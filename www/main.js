@@ -9,14 +9,6 @@ let player = {
     pos: new Vec(),
 }
 
-function update(dt) {
-    //console.log(dt);
-}
-
-function pixiMouseMove(event) {
-    console.log(event);
-}
-
 window.onload = function() {
     if(!PIXI.utils.isWebGLSupported()){
         console.log("webGL not supported");
@@ -30,12 +22,11 @@ window.onload = function() {
     
     container.appendChild(pixiApp.view);
 
+    let input = new Input(pixiApp.view);
+    let gfx = new Graphics(document.body);
+
     pixiApp.ticker.add(function () {
         let dt = pixiApp.ticker.elapsedMS/1000.0;
-		update(dt);
+		USE TIMING CLASS OR MAYBE RELY ON PIXI Ticker, CHECK ITS SOURCE
 	});
-
-    let input = new Input(pixiApp);
-
-    let gfx = new Graphics(document.body);
 };

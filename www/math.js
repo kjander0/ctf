@@ -27,6 +27,10 @@ class Vec {
         return new Vec(this.x +x, this.y + y);
     }
 
+    subXY(x, y) {
+        return new Vec(this.x - x, this.y - y);
+    }
+
     sub(other) {
         return new Vec(this.x - other.x, this.y - other.y);
     }

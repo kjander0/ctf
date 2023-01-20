@@ -15,17 +15,17 @@ class Input {
     static CMD_DOWN = 3;
     static CMD_SHOOT = 4;
 
-    commandMap = {};
+    _mousePos = new Vec();
+    _canvas;
+    _commandMap = {};
+    _keyMap = {};
 
-    keyMap = {};
-
-    mousePos = new Vec();
-
-    constructor(pixiApp) {
-        this.keyMap['a'] = CMD_LEFT;
-        this.keyMap['d'] = CMD_RIGHT;
-        this.keyMap['w'] = CMD_UP;
-        this.keyMap['s'] = CMD_DOWN;
+    constructor(canvas) {
+        this.canvas = canvas;
+        this.keyMap['a'] = Input.CMD_LEFT;
+        this.keyMap['d'] = Input.CMD_RIGHT;
+        this.keyMap['w'] = Input.CMD_UP;
+        this.keyMap['s'] = Input.CMD_DOWN;
 
         let commands = [
             Input.CMD_LEFT, Input.CMD_RIGHT, Input.CMD_UP,
@@ -34,14 +34,31 @@ class Input {
         commands.forEach((cmd) => {
             this.commandMap[cmd] = new Command(cmd);
         });
-        document.addEventListener("keydown", keyDown);
-        document.addEventListener("keyup", keyUp);
-        pixiApp.view.onmousedown = pixiMouseDown;
-        pixiApp.view.onmouseup = pixiMouseUp;
-        pixiApp.view.onmousemove = pixiMouseMove;
+        document.addEventListener("keydown", (event) => this._onKeyDown(event));
+        document.addEventListener("keyup", (event) => this._onKeyUp(event));
+        canvas.addEventListener("mousedown", (event) => this._onMouseDown(event));
+        canvas.addEventListener("mouseup", (event) => this._onMouseUp(event));
+        canvas.addEventListener("mousemove", (event) => this._onMouseMove(event));
     }
 
-    keyDown(event) {
+    mousePos() {
+        return new Vec(this._mousePos);
+    }
+
+    isActive(cmd_type) {
+        return this.commandMap[cmd_type].isActive;
+    }
+
+    wasActive(cmd_type) {
+        return this.commandMap[cmd_type].wasActive;
+    }
+
+    _clientToCanvasPos(clientPos) {
+        let rect = this.canvas.getBoundingClientRect();
+        return clientPos.subXY(rect.x, rect.y);
+    }
+
+    _onKeyDown(event) {
         if (event.repeat) {
             return
         }
@@ -50,7 +67,7 @@ class Input {
         if (!cmd_type) {
             return;
         }
-        cmd = this.commandMap[cmd_type];
+        let cmd = this.commandMap[cmd_type];
         if (!cmd) {
             return;
         }
@@ -58,7 +75,7 @@ class Input {
         cmd.wasActive = true;
     }
     
-    keyUp(event) {
+    _onKeyUp(event) {
         if (event.repeat) {
             return
         }
@@ -67,24 +84,23 @@ class Input {
         if (!cmd_type) {
             return;
         }
-        cmd = this.commandMap[cmd_type];
+        let cmd = this.commandMap[cmd_type];
         if (!cmd) {
             return;
         }
         cmd.active = false;
     }
     
-    pixiMouseDown(event) {
-        console.log("mouse down", event.data.global);
-        beginCb({type: SHOOT, pos: event.data.global});
+    _onMouseDown(event) {
+        console.log(this._clientToCanvasPos(new Vec(event.clientX, event.clientY)));
     }
     
-    pixiMouseUp(event) {
-        endCb({type: SHOOT, pos: event.data.global});
+    _onMouseUp(event) {
+        console.log(this._clientToCanvasPos(new Vec(event.clientX, event.clientY)));
     }
     
-    pixiMouseMove(event) {
-        beginCb({type: AIM, pos: event.data.global})
+    _onMouseMove(event) {
+        console.log(this._clientToCanvasPos(new Vec(event.clientX, event.clientY)));
     }
 }
 
