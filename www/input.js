@@ -21,18 +21,18 @@ class Input {
     _keyMap = {};
 
     constructor(canvas) {
-        this.canvas = canvas;
-        this.keyMap['a'] = Input.CMD_LEFT;
-        this.keyMap['d'] = Input.CMD_RIGHT;
-        this.keyMap['w'] = Input.CMD_UP;
-        this.keyMap['s'] = Input.CMD_DOWN;
+        this._canvas = canvas;
+        this._keyMap['a'] = Input.CMD_LEFT;
+        this._keyMap['d'] = Input.CMD_RIGHT;
+        this._keyMap['w'] = Input.CMD_UP;
+        this._keyMap['s'] = Input.CMD_DOWN;
 
         let commands = [
             Input.CMD_LEFT, Input.CMD_RIGHT, Input.CMD_UP,
             Input.CMD_DOWN, Input.CMD_SHOOT
         ];
         commands.forEach((cmd) => {
-            this.commandMap[cmd] = new Command(cmd);
+            this._commandMap[cmd] = new Command(cmd);
         });
         document.addEventListener("keydown", (event) => this._onKeyDown(event));
         document.addEventListener("keyup", (event) => this._onKeyUp(event));
@@ -46,15 +46,15 @@ class Input {
     }
 
     isActive(cmd_type) {
-        return this.commandMap[cmd_type].isActive;
+        return this._commandMap[cmd_type].isActive;
     }
 
     wasActive(cmd_type) {
-        return this.commandMap[cmd_type].wasActive;
+        return this._commandMap[cmd_type].wasActive;
     }
 
     _clientToCanvasPos(clientPos) {
-        let rect = this.canvas.getBoundingClientRect();
+        let rect = this._canvas.getBoundingClientRect();
         return clientPos.subXY(rect.x, rect.y);
     }
 
@@ -63,11 +63,11 @@ class Input {
             return
         }
         let key = event.key.toLowerCase();
-        let cmd_type = this.keyMap[key];
+        let cmd_type = this._keyMap[key];
         if (!cmd_type) {
             return;
         }
-        let cmd = this.commandMap[cmd_type];
+        let cmd = this._commandMap[cmd_type];
         if (!cmd) {
             return;
         }
@@ -80,11 +80,11 @@ class Input {
             return
         }
         let key = event.key.toLowerCase();
-        let cmd_type = this.keyMap[key];
+        let cmd_type = this._keyMap[key];
         if (!cmd_type) {
             return;
         }
-        let cmd = this.commandMap[cmd_type];
+        let cmd = this._commandMap[cmd_type];
         if (!cmd) {
             return;
         }

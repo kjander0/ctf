@@ -4,6 +4,7 @@
 import { Graphics } from "./graphics.js";
 import { Vec } from "./math.js";
 import { Input } from "./input.js";
+import { Ticker } from "./time.js";
 
 let player = {
     pos: new Vec(),
@@ -25,8 +26,13 @@ window.onload = function() {
     let input = new Input(pixiApp.view);
     let gfx = new Graphics(document.body);
 
+    let updateTimer = new Ticker(30, (dt) => {
+        update(dt);
+    });
+    updateTimer.start();
+
     pixiApp.ticker.add(function () {
         let dt = pixiApp.ticker.elapsedMS/1000.0;
-		USE TIMING CLASS OR MAYBE RELY ON PIXI Ticker, CHECK ITS SOURCE
+        render(dt);
 	});
 };
