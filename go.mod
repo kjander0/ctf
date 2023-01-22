@@ -1,4 +1,4 @@
-module github.com/kjander0/polis
+module github.com/kjander0/ctf
 
 go 1.18
 

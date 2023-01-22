@@ -1,12 +1,12 @@
 import { Vec } from "./math.js";
 
 class Command {
-    cmdName;
+    cmdIndex;
     active = false;
     _pressed = false;
 
-    constructor(cmdName) {
-        this.cmdName = cmdName;
+    constructor(cmdIndex) {
+        this.cmdIndex = cmdIndex;
     }
 }
 
@@ -16,10 +16,11 @@ class Input {
     static CMD_UP = 2;
     static CMD_DOWN = 3;
     static CMD_SHOOT = 4;
+    static CMD_LAST = 5; // MUST BE LAST
 
     _mousePos = new Vec();
     _canvas;
-    _commandMap = {};
+    _commands = [];
     _keyMap = {};
 
     constructor(canvas) {
@@ -29,13 +30,10 @@ class Input {
         this._keyMap['w'] = Input.CMD_UP;
         this._keyMap['s'] = Input.CMD_DOWN;
 
-        let commands = [
-            Input.CMD_LEFT, Input.CMD_RIGHT, Input.CMD_UP,
-            Input.CMD_DOWN, Input.CMD_SHOOT
-        ];
-        commands.forEach((cmdName) => {
-            this._commandMap[cmdName] = new Command(cmdName);
-        });
+        for (let i = 0; i < Input.CMD_LAST; i++) {
+            this._commands.push(new Command(i));
+        }
+
         document.addEventListener("keydown", (event) => this._onKeyDown(event));
         document.addEventListener("keyup", (event) => this._onKeyUp(event));
         canvas.addEventListener("mousedown", (event) => this._onMouseDown(event));
@@ -47,20 +45,8 @@ class Input {
         return new Vec(this._mousePos);
     }
 
-    isActive(cmdName) {
-        return this._commandMap[cmdName].isActive;
-    }
-
-    wasActive(cmdName) {
-        return this._commandMap[cmdName].wasActive;
-    }
-
-    update(world) {
-        for (const cmdName in this._commandMap) {
-            if (!this._commandMap[cmdName]._pressed) {
-                this._commandMap[cmdName].active = false;
-            }
-        }
+    isActive(cmdIndex) {
+        return this._commands[cmdIndex].active;
     }
 
     _clientToCanvasPos(clientPos) {
@@ -73,12 +59,12 @@ class Input {
             return
         }
         let key = event.key.toLowerCase();
-        let cmdName = this._keyMap[key];
-        if (!cmdName) {
+        let cmdIndex = this._keyMap[key];
+        if (cmdIndex === undefined) {
             return;
         }
-        let cmd = this._commandMap[cmdName];
-        if (!cmd) {
+        let cmd = this._commands[cmdIndex];
+        if (cmd === undefined) {
             return;
         }
         cmd.active = true;
@@ -90,28 +76,33 @@ class Input {
             return
         }
         let key = event.key.toLowerCase();
-        let cmdName = this._keyMap[key];
-        if (!cmdName) {
+        let cmdIndex = this._keyMap[key];
+        if (cmdIndex === undefined) {
             return;
         }
-        let cmd = this._commandMap[cmdName];
-        if (!cmd) {
+        let cmd = this._commands[cmdIndex];
+        if (cmd === undefined) {
             return;
         }
         cmd.active = false;
     }
     
     _onMouseDown(event) {
-        console.log(this._clientToCanvasPos(new Vec(event.clientX, event.clientY)));
     }
     
     _onMouseUp(event) {
-        console.log(this._clientToCanvasPos(new Vec(event.clientX, event.clientY)));
     }
     
     _onMouseMove(event) {
-        console.log(this._clientToCanvasPos(new Vec(event.clientX, event.clientY)));
     }
 }
 
-export { Input };
+function update(world) {
+    for (const cmd of world.input._commands) {
+        if (!cmd._pressed) {
+            cmd.active = false;
+        }
+    }
+}
+
+export { Input, update };

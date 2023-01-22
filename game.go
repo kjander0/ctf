@@ -1,63 +1,38 @@
 package main
 
-import "encoding/json"
+const tickRate = 30.0
 
-// - load game state struct from database
-// - save into database sequentially
+const gridSize = 10
 
 type Game struct {
-	ClientC          chan Client
-	UsernameToClient map[string]Client
-	World            World
-	inputC           chan PlayerInputMsg
-}
-
-type PlayerInputMsg struct {
-	Username string
-	InputMsg InputMsg
+	ClientC chan Client
+	World   World
 }
 
 func NewGame(clientC chan Client) Game {
 	return Game{
-		ClientC:          clientC,
-		UsernameToClient: make(map[string]Client),
-		World:            NewWorld(),
+		ClientC: clientC,
+		World:   NewWorld(),
 	}
 }
 
-func (g Game) run() {
+func (g Game) Run() {
+	ticker := NewTicker(tickRate)
+	ticker.Start()
+
 	for {
 		select {
 		case newClient := <-g.ClientC:
-			// associate client with a player
-			var existingClient, ok = g.UsernameToClient[newClient.Username]
-			if ok {
-				close(existingClient.WriteC)
-			}
-			g.UsernameToClient[newClient.Username] = newClient
-			go readMessages(newClient, g.inputC)
+			g.World.PlayerList = append(g.World.PlayerList, NewPlayer(newClient))
+		default:
+		}
 
-		case input := <-g.inputC:
-			logDebug("messaged received from player; {}", input.Username)
-			g.World = g.World.Update(input.Username, input.InputMsg)
-		}
-	}
-}
+		update_net(&g.World)
 
-// reads client messages into player message channel
-func readMessages(client Client, messageC chan PlayerInputMsg) {
-	for {
-		msgBytes, ok := <-client.ReadC
-		if !ok {
-			logDebug("game: readMessages: client readC closed")
-			return
-		}
-		var msg PlayerInputMsg
-		err := json.Unmarshal(msgBytes, &msg.InputMsg)
-		if err != nil {
-			logError("game: readMessages: error parsing JSON")
-		}
-		msg.Username = client.Username
-		messageC <- msg
+		// read player inputs
+		// spawn bullets
+		// update player, bullet movement
+		// damage players, destroy, respawn
+		ticker.Sleep()
 	}
 }

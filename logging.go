@@ -5,38 +5,38 @@ import (
 	"log"
 )
 
-func logDebug(items ...interface{}) {
+func LogDebug(items ...interface{}) {
 	msg := "DEBUG: " + fmt.Sprint(items...)
 	log.Println(msg)
 }
 
-func logDebugf(fmt string, items ...interface{}) {
+func LogDebugf(fmt string, items ...interface{}) {
 	log.Printf("DEBUG: "+fmt, items...)
 }
 
-func logInfo(items ...interface{}) {
+func LogInfo(items ...interface{}) {
 	msg := "INFO: " + fmt.Sprint(items...)
 	log.Println(msg)
 }
 
-func logInfof(fmt string, items ...interface{}) {
+func LogInfof(fmt string, items ...interface{}) {
 	log.Printf("INFO: "+fmt, items...)
 }
 
-func logError(items ...interface{}) {
+func LogError(items ...interface{}) {
 	msg := "ERROR: " + fmt.Sprint(items...)
 	log.Println(msg)
 }
 
-func logErrorf(fmt string, items ...interface{}) {
+func LogErrorf(fmt string, items ...interface{}) {
 	log.Printf("ERROR: "+fmt, items...)
 }
 
-func logPanic(items ...interface{}) {
+func LogPanic(items ...interface{}) {
 	msg := "PANIC: " + fmt.Sprint(items...)
 	log.Panic(msg)
 }
 
-func logPanicf(fmt string, items ...interface{}) {
+func LogPanicf(fmt string, items ...interface{}) {
 	log.Panicf("PANIC: "+fmt, items...)
 }

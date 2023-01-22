@@ -4,6 +4,9 @@
 import * as graphics from "./graphics.js";
 import * as input from "./input.js";
 import * as time from "./time.js";
+import * as player from "./player.js";
+import * as tilemap from "./tilemap.js";
+
 
 const TICK_RATE = 30.0;
 
@@ -15,17 +18,20 @@ window.onload = function() {
     let container = document.body;
     let pixiApp = new PIXI.Application({
         resizeTo: container,
-        backgroundColor: 0x1099bb
+        backgroundColor: 0x000000
     });
     
     container.appendChild(pixiApp.view);
-
     let world = {
-        updateSecs: = 1.0/TICK_RATE,
+        updateSecs: 1.0/TICK_RATE,
+        renderSecs: 1.0/60.0,
         input: new input.Input(pixiApp.view),
-        gfx: new graphics.Graphics(document.body),
+        gfx: new graphics.Graphics(pixiApp),
         player: new player.Player(),
+        map: new tilemap.TileMap(),
     };
+
+    world.player.graphic = world.gfx.addPlayer();
 
     let updateTimer = new time.Ticker(TICK_RATE, (dt) => {
         // net.update(world);
@@ -35,7 +41,7 @@ window.onload = function() {
     updateTimer.start();
 
     pixiApp.ticker.add(function () {
-        let dt = pixiApp.ticker.elapsedMS/1000.0;
+        world.renderSecs = pixiApp.ticker.elapsedMS/1000.0;
         graphics.update(world);
 	});
 };

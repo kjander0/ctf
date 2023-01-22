@@ -1,8 +1,11 @@
 package main
 
+// TODO
+// - binary messages to save bandwidth
+
 func main() {
 	webserver := NewWebServer()
 	game := NewGame(webserver.ClientC)
-	go game.run()
-	logError(webserver.run())
+	go game.Run()
+	LogError(webserver.Run())
 }
