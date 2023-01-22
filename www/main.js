@@ -1,14 +1,11 @@
 // TODO
 // - serve minified versions of PIXI for release
 
-import { Graphics } from "./graphics.js";
-import { Vec } from "./math.js";
-import { Input } from "./input.js";
-import { Ticker } from "./time.js";
+import * as graphics from "./graphics.js";
+import * as input from "./input.js";
+import * as time from "./time.js";
 
-let player = {
-    pos: new Vec(),
-}
+const TICK_RATE = 30.0;
 
 window.onload = function() {
     if(!PIXI.utils.isWebGLSupported()){
@@ -23,16 +20,22 @@ window.onload = function() {
     
     container.appendChild(pixiApp.view);
 
-    let input = new Input(pixiApp.view);
-    let gfx = new Graphics(document.body);
+    let world = {
+        updateSecs: = 1.0/TICK_RATE,
+        input: new input.Input(pixiApp.view),
+        gfx: new graphics.Graphics(document.body),
+        player: new player.Player(),
+    };
 
-    let updateTimer = new Ticker(30, (dt) => {
-        update(dt);
+    let updateTimer = new time.Ticker(TICK_RATE, (dt) => {
+        // net.update(world);
+        player.update(world);
+        input.update(world);
     });
     updateTimer.start();
 
     pixiApp.ticker.add(function () {
         let dt = pixiApp.ticker.elapsedMS/1000.0;
-        render(dt);
+        graphics.update(world);
 	});
 };
