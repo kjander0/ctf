@@ -18,7 +18,7 @@ class Graphics {
     }
 
     resize(screenWidth, screenHeight) {
-        moveCamera(screenWidth/2, screenHeight/2);
+        this.moveCamera(screenWidth/2, screenHeight/2);
     }
 
     addPlayer() {

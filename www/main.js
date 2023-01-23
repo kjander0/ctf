@@ -6,11 +6,11 @@ import * as input from "./input.js";
 import * as time from "./time.js";
 import * as player from "./player.js";
 import * as tilemap from "./tilemap.js";
-
+import * as net from "./net.js"
 
 const TICK_RATE = 30.0;
 
-window.onload = function() {
+window.onload = async function() {
     if(!PIXI.utils.isWebGLSupported()){
         console.log("webGL not supported");
     }
@@ -28,13 +28,14 @@ window.onload = function() {
         input: new input.Input(pixiApp.view),
         gfx: new graphics.Graphics(pixiApp),
         player: new player.Player(),
-        map: new tilemap.TileMap(),
+        //map: new tilemap.TileMap(),
     };
-
     world.player.graphic = world.gfx.addPlayer();
 
+    await net.connect();
+
     let updateTimer = new time.Ticker(TICK_RATE, (dt) => {
-        // net.update(world);
+        net.sendInput(world);
         player.update(world);
         input.update(world);
     });

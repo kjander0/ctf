@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	pongWait       = 60 * time.Second
-	writeWait      = 60 * time.Second
+	readWait       = 10 * time.Second
+	writeWait      = 10 * time.Second
 	maxMessageSize = 1024
 )
 
@@ -105,13 +105,14 @@ func readPump(conn *websocket.Conn, readC chan []byte) {
 	conn.SetReadLimit(maxMessageSize)
 
 	for {
-		conn.SetReadDeadline(time.Now().Add(pongWait))
+		conn.SetReadDeadline(time.Now().Add(readWait))
 		conn.SetPongHandler(
 			func(string) error {
-				conn.SetReadDeadline(time.Now().Add(pongWait))
+				conn.SetReadDeadline(time.Now().Add(readWait))
 				return nil
 			})
 		_, data, err := conn.ReadMessage()
+		LogDebug("ws read data: ", data)
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				LogError("readPump: unexpected websocket error: ", err)
@@ -121,6 +122,7 @@ func readPump(conn *websocket.Conn, readC chan []byte) {
 			return
 		}
 
+		readTimer := time.NewTimer(readWait)
 		select {
 		case readC <- data:
 		default:

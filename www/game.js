@@ -41,6 +41,4 @@ window.onload = function() {
         console.log("websocket closed");
         // TODO: redirect to auth page
     }
-
-    
 };

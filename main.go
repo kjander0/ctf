@@ -2,6 +2,7 @@ package main
 
 // TODO
 // - binary messages to save bandwidth
+// - test with artificial delay, jitter, loss
 
 func main() {
 	webserver := NewWebServer()
