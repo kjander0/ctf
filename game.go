@@ -1,6 +1,10 @@
 package main
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/kjander0/ctf/net"
+)
 
 const (
 	TickRate  = 30.0
@@ -9,11 +13,11 @@ const (
 )
 
 type Game struct {
-	ClientC chan Client
+	ClientC chan net.Client
 	World   World
 }
 
-func NewGame(clientC chan Client) Game {
+func NewGame(clientC chan net.Client) Game {
 	return Game{
 		ClientC: clientC,
 		World:   NewWorld(),
@@ -82,7 +86,6 @@ func readInputsFromPlayers(world *World) {
 				// TODO: don't close here, because we will be writing in the next step
 				close(world.PlayerList[i].Client.WriteC)
 			}
-			LogDebug("read cmd bits")
 			var newInputState InputState
 
 			if (inputMsg.CmdBits & leftBit) == leftBit {

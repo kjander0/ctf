@@ -1,4 +1,4 @@
-package main
+package net
 
 import (
 	"encoding/json"
@@ -9,8 +9,7 @@ import (
 )
 
 const (
-	readWait       = 10 * time.Second
-	writeWait      = 10 * time.Second
+	connTimeout    = 10 * time.Second
 	maxMessageSize = 1024
 )
 
@@ -28,10 +27,7 @@ type ClientMsg struct {
 	Username string
 }
 
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-}
+var upgrader = websocket.Upgrader{}
 
 func NewWebServer() WebServer {
 	return WebServer{
@@ -46,7 +42,7 @@ func (ws *WebServer) Run() error {
 }
 
 func NewClient() Client {
-	return Client{ReadC: make(chan []byte, 10), WriteC: make(chan []byte, 10)}
+	return Client{ReadC: make(chan []byte), WriteC: make(chan []byte)}
 }
 
 func (ws *WebServer) handleWs(w http.ResponseWriter, r *http.Request) {
@@ -105,12 +101,17 @@ func readPump(conn *websocket.Conn, readC chan []byte) {
 	conn.SetReadLimit(maxMessageSize)
 
 	for {
-		conn.SetReadDeadline(time.Now().Add(readWait))
 		conn.SetPongHandler(
 			func(string) error {
-				conn.SetReadDeadline(time.Now().Add(readWait))
-				return nil
+				return conn.SetReadDeadline(time.Now().Add(connTimeout))
 			})
+
+		err := conn.SetReadDeadline(time.Now().Add(connTimeout))
+		if err != nil {
+			LogError("SetReadDeadline: ", err)
+			return
+		}
+
 		_, data, err := conn.ReadMessage()
 		LogDebug("ws read data: ", data)
 		if err != nil {
@@ -122,11 +123,11 @@ func readPump(conn *websocket.Conn, readC chan []byte) {
 			return
 		}
 
-		readTimer := time.NewTimer(readWait)
+		readTimer := time.NewTimer(connTimeout)
 		select {
 		case readC <- data:
-		default:
-			LogError("readPump: read channel full")
+		case <-readTimer.C:
+			LogError("readPump: timeout on read channel")
 			return
 		}
 	}
@@ -148,15 +149,15 @@ func writePump(conn *websocket.Conn, writeC chan []byte) {
 			return
 		}
 
-		conn.SetWriteDeadline(time.Now().Add(writeWait))
-		w, err := conn.NextWriter(websocket.TextMessage)
+		err := conn.SetWriteDeadline(time.Now().Add(connTimeout))
 		if err != nil {
-			LogError("writePump: NextWriter: ", err)
+			LogError("SetWriteDeadline: ", err)
 			return
 		}
-		w.Write(data)
 
-		if err := w.Close(); err != nil {
+		err = conn.WriteMessage(websocket.TextMessage, data)
+		if err != nil {
+			LogError("writePump: WriteMessage: ", err)
 			return
 		}
 	}
