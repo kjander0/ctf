@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/kjander0/ctf/log"
 )
 
 const (
@@ -48,10 +49,10 @@ func NewClient() Client {
 func (ws *WebServer) handleWs(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		LogError("handleWs: upgrader.Upgrade: ", err)
+		log.Error("handleWs: upgrader.Upgrade: ", err)
 		return
 	}
-	LogDebug("handleWs: new connection from: ", r.RemoteAddr)
+	log.Debug("handleWs: new connection from: ", r.RemoteAddr)
 
 	client := NewClient()
 
@@ -68,7 +69,7 @@ Validate client before passing onto game logic
 func (ws *WebServer) serviceClient(client Client) {
 	msgBytes, ok := <-client.ReadC
 	if !ok {
-		LogError("serviceClient: connection lost")
+		log.Error("serviceClient: connection lost")
 		close(client.WriteC)
 		return
 	}
@@ -76,7 +77,7 @@ func (ws *WebServer) serviceClient(client Client) {
 	var inputMsg ClientMsg
 	err := json.Unmarshal(msgBytes, &inputMsg)
 	if err != nil {
-		LogError("serviceClient: error decoding JSON")
+		log.Error("serviceClient: error decoding JSON")
 		close(client.WriteC)
 		return
 	}
@@ -93,7 +94,7 @@ readC will be closed when the connection ends.
 */
 func readPump(conn *websocket.Conn, readC chan []byte) {
 	defer func() {
-		LogDebug("readPump: closing")
+		log.Debug("readPump: closing")
 		conn.Close()
 		close(readC)
 	}()
@@ -108,17 +109,17 @@ func readPump(conn *websocket.Conn, readC chan []byte) {
 
 		err := conn.SetReadDeadline(time.Now().Add(connTimeout))
 		if err != nil {
-			LogError("SetReadDeadline: ", err)
+			log.Error("SetReadDeadline: ", err)
 			return
 		}
 
 		_, data, err := conn.ReadMessage()
-		LogDebug("ws read data: ", data)
+		log.Debug("ws read data: ", data)
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				LogError("readPump: unexpected websocket error: ", err)
+				log.Error("readPump: unexpected websocket error: ", err)
 			} else {
-				LogDebug("readPump: ", err)
+				log.Debug("readPump: ", err)
 			}
 			return
 		}
@@ -127,7 +128,7 @@ func readPump(conn *websocket.Conn, readC chan []byte) {
 		select {
 		case readC <- data:
 		case <-readTimer.C:
-			LogError("readPump: timeout on read channel")
+			log.Error("readPump: timeout on read channel")
 			return
 		}
 	}
@@ -138,7 +139,7 @@ Gorilla WS require all write from same goroutine, so we do it here
 */
 func writePump(conn *websocket.Conn, writeC chan []byte) {
 	defer func() {
-		LogDebug("writePump: closing")
+		log.Debug("writePump: closing")
 		conn.Close()
 	}()
 
@@ -151,13 +152,13 @@ func writePump(conn *websocket.Conn, writeC chan []byte) {
 
 		err := conn.SetWriteDeadline(time.Now().Add(connTimeout))
 		if err != nil {
-			LogError("SetWriteDeadline: ", err)
+			log.Error("SetWriteDeadline: ", err)
 			return
 		}
 
 		err = conn.WriteMessage(websocket.TextMessage, data)
 		if err != nil {
-			LogError("writePump: WriteMessage: ", err)
+			log.Error("writePump: WriteMessage: ", err)
 			return
 		}
 	}
