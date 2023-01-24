@@ -1,5 +1,6 @@
 // TODO
 // - serve minified versions of PIXI for release
+// - bundle the js
 
 import * as graphics from "./graphics.js";
 import * as input from "./input.js";
@@ -34,15 +35,21 @@ window.onload = async function() {
 
     await net.connect();
 
+    let updateCount = 0;
     let updateTimer = new time.Ticker(TICK_RATE, (dt) => {
+        net.consumeMessages(world);
+        Need to throttle to keep in sync with server. Server can see how many inputs it has
+        buffered and should send a thottle signal.
         net.sendInput(world);
         player.update(world);
         input.update(world);
+        console.log("COUNT: ", updateCount++);
     });
     updateTimer.start();
 
     pixiApp.ticker.add(function () {
         world.renderSecs = pixiApp.ticker.elapsedMS/1000.0;
+        DRAW last acked pos and predicted pos
         graphics.update(world);
 	});
 };

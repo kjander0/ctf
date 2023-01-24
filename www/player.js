@@ -4,6 +4,8 @@ import { Input } from "./input.js";
 class Player {
     static SPEED = 150.0;
 
+    unackedInputs = [];
+    lastAckedPos = new Vec();
     pos = new Vec();
     graphic;
 }
@@ -25,6 +27,7 @@ function update(world) {
     }
 
     world.player.pos = world.player.pos.add(dir.scale(Player.SPEED * world.updateSecs));
+    world.player.pos = world.player.lastAckedPos;
 }
 
 export {Player, update}

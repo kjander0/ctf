@@ -1,20 +1,27 @@
 package main
 
 import (
-	"encoding/json"
-
+	"github.com/kjander0/ctf/entity"
+	"github.com/kjander0/ctf/logger"
+	"github.com/kjander0/ctf/mymath"
 	"github.com/kjander0/ctf/net"
+)
+
+const (
+	TickRate    = 30.0
+	DeltaSecs   = 1.0 / TickRate
+	PlayerSpeed = 150
 )
 
 type Game struct {
 	ClientC chan net.Client
-	World   World
+	World   entity.World
 }
 
 func NewGame(clientC chan net.Client) Game {
 	return Game{
 		ClientC: clientC,
-		World:   NewWorld(),
+		World:   entity.NewWorld(),
 	}
 }
 
@@ -22,16 +29,21 @@ func (g Game) Run() {
 	ticker := NewTicker(TickRate)
 	ticker.Start()
 
+	tickCount := 0
 	for {
 		select {
 		case newClient := <-g.ClientC:
-			g.World.PlayerList = append(g.World.PlayerList, NewPlayer(newClient))
+			g.World.PlayerList = append(g.World.PlayerList, entity.NewPlayer(newClient))
 		default:
 		}
 
-		net.ReceiveInputs(&g.World)
+		g.World.DeltaSecs = DeltaSecs
+		ReceiveInputs(&g.World)
 		updatePlayerMovement(&g.World)
-		net.Dispatch(&g.World)
+		SendWorldUpdate(&g.World)
+
+		logger.Debug("Tick count", tickCount)
+		tickCount += 1
 
 		// read player inputs
 		// spawn bullets
@@ -41,23 +53,25 @@ func (g Game) Run() {
 	}
 }
 
-func sendStateToPlayers(world *World) {
-	var msg GameStateMsg
+func updatePlayerMovement(world *entity.World) {
 	for i := range world.PlayerList {
-		msg.Players = append(msg.Players, PlayerState{world.PlayerList[i].Pos.X, world.PlayerList[i].Pos.Y})
-	}
-
-	msgBytes, err := json.Marshal(msg)
-	if err != nil {
-		LogPanic("sendStateToPlayers: ", err)
-	}
-
-	for i := range world.PlayerList {
-		select {
-		case world.PlayerList[i].Client.WriteC <- msgBytes:
-		default:
-			LogError("sendStateToPlayers: player writeC full")
+		input := world.PlayerList[i].Input
+		// TODO: last pressed would probs feel better?
+		var dir mymath.Vec
+		if input.Left {
+			dir.X -= 1
 		}
-	}
+		if input.Right {
+			dir.X += 1
+		}
+		if input.Up {
+			dir.Y += 1
+		}
+		if input.Down {
+			dir.Y -= 1
+		}
 
+		world.PlayerList[i].Pos = world.PlayerList[i].Pos.Add(dir.Scale(PlayerSpeed * DeltaSecs))
+		logger.Debug("new dir: ", dir)
+	}
 }

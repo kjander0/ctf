@@ -31,9 +31,10 @@ class Ticker {
         let prevTime = performance.now() - this._frameTimeMs;
         let accumMs = 0;
         while (true) {
-            let now = performance.now()
+            let now = performance.now();
             let dt = now - prevTime;
-            
+            prevTime = now;
+
             this._cb(dt / 1000.0);
 
             let spentTimeMs = performance.now() - prevTime;
@@ -41,8 +42,8 @@ class Ticker {
             await sleepMs(sleepTimeMs);
             spentTimeMs = performance.now() - prevTime;
             accumMs += this._frameTimeMs - spentTimeMs;
+            console.log(dt, spentTimeMs, accumMs);
 
-            prevTime = now;
         }
     }
 }

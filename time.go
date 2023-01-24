@@ -1,8 +1,9 @@
 package main
 
 import (
-	"log"
 	"time"
+
+	"github.com/kjander0/ctf/logger"
 )
 
 // Fixed timestep ticker
@@ -29,12 +30,13 @@ func (t *Ticker) Start() {
 
 func (t *Ticker) Sleep() {
 	if !t.started {
-		log.Panic("ticker was not started")
+		logger.Panic("ticker was not started")
 	}
 	spentTime := time.Since(t.prevTime)
 	sleepDuration := t.frameTime + t.accum - spentTime
 	time.Sleep(sleepDuration) // negative duration is ok
 	spentTime = time.Since(t.prevTime)
 	t.accum += t.frameTime - spentTime
+	logger.Debug("spent time: ", spentTime, t.frameTime, t.accum)
 	t.prevTime = time.Now()
 }

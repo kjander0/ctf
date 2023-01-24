@@ -1,4 +1,5 @@
 import { Input } from "./input.js";
+import { Encoder, Decoder } from "./encode.js";
 
 let socket;
 let msgQueue;
@@ -8,28 +9,27 @@ async function connect() {
     socket.binaryType = 'arraybuffer';
     let connectPromise = new Promise(function(resolve, reject) {
         socket.addEventListener('open', function (event) {
-            console.log("websocket opened");
             msgQueue = [];
             resolve();
-            socket.send(JSON.stringify({Username: "user"}));
         });
     });
 
     socket.addEventListener('message', function (event) {
-        if (event.data instanceof ArrayBuffer) {
-            msgQueue.push(event.data);
-        } else {
-            msgQueue.push(JSON.parse(event.data));
-        }
+        msgQueue.push(event.data);
     });
 
     return connectPromise;
 }
 
 const leftBit = 1;
-const rightBit = 1;
-const upBit = 1;
-const downBit = 1;
+const rightBit = 2;
+const upBit = 4;
+const downBit = 8;
+
+const inputMsgType = 0;
+const stateUpdateMsgType = 1;
+
+let encoder = new Encoder();
 
 function sendInput(world) {
     let cmdBits = 0;
@@ -45,14 +45,34 @@ function sendInput(world) {
     if (world.input.isActive(Input.CMD_DOWN)) {
         cmdBits |= downBit;
     }
-	socket.send(JSON.stringify({cmdBits: cmdBits}));
+    encoder.reset();
+    encoder.writeUint8(inputMsgType);
+    encoder.writeUint8(cmdBits);
+	socket.send(encoder.getView());
 }
 
-function rcvMsg() {
-    return msgQueue.shift();
+function consumeMessages(world) {
+    for (let msg of msgQueue) {
+        let decoder = new Decoder(msg);
+        let msgType = decoder.readUint8();
+        switch (msgType) {
+            case stateUpdateMsgType:
+                _doStateUpdate(world, decoder);
+                break;
+        }
+    }
+    msgQueue = [];
 }
 
-export {connect, sendInput, rcvMsg};
+function _doStateUpdate(world, decoder) {
+    let numPlayers = decoder.readUint8();
+
+    // Assume first player is me for now
+    world.player.lastAckedPos = decoder.readVec();
+
+}
+
+export {connect, sendInput, consumeMessages};
 
 
 

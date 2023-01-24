@@ -6,12 +6,11 @@ import (
 )
 
 const (
-	TickRate  = 30.0
-	DeltaSecs = 1.0 / TickRate
-	GridSize  = 10
+	GridSize = 10
 )
 
 type World struct {
+	DeltaSecs  float64
 	PlayerList []Player
 	TileList   []Tile
 }
@@ -26,10 +25,6 @@ func NewWorld() World {
 		PlayerList: []Player{},
 	}
 }
-
-const (
-	PlayerSpeed = 150
-)
 
 type Player struct {
 	Pos    mymath.Vec
@@ -52,25 +47,4 @@ func NewPlayer(client net.Client) Player {
 
 type Tile struct {
 	color int
-}
-
-func updatePlayerMovement(world *World) {
-	for i := range world.PlayerList {
-		input := world.PlayerList[i].Input
-		var dir mymath.Vec
-		if input.Left {
-			dir.X -= 1
-		}
-		if input.Right {
-			dir.X += 1
-		}
-		if input.Up {
-			dir.Y += 1
-		}
-		if input.Down {
-			dir.Y -= 1
-		}
-
-		world.PlayerList[i].Pos = world.PlayerList[i].Pos.Add(dir.Scale(PlayerSpeed * DeltaSecs))
-	}
 }
