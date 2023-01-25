@@ -1,51 +1,6 @@
-function sleepMs(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
+const UPDATE_RATE = 32.0;
+const UPDATE_MS = 1000.0 / UPDATE_RATE;
+const THROTTLED_UPDATE_RATE = 28.0;
+const THROTTLED_UPDATE_MS = 1000.0 / THROTTLED_UPDATE_RATE;
 
-class Timer {
-    constructor(periodSecs) {
-        this.periodSecs = periodSecs;
-        this.endTime = performance.now() + periodSecs * 1000;
-    }
-
-    rollover() {
-        let diff = performance.now() - this.endTime;
-        if (diff > 0) {
-            this.endTime += this.periodSecs - diff;
-            return true;
-        } else {
-            return false;
-        }
-    }
-}
-
-class Ticker {
-    _frameTimeMs
-    _cb
-    constructor(tickRate, cb) {
-        this._frameTimeMs = 1000.0 / tickRate;
-        this._cb = cb;
-    }
-
-    async start() {
-        let prevTime = performance.now() - this._frameTimeMs;
-        let accumMs = 0;
-        while (true) {
-            let now = performance.now();
-            let dt = now - prevTime;
-            prevTime = now;
-
-            this._cb(dt / 1000.0);
-
-            let spentTimeMs = performance.now() - prevTime;
-            let sleepTimeMs = this._frameTimeMs + accumMs - spentTimeMs;
-            await sleepMs(sleepTimeMs);
-            spentTimeMs = performance.now() - prevTime;
-            accumMs += this._frameTimeMs - spentTimeMs;
-            console.log(dt, spentTimeMs, accumMs);
-
-        }
-    }
-}
-
-export{sleepMs, Timer, Ticker};
+export {UPDATE_RATE, UPDATE_MS, THROTTLED_UPDATE_RATE, THROTTLED_UPDATE_MS};

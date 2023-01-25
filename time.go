@@ -37,6 +37,5 @@ func (t *Ticker) Sleep() {
 	time.Sleep(sleepDuration) // negative duration is ok
 	spentTime = time.Since(t.prevTime)
 	t.accum += t.frameTime - spentTime
-	logger.Debug("spent time: ", spentTime, t.frameTime, t.accum)
 	t.prevTime = time.Now()
 }

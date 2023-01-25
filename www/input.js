@@ -97,7 +97,7 @@ class Input {
     }
 }
 
-function update(world) {
+function postUpdate(world) {
     for (const cmd of world.input._commands) {
         if (!cmd._pressed) {
             cmd.active = false;
@@ -105,4 +105,4 @@ function update(world) {
     }
 }
 
-export { Input, update };
+export { Input, postUpdate };

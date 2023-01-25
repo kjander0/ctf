@@ -2,7 +2,7 @@ package entity
 
 import (
 	"github.com/kjander0/ctf/mymath"
-	"github.com/kjander0/ctf/net"
+	"github.com/kjander0/ctf/web"
 )
 
 const (
@@ -10,7 +10,6 @@ const (
 )
 
 type World struct {
-	DeltaSecs  float64
 	PlayerList []Player
 	TileList   []Tile
 }
@@ -27,9 +26,11 @@ func NewWorld() World {
 }
 
 type Player struct {
-	Pos    mymath.Vec
-	Client net.Client
-	Input  PlayerInput
+	Pos          mymath.Vec
+	Client       web.Client
+	Input        PlayerInput
+	DoDisconnect bool
+	DoThrottle   bool
 }
 
 type PlayerInput struct {
@@ -39,7 +40,7 @@ type PlayerInput struct {
 	Down  bool
 }
 
-func NewPlayer(client net.Client) Player {
+func NewPlayer(client web.Client) Player {
 	return Player{
 		Client: client,
 	}

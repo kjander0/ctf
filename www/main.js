@@ -1,15 +1,14 @@
 // TODO
+// - hard limit number unacked packets (1 second worth?) in case server running slow, etc
+// - handle switching browser tab (ignore first huge delta time, etc)
 // - serve minified versions of PIXI for release
 // - bundle the js
 
 import * as graphics from "./graphics.js";
 import * as input from "./input.js";
-import * as time from "./time.js";
 import * as player from "./player.js";
-import * as tilemap from "./tilemap.js";
 import * as net from "./net.js"
-
-const TICK_RATE = 30.0;
+import * as time from "./time.js"
 
 window.onload = async function() {
     if(!PIXI.utils.isWebGLSupported()){
@@ -24,32 +23,48 @@ window.onload = async function() {
     
     container.appendChild(pixiApp.view);
     let world = {
-        updateSecs: 1.0/TICK_RATE,
-        renderSecs: 1.0/60.0,
+        deltaMs: 1000.0/60.0,
+        accumMs: 0,
+        doThrottle: false,
         input: new input.Input(pixiApp.view),
         gfx: new graphics.Graphics(pixiApp),
         player: new player.Player(),
         //map: new tilemap.TileMap(),
     };
-    world.player.graphic = world.gfx.addPlayer();
+    world.player.graphic = world.gfx.addCircle(0x00AA33);
+    world.player.lastAckedGraphic = world.gfx.addCircle(0xFF0000);
+    world.player.correctedGraphic = world.gfx.addCircle(0x0000FF);
 
     await net.connect();
 
     let updateCount = 0;
-    let updateTimer = new time.Ticker(TICK_RATE, (dt) => {
+    function update(world) {
+        world.accumMs += world.deltaMs;
+        let targetMs = time.UPDATE_MS;
+        if (world.doThrottle) {
+            targetMs = time.THROTTLED_UPDATE_MS;
+        }
+
+        if (world.accumMs < targetMs) {
+            return;
+        }
+        world.accumMs -= targetMs;
+        
         net.consumeMessages(world);
-        Need to throttle to keep in sync with server. Server can see how many inputs it has
-        buffered and should send a thottle signal.
+        // TODO Need to throttle to keep in sync with server. Server can see how many inputs it has
+        // buffered and should send a thottle signal.
         net.sendInput(world);
         player.update(world);
-        input.update(world);
-        console.log("COUNT: ", updateCount++);
-    });
-    updateTimer.start();
+        //console.log("COUNT: ", updateCount++);
+        input.postUpdate(world); // do last
+    }
 
+    let prevTime = window.performance.now();
     pixiApp.ticker.add(function () {
-        world.renderSecs = pixiApp.ticker.elapsedMS/1000.0;
-        DRAW last acked pos and predicted pos
+        // TODO: want elapsedMS to be bounded
+        world.deltaMs = pixiApp.ticker.elapsedMS;
+        update(world);
         graphics.update(world);
+        prevTime = window.performance.now();
 	});
 };

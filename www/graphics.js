@@ -1,3 +1,6 @@
+import {lerpVec} from "./interpolate.js"
+import * as time from "./time.js"
+
 class Graphics {
     camContainer;
     screenRect;
@@ -21,10 +24,10 @@ class Graphics {
         this.moveCamera(screenWidth/2, screenHeight/2);
     }
 
-    addPlayer() {
+    addCircle(color) {
         // TODO: reuse pixi.Geometry for each instance of a drawable
         let p = new PIXI.Graphics();
-        p.beginFill(0x00AA33);
+        p.beginFill(color);
         p.drawCircle(0, 0, 10);
         p.endFill();
         this.camContainer.addChild(p);
@@ -33,8 +36,13 @@ class Graphics {
 }
 
 function update(world) {
-    world.player.graphic.x = world.player.pos.x;
-    world.player.graphic.y = world.player.pos.y;
+    let lerpPos = lerpVec(world.player.prevPos, world.player.pos, world.accumMs/time.UPDATE_MS);
+    world.player.graphic.x = lerpPos.x;
+    world.player.graphic.y = lerpPos.y;
+    world.player.lastAckedGraphic.x = world.player.lastAckedPos.x;
+    world.player.lastAckedGraphic.y = world.player.lastAckedPos.y;
+    world.player.correctedGraphic.x = world.player.correctedPos.x;
+    world.player.correctedGraphic.y = world.player.correctedPos.y;
 }
 
 export {Graphics, update}

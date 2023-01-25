@@ -1,4 +1,4 @@
-package net
+package web
 
 import (
 	"net/http"
@@ -19,12 +19,12 @@ type WebServer struct {
 
 type Client struct {
 	Username string
-	ReadC    chan []byte
+	ReadC    chan ClientMsg
 	WriteC   chan []byte
 }
 
 type ClientMsg struct {
-	Username string
+	Data []byte
 }
 
 var upgrader = websocket.Upgrader{}
@@ -42,7 +42,10 @@ func (ws *WebServer) Run() error {
 }
 
 func NewClient() Client {
-	return Client{ReadC: make(chan []byte), WriteC: make(chan []byte)}
+	return Client{
+		ReadC:  make(chan ClientMsg, 5), // buffered channel so we can detect throttle condition
+		WriteC: make(chan []byte),
+	}
 }
 
 func (ws *WebServer) handleWs(w http.ResponseWriter, r *http.Request) {
@@ -77,7 +80,7 @@ func (ws *WebServer) serviceClient(client Client) {
 Gorilla WS require all read from same goroutine, so we do it here.
 readC will be closed when the connection ends.
 */
-func readPump(conn *websocket.Conn, readC chan []byte) {
+func readPump(conn *websocket.Conn, readC chan ClientMsg) {
 	defer func() {
 		logger.Debug("readPump: closing")
 		conn.Close()
@@ -98,7 +101,7 @@ func readPump(conn *websocket.Conn, readC chan []byte) {
 			return
 		}
 
-		msgType, data, err := conn.ReadMessage()
+		wsMsgType, data, err := conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				logger.Error("readPump: unexpected websocket error: ", err)
@@ -108,14 +111,19 @@ func readPump(conn *websocket.Conn, readC chan []byte) {
 			return
 		}
 
-		if msgType != websocket.BinaryMessage {
-			logger.Error("readPump: unsupported websocket message type: ", msgType)
+		if wsMsgType != websocket.BinaryMessage {
+			logger.Error("readPump: unsupported websocket message type: ", wsMsgType)
 			return
+		}
+
+		msg := ClientMsg{
+			// TODO: might want to put msgType here if we decide to accept TextMessage (json) also
+			data,
 		}
 
 		readTimer := time.NewTimer(connTimeout)
 		select {
-		case readC <- data:
+		case readC <- msg:
 		case <-readTimer.C:
 			logger.Error("readPump: timeout on read channel")
 			return
