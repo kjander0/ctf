@@ -1,17 +1,14 @@
 package entity
 
-import (
-	"github.com/kjander0/ctf/mymath"
-	"github.com/kjander0/ctf/web"
-)
-
 const (
 	GridSize = 10
 )
 
 type World struct {
-	PlayerList []Player
-	TileList   []Tile
+	PlayerList    []Player
+	TileList      []Tile
+	freePlayerIds []uint8
+	playerIdCount int
 }
 
 func NewWorld() World {
@@ -25,25 +22,24 @@ func NewWorld() World {
 	}
 }
 
-type Player struct {
-	Pos          mymath.Vec
-	Client       web.Client
-	Input        PlayerInput
-	DoDisconnect bool
-	DoThrottle   bool
-}
-
-type PlayerInput struct {
-	Left  bool
-	Right bool
-	Up    bool
-	Down  bool
-}
-
-func NewPlayer(client web.Client) Player {
-	return Player{
-		Client: client,
+func (w *World) NextPlayerId() (bool, uint8) {
+	if w.playerIdCount < 256 {
+		id := uint8(w.playerIdCount)
+		w.playerIdCount += 1
+		return true, id
 	}
+
+	if len(w.freePlayerIds) > 0 {
+		id := w.freePlayerIds[len(w.freePlayerIds)-1]
+		w.freePlayerIds = w.freePlayerIds[0 : len(w.freePlayerIds)-1]
+		return true, id
+	}
+
+	return false, 0
+}
+
+func (w *World) FreePlayerId(id uint8) {
+	w.freePlayerIds = append(w.freePlayerIds, id)
 }
 
 type Tile struct {

@@ -29,6 +29,7 @@ window.onload = async function() {
         input: new input.Input(pixiApp.view),
         gfx: new graphics.Graphics(pixiApp),
         player: new player.Player(),
+        otherPlayers: [],
         //map: new tilemap.TileMap(),
     };
     world.player.graphic = world.gfx.addCircle(0x00AA33);
@@ -56,6 +57,7 @@ window.onload = async function() {
         net.sendInput(world);
         player.update(world);
         //console.log("COUNT: ", updateCount++);
+        removeDisconnectedPlayers(world);
         input.postUpdate(world); // do last
     }
 
@@ -68,3 +70,12 @@ window.onload = async function() {
         prevTime = window.performance.now();
 	});
 };
+
+function removeDisconnectedPlayers(world) {
+    for (let otherPlayer of world.otherPlayers) {
+        if (!otherPlayer.disconnected) {
+            continue;
+        }
+        world.gfx.remove(otherPlayer.graphic);
+    }
+}

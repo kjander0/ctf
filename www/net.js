@@ -1,6 +1,6 @@
 import { Input } from "./input.js";
 import { Encoder, Decoder } from "./encode.js";
-import { PlayerInputState } from "./player.js";
+import { Player, PlayerInputState } from "./player.js";
 
 let socket;
 let msgQueue;
@@ -79,13 +79,25 @@ function _doStateUpdate(world, decoder) {
     world.player.lastAckedPos = decoder.readVec();
     world.player.unackedInputs.shift();
 
+    for (let otherPlayer of world.otherPlayers) {
+        otherPlayer.disconnected = true;
+    }
+
     let numPlayers = decoder.readUint8();
     for (let i = 0; i < numPlayers; i++) {
         let id = decoder.readUint8();
-        find player with this id
-        set players position/prev_position
-
+        let otherPlayer = world.otherPlayers.find(p => id === p.id);
+        if (otherPlayer === undefined) {
+            otherPlayer = new Player();
+            otherPlayer.id = id;
+            otherPlayer.graphic = world.gfx.addCircle(0x771177);
+            world.otherPlayers.push(otherPlayer);
+        }
+        otherPlayer.disconnected = false;
+        otherPlayer.prevPos = otherPlayer.pos;
+        otherPlayer.pos = decoder.readVec();
     }
+    // TODO remove players who don't exist no more
 }
 
 export {connect, sendInput, consumeMessages};

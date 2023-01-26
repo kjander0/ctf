@@ -115,6 +115,7 @@ func prepareWorldUpdateForPlayer(world *entity.World, playerIndex int) []byte {
 		if i == playerIndex {
 			continue
 		}
+		encoder.WriteUint8(world.PlayerList[i].Id)
 		// TODO, don't send unchanged attributes of players
 		encoder.WriteVec(world.PlayerList[i].Pos)
 	}

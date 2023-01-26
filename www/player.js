@@ -3,7 +3,7 @@ import { Input } from "./input.js";
 
 class Player {
     static SPEED = 5.0;
-
+    id;
     unackedInputs = [];
     lastAckedPos = new Vec();
     prevPos = new Vec();

@@ -33,16 +33,29 @@ class Graphics {
         this.camContainer.addChild(p);
         return p;
     }
+
+    remove(graphic) {
+        this.camContainer.removeChild(graphic);
+        //graphic.destroy();
+    }
 }
 
 function update(world) {
-    let lerpPos = lerpVec(world.player.prevPos, world.player.pos, world.accumMs/time.UPDATE_MS);
+    let lerpFraction = world.accumMs/time.UPDATE_MS;
+    let lerpPos = lerpVec(world.player.prevPos, world.player.pos, lerpFraction);
     world.player.graphic.x = lerpPos.x;
     world.player.graphic.y = lerpPos.y;
     world.player.lastAckedGraphic.x = world.player.lastAckedPos.x;
     world.player.lastAckedGraphic.y = world.player.lastAckedPos.y;
     world.player.correctedGraphic.x = world.player.correctedPos.x;
     world.player.correctedGraphic.y = world.player.correctedPos.y;
+
+    for (let other of world.otherPlayers) {
+        // TODO: use a different lerpFraction for other players (based on how long since last input received)
+        let lerpPos = lerpVec(other.prevPos, other.pos, lerpFraction);
+        other.graphic.x = lerpPos.x;
+        other.graphic.y = lerpPos.y;
+    }
 }
 
 export {Graphics, update}
