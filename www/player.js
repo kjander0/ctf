@@ -2,7 +2,7 @@ import { Vec } from "./math.js";
 import { Input } from "./input.js";
 
 class Player {
-    static SPEED = 5.0;
+    static SPEED = 2.5;
     id;
     unackedInputs = [];
     lastAckedPos = new Vec();

@@ -25,6 +25,7 @@ window.onload = async function() {
     let world = {
         deltaMs: 1000.0/60.0,
         accumMs: 0,
+        serverAccumMs: 0, // time accumulation for server updates from server
         doThrottle: false,
         input: new input.Input(pixiApp.view),
         gfx: new graphics.Graphics(pixiApp),
@@ -33,15 +34,15 @@ window.onload = async function() {
         //map: new tilemap.TileMap(),
     };
     world.player.graphic = world.gfx.addCircle(0x00AA33);
-    world.player.lastAckedGraphic = world.gfx.addCircle(0xFF0000);
-    world.player.correctedGraphic = world.gfx.addCircle(0x0000FF);
+    world.player.lastAckedGraphic = world.gfx.addCircle(0xFF0000, false);
+    world.player.correctedGraphic = world.gfx.addCircle(0x0000FF, false);
 
-    await net.connect();
+    await net.connect(world);
 
     let updateCount = 0;
     function update(world) {
         world.accumMs += world.deltaMs;
-        let targetMs = time.UPDATE_MS;
+        let targetMs = time.CLIENT_UPDATE_MS;
         if (world.doThrottle) {
             targetMs = time.THROTTLED_UPDATE_MS;
         }
@@ -49,11 +50,8 @@ window.onload = async function() {
         if (world.accumMs < targetMs) {
             return;
         }
-        world.accumMs -= targetMs;
+        world.accumMs = Math.min(world.accumMs - targetMs, targetMs);
         
-        net.consumeMessages(world);
-        // TODO Need to throttle to keep in sync with server. Server can see how many inputs it has
-        // buffered and should send a thottle signal.
         net.sendInput(world);
         player.update(world);
         //console.log("COUNT: ", updateCount++);
@@ -72,10 +70,12 @@ window.onload = async function() {
 };
 
 function removeDisconnectedPlayers(world) {
-    for (let otherPlayer of world.otherPlayers) {
+    for (let i = world.otherPlayers.length-1; i >= 0; i--) { // loop backwards for removing elements
+        let otherPlayer = world.otherPlayers[i];
         if (!otherPlayer.disconnected) {
             continue;
         }
         world.gfx.remove(otherPlayer.graphic);
+        world.otherPlayers.splice(i, 1);
     }
 }

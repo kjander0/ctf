@@ -1,22 +1,21 @@
 import { Input } from "./input.js";
 import { Encoder, Decoder } from "./encode.js";
 import { Player, PlayerInputState } from "./player.js";
+import { SERVER_UPDATE_MS } from "./time.js";
 
 let socket;
-let msgQueue;
 
-async function connect() {
+async function connect(world) {
     socket = new WebSocket('ws://localhost:8000/ws');
     socket.binaryType = 'arraybuffer';
     let connectPromise = new Promise(function(resolve, reject) {
         socket.addEventListener('open', function (event) {
-            msgQueue = [];
             resolve();
         });
     });
 
     socket.addEventListener('message', function (event) {
-        msgQueue.push(event.data);
+        consumeMessage(event.data, world);
     });
 
     return connectPromise;
@@ -60,22 +59,20 @@ function sendInput(world) {
 	socket.send(encoder.getView());
 }
 
-function consumeMessages(world) {
-    for (let msg of msgQueue) {
-        let decoder = new Decoder(msg);
-        let msgType = decoder.readUint8();
-        let flags = decoder.readUint8();
-        world.doThrottle = ((flags & throttleFlagBit) == throttleFlagBit);
-        switch (msgType) {
-            case stateUpdateMsgType:
-                _doStateUpdate(world, decoder);
-                break;
-        }
+function consumeMessage(msg, world) {
+    let decoder = new Decoder(msg);
+    let msgType = decoder.readUint8();
+    let flags = decoder.readUint8();
+    world.doThrottle = ((flags & throttleFlagBit) == throttleFlagBit);
+    switch (msgType) {
+        case stateUpdateMsgType:
+            _doStateUpdate(world, decoder);
+            break;
     }
-    msgQueue = [];
 }
 
 function _doStateUpdate(world, decoder) {
+    world.serverAccumMs -= SERVER_UPDATE_MS;
     world.player.lastAckedPos = decoder.readVec();
     world.player.unackedInputs.shift();
 
@@ -97,10 +94,9 @@ function _doStateUpdate(world, decoder) {
         otherPlayer.prevPos = otherPlayer.pos;
         otherPlayer.pos = decoder.readVec();
     }
-    // TODO remove players who don't exist no more
 }
 
-export {connect, sendInput, consumeMessages};
+export {connect, sendInput};
 
 
 

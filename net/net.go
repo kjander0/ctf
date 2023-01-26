@@ -86,9 +86,8 @@ func SendWorldUpdate(world *entity.World) error {
 		select {
 		case world.PlayerList[i].Client.WriteC <- updateBytes:
 		default:
-			// TODO, might want to just make it a buffered channel and disconnect player
-			// at this point. Then we don't have to worry about lost packets.
-			logger.Error("SendWorldUpdate: WriteC would block")
+			logger.Error("SendWorldUpdate: WriteC would block, disconnecting player")
+			world.PlayerList[i].DoDisconnect = true
 			continue
 		}
 	}

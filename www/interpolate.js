@@ -3,4 +3,8 @@ function lerpVec(a, b, frac) {
     return a.scale(1-frac).add(b.scale(frac));
 }
 
-export {lerpVec};
+function extrapolateVec(a, b, frac) {
+    return a.scale(1-frac).add(b.scale(frac));
+}
+
+export {lerpVec, extrapolateVec};

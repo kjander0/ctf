@@ -10,6 +10,7 @@ import (
 
 const (
 	connTimeout    = 10 * time.Second
+	pingPeriod     = 5 * time.Second
 	maxMessageSize = 1024
 )
 
@@ -43,8 +44,8 @@ func (ws *WebServer) Run() error {
 
 func NewClient() Client {
 	return Client{
-		ReadC:  make(chan ClientMsg, 5), // buffered channel so we can detect throttle condition
-		WriteC: make(chan []byte),
+		ReadC:  make(chan ClientMsg, 5), // buffered so we can detect throttle condition
+		WriteC: make(chan []byte, 5),    // buffered so we don't block game when writePump busy sending ping
 	}
 }
 
@@ -92,6 +93,7 @@ func readPump(conn *websocket.Conn, readC chan ClientMsg) {
 	for {
 		conn.SetPongHandler(
 			func(string) error {
+				logger.Debug("PONG RECEIVED")
 				return conn.SetReadDeadline(time.Now().Add(connTimeout))
 			})
 
@@ -135,28 +137,38 @@ func readPump(conn *websocket.Conn, readC chan ClientMsg) {
 Gorilla WS require all write from same goroutine, so we do it here
 */
 func writePump(conn *websocket.Conn, writeC chan []byte) {
+	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		logger.Debug("writePump: closing")
+		ticker.Stop()
 		conn.Close()
 	}()
 
 	for {
-		data, ok := <-writeC
-		if !ok { // writeChan closed
-			conn.WriteMessage(websocket.CloseMessage, []byte{})
-			return
-		}
+		select {
+		case data, ok := <-writeC:
+			if !ok { // writeChan closed
+				conn.WriteMessage(websocket.CloseMessage, []byte{})
+				return
+			}
 
-		err := conn.SetWriteDeadline(time.Now().Add(connTimeout))
-		if err != nil {
-			logger.Error("SetWriteDeadline: ", err)
-			return
-		}
+			err := conn.SetWriteDeadline(time.Now().Add(connTimeout))
+			if err != nil {
+				logger.Error("SetWriteDeadline: ", err)
+				return
+			}
+			err = conn.WriteMessage(websocket.BinaryMessage, data)
+			if err != nil {
+				logger.Error("writePump: WriteMessage: ", err)
+				return
+			}
 
-		err = conn.WriteMessage(websocket.BinaryMessage, data)
-		if err != nil {
-			logger.Error("writePump: WriteMessage: ", err)
-			return
+		case <-ticker.C:
+			conn.SetWriteDeadline(time.Now().Add(connTimeout))
+			if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				logger.Error("writePump: ping: ", err)
+				return
+			}
 		}
 	}
 }
