@@ -47,11 +47,13 @@ function update(world) {
     world.player.graphic.y = lerpPos.y;
     world.player.lastAckedGraphic.x = world.player.lastAckedPos.x;
     world.player.lastAckedGraphic.y = world.player.lastAckedPos.y;
-    world.player.correctedGraphic.x = world.player.correctedPos.x;
+    world.player.correctedGraphic.x = world.player.correctedPos.x; c
     world.player.correctedGraphic.y = world.player.correctedPos.y;
 
     for (let other of world.otherPlayers) {
-        // TODO: use a different lerpFraction for other players (based on how long since last input received)
+        // TODO: lerp other players with lerpFraction doesn't make sense. Instead always
+        // move players at constant speed, extrapolating while waiting for game update.
+        // Smoothly correct error in extrapolation.
         let lerpPos = lerpVec(other.prevPos, other.pos, lerpFraction);
         other.graphic.x = lerpPos.x;
         other.graphic.y = lerpPos.y;
