@@ -32,7 +32,7 @@ func NewPlayer(id uint8, client web.Client) Player {
 	}
 }
 
-func UpdatePlayerMovement(world *World) {
+func MovePlayers(world *World) {
 	for i := range world.PlayerList {
 		input := world.PlayerList[i].Input
 		// TODO: last pressed would probs feel better?

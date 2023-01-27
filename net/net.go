@@ -106,6 +106,7 @@ func prepareWorldUpdateForPlayer(world *entity.World, playerIndex int) []byte {
 
 	encoder.WriteUint8(stateUpdateMsgType)
 	encoder.WriteUint8(flags)
+	encoder.WriteUint8(world.TickCount)
 
 	encoder.WriteVec(world.PlayerList[playerIndex].Pos)
 

@@ -62,8 +62,6 @@ function sendInput(world) {
 function consumeMessage(msg, world) {
     let decoder = new Decoder(msg);
     let msgType = decoder.readUint8();
-    let flags = decoder.readUint8();
-    world.doThrottle = ((flags & throttleFlagBit) == throttleFlagBit);
     switch (msgType) {
         case stateUpdateMsgType:
             _doStateUpdate(world, decoder);
@@ -72,6 +70,12 @@ function consumeMessage(msg, world) {
 }
 
 function _doStateUpdate(world, decoder) {
+    let flags = decoder.readUint8();
+    world.doThrottle = ((flags & throttleFlagBit) == throttleFlagBit);
+
+    let tickCount = decoder.readUint8();
+    can we ack with this tick count? or maybe we need id for each input and ack of them
+
     world.serverAccumMs -= SERVER_UPDATE_MS;
     world.player.lastAckedPos = decoder.readVec();
     world.player.unackedInputs.shift();

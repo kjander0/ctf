@@ -29,13 +29,13 @@ func (g *Game) Run() {
 	ticker := NewTicker(TickRate)
 	ticker.Start()
 
-	tickCount := 0
 	for {
 		// TODO: probs wanna accept more than 1 client per tick?
 		select {
 		case newClient := <-g.ClientC:
 			ok, id := g.World.NextPlayerId()
 			if !ok {
+				logger.Debug("server full, rejecting connection")
 				close(newClient.WriteC)
 			}
 			g.World.PlayerList = append(g.World.PlayerList, entity.NewPlayer(id, newClient))
@@ -43,12 +43,12 @@ func (g *Game) Run() {
 		}
 
 		net.ReceiveInputs(&g.World)
-		entity.UpdatePlayerMovement(&g.World)
+		entity.MovePlayers(&g.World)
+		entity.MoveLasers(&g.World)
 		net.SendWorldUpdate(&g.World)
 		removeDisconnectedPlayers(&g.World)
 
-		//logger.Debug("Tick count", tickCount)
-		tickCount += 1
+		g.World.TickCount += 1
 
 		// read player inputs
 		// spawn bullets
