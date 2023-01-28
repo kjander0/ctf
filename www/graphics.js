@@ -1,4 +1,5 @@
 import {lerpVec, extrapolateVec} from "./interpolate.js"
+import { Vec } from "./math.js";
 import * as time from "./time.js"
 
 class Graphics {
@@ -12,7 +13,6 @@ class Graphics {
         pixiApp.stage.addChild(this.camContainer);
         pixiApp.renderer.on("resize", (w, h) => { this.resize(w, h) });
         this.resize(this.screenRect.width, this.screenRect.height);
-
     }
 
     moveCamera(x, y) {
@@ -20,6 +20,13 @@ class Graphics {
         let centreOffsetY = y - this.screenRect.height/2;
         this.camContainer.position.x = -centreOffsetX;
         this.camContainer.position.y = this.screenRect.height + centreOffsetY;
+    }
+
+    unproject(pos) {
+        let p = new PIXI.Point(pos.x, pos.y);
+        let m = this.camContainer.localTransform;
+        m.applyInverse(p, p);
+        return new Vec(p.x, p.y);
     }
 
     resize(screenWidth, screenHeight) {

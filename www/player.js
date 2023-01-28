@@ -60,7 +60,7 @@ function update(world) {
     world.player.pos = world.player.pos.add(diff);
 
     world.player.pos = world.player.pos.add(world.player.correctedPos).scale(0.5);
-    // TODO: correct position based on server (interpolate overtime?)
+    // TODO: correct position with correctedPos above (interpolate overtime?)
 }
 
 export {Player, PlayerInputState, update}

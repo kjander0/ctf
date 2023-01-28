@@ -21,6 +21,7 @@ const (
 
 const (
 	throttleFlagBit = 1
+	ackInputFlagBit = 2
 )
 
 func ReceiveInputs(world *entity.World) error {
@@ -36,6 +37,10 @@ func ReceiveInputs(world *entity.World) error {
 				world.PlayerList[i].DoDisconnect = true
 				continue
 			}
+
+			world.PlayerList[i].InputAcked = true
+
+			decoder.ReadUint8() // read tick count
 
 			// Client intentionally send inputs at slightly faster tick rate than server. This ensures that server
 			// always has an input available at each tick. However, we periodically throttle client such that we
@@ -71,6 +76,7 @@ func ReceiveInputs(world *entity.World) error {
 
 		default:
 			logger.Error("ReceiveInputs: no inputs available")
+			world.PlayerList[i].InputAcked = false
 		}
 	}
 	return nil
@@ -102,6 +108,9 @@ func prepareWorldUpdateForPlayer(world *entity.World, playerIndex int) []byte {
 	var flags uint8
 	if world.PlayerList[playerIndex].DoThrottle {
 		flags |= throttleFlagBit
+	}
+	if world.PlayerList[playerIndex].InputAcked {
+		flags |= ackInputFlagBit
 	}
 
 	encoder.WriteUint8(stateUpdateMsgType)

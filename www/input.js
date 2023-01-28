@@ -3,6 +3,7 @@ import { Vec } from "./math.js";
 class Command {
     cmdIndex;
     active = false;
+    mousePos = new Vec();
     _pressed = false;
 
     constructor(cmdIndex) {
@@ -18,13 +19,14 @@ class Input {
     static CMD_SHOOT = 4;
     static CMD_LAST = 5; // MUST BE LAST
 
-    _mousePos = new Vec();
-    _canvas;
+    _pixiApp;
     _commands = [];
     _keyMap = {};
 
-    constructor(canvas) {
-        this._canvas = canvas;
+    constructor(pixiApp) {
+        this._pixiApp = pixiApp;
+        pixiApp.stage.interactive = true;
+        pixiApp.stage.hitArea = pixiApp.screen;
         this._keyMap['a'] = Input.CMD_LEFT;
         this._keyMap['d'] = Input.CMD_RIGHT;
         this._keyMap['w'] = Input.CMD_UP;
@@ -36,22 +38,13 @@ class Input {
 
         document.addEventListener("keydown", (event) => this._onKeyDown(event));
         document.addEventListener("keyup", (event) => this._onKeyUp(event));
-        canvas.addEventListener("mousedown", (event) => this._onMouseDown(event));
-        canvas.addEventListener("mouseup", (event) => this._onMouseUp(event));
-        canvas.addEventListener("mousemove", (event) => this._onMouseMove(event));
-    }
-
-    mousePos() {
-        return new Vec(this._mousePos);
+        pixiApp.stage.addEventListener("mousedown", (event) => this._onMouseDown(event));
+        pixiApp.stage.addEventListener("mouseup", (event) => this._onMouseUp(event));
+        pixiApp.stage.addEventListener("mousemove", (event) => this._onMouseMove(event));
     }
 
     isActive(cmdIndex) {
         return this._commands[cmdIndex].active;
-    }
-
-    _clientToCanvasPos(clientPos) {
-        let rect = this._canvas.getBoundingClientRect();
-        return clientPos.subXY(rect.x, rect.y);
     }
 
     _onKeyDown(event) {
@@ -84,13 +77,28 @@ class Input {
         if (cmd === undefined) {
             return;
         }
-        cmd.active = false;
+        cmd._pressed = false;
     }
     
     _onMouseDown(event) {
+        let cmdIndex = Input.CMD_SHOOT;
+        let cmd = this._commands[cmdIndex];
+        if (cmd === undefined) {
+            return;
+        }
+        cmd.mousePos = new Vec(event.globalX, event.globalY);
+        cmd.active = true;
+        cmd._pressed = true;
     }
     
     _onMouseUp(event) {
+        let cmdIndex = Input.CMD_SHOOT;
+        let cmd = this._commands[cmdIndex];
+        if (cmd === undefined) {
+            return;
+        }
+        cmd.mousePos = new Vec(event.globalX, event.globalY);
+        cmd._pressed = false;
     }
     
     _onMouseMove(event) {

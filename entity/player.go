@@ -16,6 +16,7 @@ type Player struct {
 	Input        PlayerInput
 	DoDisconnect bool
 	DoThrottle   bool
+	InputAcked   bool
 }
 
 type PlayerInput struct {

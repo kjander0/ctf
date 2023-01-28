@@ -50,10 +50,6 @@ func (g *Game) Run() {
 
 		g.World.TickCount += 1
 
-		// read player inputs
-		// spawn bullets
-		// update player, bullet movement
-		// damage players, destroy, respawn
 		ticker.Sleep()
 	}
 }

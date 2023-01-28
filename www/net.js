@@ -30,6 +30,7 @@ const upBit = 4;
 const downBit = 8;
 
 const throttleFlagBit = 1;
+const ackInputFlagBit = 2;
 
 let encoder = new Encoder();
 
@@ -55,6 +56,7 @@ function sendInput(world) {
     world.player.unackedInputs.push(playerInput);
     encoder.reset();
     encoder.writeUint8(inputMsgType);
+    encoder.writeUint8(world.tickCount);
     encoder.writeUint8(cmdBits);
 	socket.send(encoder.getView());
 }
@@ -73,12 +75,14 @@ function _doStateUpdate(world, decoder) {
     let flags = decoder.readUint8();
     world.doThrottle = ((flags & throttleFlagBit) == throttleFlagBit);
 
-    let tickCount = decoder.readUint8();
-    can we ack with this tick count? or maybe we need id for each input and ack of them
+    if ((flags & ackInputFlagBit) == ackInputFlagBit) {
+        world.player.unackedInputs.shift();
+    }
+
+    world.tickCount = decoder.readUint8();
 
     world.serverAccumMs -= SERVER_UPDATE_MS;
     world.player.lastAckedPos = decoder.readVec();
-    world.player.unackedInputs.shift();
 
     for (let otherPlayer of world.otherPlayers) {
         otherPlayer.disconnected = true;
@@ -101,7 +105,3 @@ function _doStateUpdate(world, decoder) {
 }
 
 export {connect, sendInput};
-
-
-
-

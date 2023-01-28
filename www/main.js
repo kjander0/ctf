@@ -7,8 +7,9 @@
 import * as graphics from "./graphics.js";
 import * as input from "./input.js";
 import * as player from "./player.js";
-import * as net from "./net.js"
-import * as time from "./time.js"
+import * as weapons from "./weapons.js";
+import * as net from "./net.js";
+import * as time from "./time.js";
 
 window.onload = async function() {
     if(!PIXI.utils.isWebGLSupported()){
@@ -23,14 +24,16 @@ window.onload = async function() {
     
     container.appendChild(pixiApp.view);
     let world = {
+        tickCount: -1,
         deltaMs: 1000.0/60.0,
         accumMs: 0,
         serverAccumMs: 0, // time accumulation for server updates from server
         doThrottle: false,
-        input: new input.Input(pixiApp.view),
+        input: new input.Input(pixiApp),
         gfx: new graphics.Graphics(pixiApp),
         player: new player.Player(),
         otherPlayers: [],
+        laserList: [],
         //map: new tilemap.TileMap(),
     };
     world.player.graphic = world.gfx.addCircle(0x00AA33);
@@ -39,8 +42,11 @@ window.onload = async function() {
 
     await net.connect(world);
 
-    let updateCount = 0;
     function update(world) {
+        if (world.tickCount == -1) {
+            return; // wait until we have a world update from server
+        }
+
         world.accumMs += world.deltaMs;
         let targetMs = time.CLIENT_UPDATE_MS;
         if (world.doThrottle) {
@@ -54,7 +60,7 @@ window.onload = async function() {
         
         net.sendInput(world);
         player.update(world);
-        //console.log("COUNT: ", updateCount++);
+        weapons.update(world);
         removeDisconnectedPlayers(world);
         input.postUpdate(world); // do last
     }
