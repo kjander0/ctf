@@ -25,7 +25,7 @@ type WebServer struct {
 
 type Client struct {
 	Username string
-	ReadC    chan ClientMsg
+	ReadC    chan []byte
 	WriteC   chan []byte
 }
 
@@ -49,8 +49,8 @@ func (ws *WebServer) Run() error {
 
 func NewClient() Client {
 	return Client{
-		ReadC:  make(chan ClientMsg, 5), // buffered so we can detect throttle condition
-		WriteC: make(chan []byte, 5),    // buffered so we don't block game when writePump busy sending ping
+		ReadC:  make(chan []byte, 5), // buffered so we can detect throttle condition
+		WriteC: make(chan []byte, 5), // buffered so we don't block game when writePump busy sending ping
 	}
 }
 
@@ -64,8 +64,19 @@ func (ws *WebServer) handleWs(w http.ResponseWriter, r *http.Request) {
 
 	client := NewClient()
 
-	go writePump(conn, client.WriteC)
-	go readPump(conn, client.ReadC)
+	// BEGIN DEBUG delayed packets
+	dRead := NewDelayChannel()
+	dWrite := NewDelayChannel()
+	client.ReadC = dRead.OutC
+	client.WriteC = dWrite.InC
+	go dRead.Start()
+	go dWrite.Start()
+	go writePump(conn, dWrite.OutC)
+	go readPump(conn, dRead.InC)
+	// END DEBUG delayed packets
+
+	//go writePump(conn, client.WriteC)
+	//go readPump(conn, client.ReadC)
 
 	// service in seperate goroutine so handler can complete
 	go ws.serviceClient(client)
@@ -86,7 +97,7 @@ func (ws *WebServer) serviceClient(client Client) {
 Gorilla WS require all read from same goroutine, so we do it here.
 readC will be closed when the connection ends.
 */
-func readPump(conn *websocket.Conn, readC chan ClientMsg) {
+func readPump(conn *websocket.Conn, readC chan []byte) {
 	defer func() {
 		logger.Debug("readPump: closing")
 		conn.Close()
@@ -123,14 +134,9 @@ func readPump(conn *websocket.Conn, readC chan ClientMsg) {
 			return
 		}
 
-		msg := ClientMsg{
-			// TODO: might want to put msgType here if we decide to accept TextMessage (json) also
-			data,
-		}
-
 		readTimer := time.NewTimer(connTimeout)
 		select {
-		case readC <- msg:
+		case readC <- data:
 		case <-readTimer.C:
 			logger.Error("readPump: timeout on read channel")
 			return

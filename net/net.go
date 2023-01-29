@@ -35,8 +35,8 @@ func ReceiveInputs(world *entity.World) error {
 	for i := range world.PlayerList {
 		//logger.Debug("len readC: ", len(world.PlayerList[i].Client.ReadC))
 		select {
-		case clientMsg := <-world.PlayerList[i].Client.ReadC:
-			decoder := NewDecoder(clientMsg.Data)
+		case msgBytes := <-world.PlayerList[i].Client.ReadC:
+			decoder := NewDecoder(msgBytes)
 			msgType := decoder.ReadUint8()
 
 			if msgType != inputMsgType {
@@ -151,6 +151,8 @@ func prepareWorldUpdateForPlayer(world *entity.World, playerIndex int) []byte {
 		// in a seperate block of bytes
 		if world.PlayerList[i].Input.DoShoot {
 			encoder.WriteUint8(1)
+			Shoot pos is wrong here, laser has been fast forwarded already!
+			Instead send start pos and angle!!!
 			encoder.WriteVec(world.PlayerList[i].Input.ShootPos)
 		} else {
 			encoder.WriteUint8(0)
