@@ -1,33 +1,33 @@
 package entity
 
-import "github.com/kjander0/ctf/mymath"
+import (
+	"math"
+
+	"github.com/kjander0/ctf/mymath"
+)
 
 const (
-	LaserSpeed = 15
+	LaserSpeed = 10
 )
 
 type Laser struct {
 	PlayerId uint8
 	Line     mymath.Line
 	Dir      mymath.Vec
+	Angle    float64
 }
 
 func UpdateWeapons(world *World) {
 	moveLasers(world)
 
 	// Spawn new lasers
+	world.NewLasers = world.NewLasers[:0]
 	for i := range world.PlayerList {
 		playerInput := world.PlayerList[i].Input
 		if !playerInput.DoShoot {
 			continue
 		}
-		dir := playerInput.ShootPos.Sub(world.PlayerList[i].Pos)
-		dirLen := dir.Length()
-		if dirLen < 1e-3 {
-			dir = mymath.Vec{X: 1, Y: 0}
-		} else {
-			dir = dir.Scale(1.0 / dirLen)
-		}
+		dir := mymath.Vec{X: math.Cos(playerInput.AimAngle), Y: math.Sin(playerInput.AimAngle)}
 		newLaser := Laser{
 			world.PlayerList[i].Id,
 			mymath.Line{
@@ -35,6 +35,7 @@ func UpdateWeapons(world *World) {
 				End:   world.PlayerList[i].Pos,
 			},
 			dir,
+			playerInput.AimAngle,
 		}
 		// Compensate for shooter's lag by fast forwarding the end point of the laser
 		serverTick := int(world.TickCount)
@@ -42,12 +43,14 @@ func UpdateWeapons(world *World) {
 		if serverTick < clientTick { // server tick has wrapped and client tick has not
 			serverTick += 256
 		}
+		// TODO limit tick difference so we arn't teleporting lasers too dramatically
 		tickDiff := serverTick - clientTick
 		for j := 0; j < tickDiff; j += 1 {
 			newLaser.Line.End = newLaser.Line.End.Add(newLaser.Dir.Scale(LaserSpeed))
 		}
 
 		world.LaserList = append(world.LaserList, newLaser)
+		world.NewLasers = append(world.NewLasers, &world.LaserList[len(world.LaserList)-1])
 	}
 }
 

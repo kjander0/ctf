@@ -2,6 +2,7 @@ import { Input } from "./input.js";
 import { Encoder, Decoder } from "./encode.js";
 import { Player, PlayerInputState } from "./player.js";
 import { SERVER_UPDATE_MS } from "./time.js";
+import { Laser } from "./weapons.js";
 
 let socket;
 
@@ -60,7 +61,7 @@ function sendInput(world) {
     world.player.unackedInputs.push(playerInput);
 
     let flags = 0;
-    if (world.player.shootPos !== null) {
+    if (world.player.didShoot) {
         flags |= shootFlagBit;
     }
 
@@ -69,9 +70,8 @@ function sendInput(world) {
     encoder.writeUint8(flags);
     encoder.writeUint8(world.tickCount);
     encoder.writeUint8(cmdBits);
-    if (world.player.shootPos !== null) {
-        encoder.writeFloat64(world.player.shootPos.x);
-        encoder.writeFloat64(world.player.shootPos.y);
+    if (world.player.didShoot) {
+        encoder.writeFloat64(world.player.aimAngle);
     }
 
 	socket.send(encoder.getView());
@@ -117,11 +117,17 @@ function _doStateUpdate(world, decoder) {
         otherPlayer.disconnected = false;
         otherPlayer.prevPos = otherPlayer.pos;
         otherPlayer.pos = decoder.readVec();
-        let didShoot = decoder.readUint8()
-        if (didShoot === 0) { 
-            continue
-        }
-        otherPlayer.shootPos = decoder.readVec();
+    }
+
+    let numNewLasers = decoder.readUint16();
+    console.log(numNewLasers);
+    for (let i = 0; i < numNewLasers; i++) {
+        Need to find player so we can get bullet start and encoder
+        Right now we are setting the start to the end (jumping a tick)
+        Also need to fast forward based on tick difference
+        let laserEnd = decoder.readVec();
+        let aimAngle = decoder.readFloat64();
+        world.laserList.push(new Laser(laserEnd, aimAngle));
     }
 }
 

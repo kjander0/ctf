@@ -53,6 +53,12 @@ class Decoder {
         return val;
     }
 
+    readUint16() {
+        let val = this._dv.getUint16(this._offset);
+        this._offset += 2;
+        return val;
+    }
+
     readInt32() {
         let val = this._dv.getInt32(this._offset);
         this._offset += 4;

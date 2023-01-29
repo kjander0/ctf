@@ -10,7 +10,7 @@ class Player {
     pos = new Vec();
     correctedPos = new Vec();
     didShoot = false;
-    shootPos = null;
+    shootAngle = 0;
     graphic;
     lastAckedGraphic;
     correctedGraphic;

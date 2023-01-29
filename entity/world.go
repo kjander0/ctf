@@ -4,6 +4,7 @@ type World struct {
 	TickCount     uint8
 	PlayerList    []Player
 	LaserList     []Laser
+	NewLasers     []*Laser
 	freePlayerIds []uint8
 	playerIdCount int
 }

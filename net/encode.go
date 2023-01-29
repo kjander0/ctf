@@ -19,24 +19,22 @@ func NewEncoder(buf *bytes.Buffer) Encoder {
 	}
 }
 
-func (e *Encoder) WriteUint8(val uint8) int {
+func (e *Encoder) WriteUint8(val uint8) {
 	if e.Error != nil {
-		return e.Offset
+		return
 	}
 
 	e.Error = e.Buf.WriteByte(val)
 	e.Offset += 1
-	return e.Offset
 }
 
-func (e *Encoder) WriteUint16(val uint16) int {
+func (e *Encoder) WriteUint16(val uint16) {
 	if e.Error != nil {
-		return e.Offset
+		return
 	}
 
 	e.Error = binary.Write(e.Buf, binary.BigEndian, val)
 	e.Offset += 2
-	return e.Offset
 }
 
 func (e *Encoder) WriteUint16At(val uint16, offset int) {
@@ -44,41 +42,37 @@ func (e *Encoder) WriteUint16At(val uint16, offset int) {
 		return
 	}
 
-	offsetBuf := bytes.NewBuffer(e.Buf.Bytes()[e.Offset:])
+	offsetBuf := bytes.NewBuffer(e.Buf.Bytes()[offset:offset])
 	e.Error = binary.Write(offsetBuf, binary.BigEndian, val)
-	return
 }
 
-func (e *Encoder) WriteFloat64(val float64) int {
+func (e *Encoder) WriteFloat64(val float64) {
 	if e.Error != nil {
-		return e.Offset
+		return
 	}
 	e.Error = binary.Write(e.Buf, binary.BigEndian, val)
 	e.Offset += 8
-	return e.Offset
 }
 
-func (e *Encoder) WriteInt32(val int32) int {
+func (e *Encoder) WriteInt32(val int32) {
 	if e.Error != nil {
-		return e.Offset
+		return
 	}
 	e.Error = binary.Write(e.Buf, binary.BigEndian, val)
 	e.Offset += 4
-	return e.Offset
 }
 
-func (e *Encoder) WriteVec(val mymath.Vec) int {
+func (e *Encoder) WriteVec(val mymath.Vec) {
 	if e.Error != nil {
-		return e.Offset
+		return
 	}
 
 	e.Error = binary.Write(e.Buf, binary.BigEndian, val.X)
 	if e.Error != nil {
-		return e.Offset
+		return
 	}
 	e.Error = binary.Write(e.Buf, binary.BigEndian, val.Y)
 	e.Offset += 16
-	return e.Offset
 }
 
 type Decoder struct {

@@ -25,7 +25,7 @@ type PlayerInput struct {
 	Up       bool
 	Down     bool
 	DoShoot  bool
-	ShootPos mymath.Vec
+	AimAngle float64
 	Tick     uint8
 }
 

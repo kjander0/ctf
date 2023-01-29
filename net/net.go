@@ -5,7 +5,6 @@ import (
 
 	"github.com/kjander0/ctf/entity"
 	"github.com/kjander0/ctf/logger"
-	"github.com/kjander0/ctf/mymath"
 )
 
 const (
@@ -77,12 +76,8 @@ func ReceiveInputs(world *entity.World) error {
 
 			if (flags & shootFlagBit) == shootFlagBit {
 				newInputState.DoShoot = true
-				newInputState.ShootPos = mymath.Vec{
-					X: decoder.ReadFloat64(),
-					Y: decoder.ReadFloat64(),
-				}
+				newInputState.AimAngle = decoder.ReadFloat64()
 				newInputState.Tick = inputTick
-				logger.Debug(newInputState)
 			}
 
 			world.PlayerList[i].Input = newInputState
@@ -146,18 +141,22 @@ func prepareWorldUpdateForPlayer(world *entity.World, playerIndex int) []byte {
 		encoder.WriteUint8(world.PlayerList[i].Id)
 		// TODO, don't send unchanged attributes of players
 		encoder.WriteVec(world.PlayerList[i].Pos)
-
-		// TODO: can probs have some general per other player flags, or maybe send list of new lasers
-		// in a seperate block of bytes
-		if world.PlayerList[i].Input.DoShoot {
-			encoder.WriteUint8(1)
-			Shoot pos is wrong here, laser has been fast forwarded already!
-			Instead send start pos and angle!!!
-			encoder.WriteVec(world.PlayerList[i].Input.ShootPos)
-		} else {
-			encoder.WriteUint8(0)
-		}
 	}
+
+	var numNewLasers uint16
+	numLasersOffset := encoder.Offset
+	encoder.WriteUint16(0) // placeholder number of new lasers
+	for i := range world.NewLasers {
+		laser := world.NewLasers[i]
+		if laser.PlayerId == world.PlayerList[playerIndex].Id {
+			continue
+		}
+		encoder.WriteVec(laser.Line.End)
+		encoder.WriteFloat64(laser.Angle)
+		numNewLasers += 1
+	}
+	encoder.WriteUint16At(numNewLasers, numLasersOffset)
+	logger.Debug("num new: ", numNewLasers)
 
 	if encoder.Error != nil {
 		logger.Panic("SendWorldUpdate: encoder error: ", encoder.Error)

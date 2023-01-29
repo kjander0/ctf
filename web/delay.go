@@ -6,8 +6,8 @@ import (
 )
 
 const (
-	delayMs  = 500
-	jitterMs = 1
+	delayMs  = 100
+	jitterMs = 10
 )
 
 // Channel for adding artificial delay/jitter to data
@@ -26,7 +26,9 @@ func NewDelayChannel() DelayChannel {
 
 func (dc *DelayChannel) Start() {
 	triggerC := make(chan bool)
+	endC := make(chan bool)
 	defer func() {
+		close(endC)
 		close(dc.OutC)
 	}()
 
@@ -36,10 +38,16 @@ func (dc *DelayChannel) Start() {
 			if !ok {
 				return
 			}
-			delay := time.Duration(delayMs+rand.Int31n(jitterMs)) * time.Millisecond
-			// TODO: these functions won't end if InC closes (player disconnects)
-			time.AfterFunc(delay, func() {
-				triggerC <- true
+			durationMs := delayMs + rand.Int31n(jitterMs) - jitterMs/2
+			if durationMs < 0 {
+				durationMs = 0
+			}
+			duration := time.Duration(durationMs) * time.Millisecond
+			time.AfterFunc(duration, func() {
+				select {
+				case <-endC:
+				case triggerC <- true:
+				}
 			})
 			dc.queue = append(dc.queue, data)
 		case <-triggerC:
