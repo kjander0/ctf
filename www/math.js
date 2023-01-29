@@ -104,6 +104,10 @@ class Line {
         let s = u.resize(sLen);
         return this.start.add(s);
     }
+
+    length() {
+        return this.end.sub(this.start).length();
+    }
 }
 
 export {Vec, Rect, Circle, Line};

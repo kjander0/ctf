@@ -5,12 +5,14 @@ import * as time from "./time.js"
 class Graphics {
     camContainer;
     screenRect;
+    lineGfx = new PIXI.Graphics();
 
     constructor(pixiApp) {
         this.screenRect = pixiApp.screen;
         this.camContainer = new PIXI.Container();
         this.camContainer.scale.y = -1;
         pixiApp.stage.addChild(this.camContainer);
+        this.camContainer.addChild(this.lineGfx);
         pixiApp.renderer.on("resize", (w, h) => { this.resize(w, h) });
         this.resize(this.screenRect.width, this.screenRect.height);
     }
@@ -72,11 +74,18 @@ function update(world) {
     let serverLerpFraction = world.serverAccumMs/time.SERVER_UPDATE_MS;
     for (let other of world.otherPlayers) {
         let lerpPos = extrapolateVec(other.prevPos, other.pos, serverLerpFraction);
-        console.log(serverLerpFraction);
         other.graphic.x = lerpPos.x;
         other.graphic.y = lerpPos.y;
         //other.graphic.x = other.pos.x;
         //other.graphic.y = other.pos.y;
+    }
+
+    let lineGfx = world.gfx.lineGfx;
+    lineGfx.clear();
+    lineGfx.lineStyle(1, 0xff0000, 1);
+    for (let laser of world.laserList) {
+        lineGfx.moveTo(laser.line.start.x, laser.line.start.y);
+        lineGfx.lineTo(laser.line.end.x, laser.line.end.y);
     }
 }
 

@@ -3,6 +3,7 @@ import { Vec } from "./math.js";
 class Command {
     cmdIndex;
     active = false;
+    wasActivated = false;
     mousePos = new Vec();
     _pressed = false;
 
@@ -61,6 +62,7 @@ class Input {
             return;
         }
         cmd.active = true;
+        cmd.activated = true;
         cmd._pressed = true;
     }
     
@@ -88,6 +90,7 @@ class Input {
         }
         cmd.mousePos = new Vec(event.globalX, event.globalY);
         cmd.active = true;
+        cmd.activated = true;
         cmd._pressed = true;
     }
     
@@ -110,6 +113,7 @@ function postUpdate(world) {
         if (!cmd._pressed) {
             cmd.active = false;
         }
+        cmd.activated = false;
     }
 }
 

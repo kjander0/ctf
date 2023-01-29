@@ -20,10 +20,13 @@ type Player struct {
 }
 
 type PlayerInput struct {
-	Left  bool
-	Right bool
-	Up    bool
-	Down  bool
+	Left     bool
+	Right    bool
+	Up       bool
+	Down     bool
+	DoShoot  bool
+	ShootPos mymath.Vec
+	Tick     uint8
 }
 
 func NewPlayer(id uint8, client web.Client) Player {

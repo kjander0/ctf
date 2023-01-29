@@ -44,7 +44,7 @@ func (g *Game) Run() {
 
 		net.ReceiveInputs(&g.World)
 		entity.MovePlayers(&g.World)
-		entity.MoveLasers(&g.World)
+		entity.UpdateWeapons(&g.World)
 		net.SendWorldUpdate(&g.World)
 		removeDisconnectedPlayers(&g.World)
 

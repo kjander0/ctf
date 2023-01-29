@@ -14,6 +14,11 @@ const (
 	maxMessageSize = 1024
 )
 
+const (
+	debugDelayMs  = 100
+	debugJitterMs = 10
+)
+
 type WebServer struct {
 	ClientC chan Client
 }

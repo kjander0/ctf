@@ -5,6 +5,7 @@ import (
 
 	"github.com/kjander0/ctf/entity"
 	"github.com/kjander0/ctf/logger"
+	"github.com/kjander0/ctf/mymath"
 )
 
 const (
@@ -19,6 +20,12 @@ const (
 	downBit  = 8
 )
 
+// Flags from client
+const (
+	shootFlagBit = 1
+)
+
+// Flags from server
 const (
 	throttleFlagBit = 1
 	ackInputFlagBit = 2
@@ -40,7 +47,8 @@ func ReceiveInputs(world *entity.World) error {
 
 			world.PlayerList[i].InputAcked = true
 
-			decoder.ReadUint8() // read tick count
+			flags := decoder.ReadUint8()
+			inputTick := decoder.ReadUint8() // read tick count
 
 			// Client intentionally send inputs at slightly faster tick rate than server. This ensures that server
 			// always has an input available at each tick. However, we periodically throttle client such that we
@@ -66,6 +74,17 @@ func ReceiveInputs(world *entity.World) error {
 			if (cmdBits & downBit) == downBit {
 				newInputState.Down = true
 			}
+
+			if (flags & shootFlagBit) == shootFlagBit {
+				newInputState.DoShoot = true
+				newInputState.ShootPos = mymath.Vec{
+					X: decoder.ReadFloat64(),
+					Y: decoder.ReadFloat64(),
+				}
+				newInputState.Tick = inputTick
+				logger.Debug(newInputState)
+			}
+
 			world.PlayerList[i].Input = newInputState
 
 			if decoder.Error != nil {
@@ -127,6 +146,15 @@ func prepareWorldUpdateForPlayer(world *entity.World, playerIndex int) []byte {
 		encoder.WriteUint8(world.PlayerList[i].Id)
 		// TODO, don't send unchanged attributes of players
 		encoder.WriteVec(world.PlayerList[i].Pos)
+
+		// TODO: can probs have some general per other player flags, or maybe send list of new lasers
+		// in a seperate block of bytes
+		if world.PlayerList[i].Input.DoShoot {
+			encoder.WriteUint8(1)
+			encoder.WriteVec(world.PlayerList[i].Input.ShootPos)
+		} else {
+			encoder.WriteUint8(0)
+		}
 	}
 
 	if encoder.Error != nil {

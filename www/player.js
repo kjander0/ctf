@@ -9,6 +9,8 @@ class Player {
     prevPos = new Vec();
     pos = new Vec();
     correctedPos = new Vec();
+    didShoot = false;
+    shootPos = null;
     graphic;
     lastAckedGraphic;
     correctedGraphic;

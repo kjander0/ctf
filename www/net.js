@@ -29,6 +29,10 @@ const rightBit = 2;
 const upBit = 4;
 const downBit = 8;
 
+// Flags from client
+const shootFlagBit = 1;
+
+// Flags from server
 const throttleFlagBit = 1;
 const ackInputFlagBit = 2;
 
@@ -54,10 +58,22 @@ function sendInput(world) {
         cmdBits |= downBit;
     }
     world.player.unackedInputs.push(playerInput);
+
+    let flags = 0;
+    if (world.player.shootPos !== null) {
+        flags |= shootFlagBit;
+    }
+
     encoder.reset();
     encoder.writeUint8(inputMsgType);
+    encoder.writeUint8(flags);
     encoder.writeUint8(world.tickCount);
     encoder.writeUint8(cmdBits);
+    if (world.player.shootPos !== null) {
+        encoder.writeFloat64(world.player.shootPos.x);
+        encoder.writeFloat64(world.player.shootPos.y);
+    }
+
 	socket.send(encoder.getView());
 }
 
@@ -101,6 +117,11 @@ function _doStateUpdate(world, decoder) {
         otherPlayer.disconnected = false;
         otherPlayer.prevPos = otherPlayer.pos;
         otherPlayer.pos = decoder.readVec();
+        let didShoot = decoder.readUint8()
+        if (didShoot === 0) { 
+            continue
+        }
+        otherPlayer.shootPos = decoder.readVec();
     }
 }
 
