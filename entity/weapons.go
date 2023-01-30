@@ -3,11 +3,12 @@ package entity
 import (
 	"math"
 
+	"github.com/kjander0/ctf/logger"
 	"github.com/kjander0/ctf/mymath"
 )
 
 const (
-	LaserSpeed = 10
+	LaserSpeed = 8
 )
 
 type Laser struct {
@@ -45,6 +46,7 @@ func UpdateWeapons(world *World) {
 		}
 		// TODO limit tick difference so we arn't teleporting lasers too dramatically
 		tickDiff := serverTick - clientTick
+		logger.Debug("tickdiff ", tickDiff)
 		for j := 0; j < tickDiff; j += 1 {
 			newLaser.Line.End = newLaser.Line.End.Add(newLaser.Dir.Scale(LaserSpeed))
 		}

@@ -3,14 +3,14 @@ import { Input } from "./input.js";
 
 class Player {
     static SPEED = 2.5;
+
     id;
+    inputState = null;
     unackedInputs = [];
     lastAckedPos = new Vec();
     prevPos = new Vec();
     pos = new Vec();
     correctedPos = new Vec();
-    didShoot = false;
-    shootAngle = 0;
     graphic;
     lastAckedGraphic;
     correctedGraphic;
@@ -21,6 +21,32 @@ class PlayerInputState {
     right = false;
     up = false;
     down = false;
+    doShoot = false;
+    aimAngle = 0;
+}
+
+function sampleInput(world) {
+    let inputState = new PlayerInputState();
+    if (world.input.isActive(Input.CMD_LEFT)) {
+        inputState.left = true;
+    }
+    if (world.input.isActive(Input.CMD_RIGHT)) {
+        inputState.right = true;
+    }
+    if (world.input.isActive(Input.CMD_UP)) {
+        inputState.up = true;
+    }
+    if (world.input.isActive(Input.CMD_DOWN)) {
+        inputState.down = true;
+    }
+    let shootCmd = world.input.getCommand(Input.CMD_SHOOT);
+    if (shootCmd.wasActivated) {
+        inputState.doShoot = true;
+        let aimPos = world.gfx.unproject(shootCmd.mousePos);
+        inputState.aimAngle = _calcAimAngle(world.player.pos, aimPos);
+    }
+    world.player.inputState = inputState;
+    world.player.unackedInputs.push(inputState);
 }
 
 function update(world) {
@@ -65,4 +91,12 @@ function update(world) {
     // TODO: correct position with correctedPos above (interpolate overtime?)
 }
 
-export {Player, PlayerInputState, update}
+function _calcAimAngle(startPos, aimPos) {
+    let dir = aimPos.sub(startPos);
+    if (dir.length() < 1e-3) {
+        return 0;
+    }
+    return Math.atan2(dir.y, dir.x);
+}
+
+export {Player, PlayerInputState, sampleInput, update}

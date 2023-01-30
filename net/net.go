@@ -151,12 +151,12 @@ func prepareWorldUpdateForPlayer(world *entity.World, playerIndex int) []byte {
 		if laser.PlayerId == world.PlayerList[playerIndex].Id {
 			continue
 		}
+		encoder.WriteUint8(laser.PlayerId)
 		encoder.WriteVec(laser.Line.End)
 		encoder.WriteFloat64(laser.Angle)
 		numNewLasers += 1
 	}
 	encoder.WriteUint16At(numNewLasers, numLasersOffset)
-	logger.Debug("num new: ", numNewLasers)
 
 	if encoder.Error != nil {
 		logger.Panic("SendWorldUpdate: encoder error: ", encoder.Error)

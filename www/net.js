@@ -41,27 +41,23 @@ let encoder = new Encoder();
 
 function sendInput(world) {
     let cmdBits = 0;
-    let playerInput = new PlayerInputState();
-    if (world.input.isActive(Input.CMD_LEFT)) {
-        playerInput.left = true;
+    let playerInput = world.player.inputState;
+    if (playerInput.left) {
         cmdBits |= leftBit;
     }
-    if (world.input.isActive(Input.CMD_RIGHT)) {
-        playerInput.right = true;
+    if (playerInput.right) {
         cmdBits |= rightBit;
     }
-    if (world.input.isActive(Input.CMD_UP)) {
-        playerInput.up = true;
+    if (playerInput.up) {
         cmdBits |= upBit;
     }
-    if (world.input.isActive(Input.CMD_DOWN)) {
-        playerInput.down = true;
+    if (playerInput.down) {
         cmdBits |= downBit;
     }
     world.player.unackedInputs.push(playerInput);
 
     let flags = 0;
-    if (world.player.didShoot) {
+    if (playerInput.doShoot) {
         flags |= shootFlagBit;
     }
 
@@ -70,8 +66,8 @@ function sendInput(world) {
     encoder.writeUint8(flags);
     encoder.writeUint8(world.tickCount);
     encoder.writeUint8(cmdBits);
-    if (world.player.didShoot) {
-        encoder.writeFloat64(world.player.aimAngle);
+    if (playerInput.doShoot) {
+        encoder.writeFloat64(playerInput.aimAngle);
     }
 
 	socket.send(encoder.getView());
@@ -120,14 +116,14 @@ function _doStateUpdate(world, decoder) {
     }
 
     let numNewLasers = decoder.readUint16();
-    console.log(numNewLasers);
     for (let i = 0; i < numNewLasers; i++) {
-        Need to find player so we can get bullet start and encoder
-        Right now we are setting the start to the end (jumping a tick)
-        Also need to fast forward based on tick difference
+        let id = decoder.readUint8();
+        let player = world.otherPlayers.find(p => id === p.id);
         let laserEnd = decoder.readVec();
         let aimAngle = decoder.readFloat64();
-        world.laserList.push(new Laser(laserEnd, aimAngle));
+        let newLaser = new Laser(player.pos, aimAngle);
+        newLaser.line.end.set(laserEnd);
+        world.laserList.push(newLaser);
     }
 }
 

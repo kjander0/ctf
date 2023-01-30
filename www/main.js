@@ -4,6 +4,7 @@
 // - serve minified versions of PIXI for release
 // - bundle the js
 
+import {World} from "./world.js"
 import * as graphics from "./graphics.js";
 import * as input from "./input.js";
 import * as player from "./player.js";
@@ -12,30 +13,15 @@ import * as net from "./net.js";
 import * as time from "./time.js";
 
 window.onload = async function() {
-    if(!PIXI.utils.isWebGLSupported()){
-        console.log("webGL not supported");
-    }
-
     let container = document.body;
     let pixiApp = new PIXI.Application({
         resizeTo: container,
         backgroundColor: 0x000000
-    });
-    
+    });    
     container.appendChild(pixiApp.view);
-    let world = {
-        tickCount: -1,
-        deltaMs: 1000.0/60.0,
-        accumMs: 0,
-        serverAccumMs: 0, // time accumulation for server updates from server
-        doThrottle: false,
-        input: new input.Input(pixiApp),
-        gfx: new graphics.Graphics(pixiApp),
-        player: new player.Player(),
-        otherPlayers: [],
-        laserList: [],
-        //map: new tilemap.TileMap(),
-    };
+
+    let world = new World(pixiApp);
+    world.player = new player.Player();
     world.player.graphic = world.gfx.addCircle(0x00AA33);
     world.player.lastAckedGraphic = world.gfx.addCircle(0xFF0000, false);
     world.player.correctedGraphic = world.gfx.addCircle(0x0000FF, false);
@@ -58,6 +44,7 @@ window.onload = async function() {
         }
         world.accumMs = Math.min(world.accumMs - targetMs, targetMs);
         
+        player.sampleInput(world);
         net.sendInput(world);
         player.update(world);
         weapons.update(world);

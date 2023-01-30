@@ -44,8 +44,16 @@ class Input {
         pixiApp.stage.addEventListener("mousemove", (event) => this._onMouseMove(event));
     }
 
+    getCommand(cmdIndex) {
+        return this._commands[cmdIndex];
+    }
+
     isActive(cmdIndex) {
         return this._commands[cmdIndex].active;
+    }
+
+    wasActivated(cmdIndex) {
+        return this._commands[cmdIndex].wasActivated;
     }
 
     _onKeyDown(event) {
@@ -62,7 +70,7 @@ class Input {
             return;
         }
         cmd.active = true;
-        cmd.activated = true;
+        cmd.wasActivated = true;
         cmd._pressed = true;
     }
     
@@ -90,7 +98,7 @@ class Input {
         }
         cmd.mousePos = new Vec(event.globalX, event.globalY);
         cmd.active = true;
-        cmd.activated = true;
+        cmd.wasActivated = true;
         cmd._pressed = true;
     }
     
@@ -113,7 +121,7 @@ function postUpdate(world) {
         if (!cmd._pressed) {
             cmd.active = false;
         }
-        cmd.activated = false;
+        cmd.wasActivated = false;
     }
 }
 
