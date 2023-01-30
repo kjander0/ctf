@@ -6,8 +6,8 @@ import (
 )
 
 const (
-	delayMs  = 160
-	jitterMs = 1
+	delayMs  = 150
+	jitterMs = 20
 )
 
 // Channel for adding artificial delay/jitter to data
@@ -38,11 +38,16 @@ func (dc *DelayChannel) Start() {
 			if !ok {
 				return
 			}
-			durationMs := delayMs + rand.Int31n(jitterMs) - jitterMs/2
+
+			durationMs := delayMs
+			if jitterMs > 0 {
+				durationMs += rand.Intn(jitterMs) - jitterMs/2
+			}
 			if durationMs < 0 {
 				durationMs = 0
 			}
 			duration := time.Duration(durationMs) * time.Millisecond
+
 			time.AfterFunc(duration, func() {
 				select {
 				case <-endC:

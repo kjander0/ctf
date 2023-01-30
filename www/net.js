@@ -1,6 +1,5 @@
-import { Input } from "./input.js";
 import { Encoder, Decoder } from "./encode.js";
-import { Player, PlayerInputState } from "./player.js";
+import { Player} from "./player.js";
 import { SERVER_UPDATE_MS } from "./time.js";
 import { Laser } from "./weapons.js";
 
@@ -40,6 +39,7 @@ const ackInputFlagBit = 2;
 let encoder = new Encoder();
 
 function sendInput(world) {
+    // TODO: don't send anything if player isn't doing anything
     let cmdBits = 0;
     let playerInput = world.player.inputState;
     if (playerInput.left) {
@@ -54,7 +54,6 @@ function sendInput(world) {
     if (playerInput.down) {
         cmdBits |= downBit;
     }
-    world.player.unackedInputs.push(playerInput);
 
     let flags = 0;
     if (playerInput.doShoot) {
@@ -85,10 +84,11 @@ function consumeMessage(msg, world) {
 
 function _doStateUpdate(world, decoder) {
     let flags = decoder.readUint8();
-    world.doThrottle = ((flags & throttleFlagBit) == throttleFlagBit);
+    world.doThrottle = ((flags & throttleFlagBit) === throttleFlagBit);
 
-    if ((flags & ackInputFlagBit) == ackInputFlagBit) {
+    if ((flags & ackInputFlagBit) === ackInputFlagBit) {
         world.player.unackedInputs.shift();
+        console.log("ack: ", world.player.unackedInputs.length);
     }
 
     world.tickCount = decoder.readUint8();

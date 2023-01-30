@@ -1,5 +1,4 @@
 import { Vec, Line } from "./math.js";
-import * as input from "./input.js"
 
 class Laser {
     static SPEED = 8;
@@ -19,6 +18,8 @@ function update(world) {
     // TODO: lagg compensate new lasers from other players based on how far ahead
     // my client side prediction is
     // - Note: it would be nice to have some top level controls for shooter/target lagg compensation for tuning
+    let tickDiff = world.player.unackedInputs.length;
+    //console.log("tick diff: ", tickDiff);
     for (let laser of world.laserList) {
         let line = laser.line;
         line.start.set(line.end);

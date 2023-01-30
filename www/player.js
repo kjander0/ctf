@@ -47,6 +47,7 @@ function sampleInput(world) {
     }
     world.player.inputState = inputState;
     world.player.unackedInputs.push(inputState);
+    console.log("push: ", world.player.unackedInputs.length);
 }
 
 function update(world) {
@@ -67,7 +68,7 @@ function update(world) {
         }
         correctedPos = correctedPos.add(dir.scale(Player.SPEED));
     }
-
+    WHAT the heck we doing here. Should be running on sampled input not querying commands again directly
     // TODO: might want to delay prediction by a tick so player sees closer to server reality
     let diff = new Vec();
     if (world.input.isActive(Input.CMD_LEFT)) {
@@ -83,11 +84,12 @@ function update(world) {
         diff.y -= 1;
     }
     diff = diff.scale(Player.SPEED);
-    world.player.correctedPos = world.player.correctedPos.add(diff);
+    world.player.correctedPos = correctedPos.add(diff);
+
     world.player.prevPos = world.player.pos;
     world.player.pos = world.player.pos.add(diff);
-
-    world.player.pos = world.player.pos.add(world.player.correctedPos).scale(0.5);
+    
+    //world.player.pos = world.player.pos.add(world.player.correctedPos).scale(0.5);
     // TODO: correct position with correctedPos above (interpolate overtime?)
 }
 
