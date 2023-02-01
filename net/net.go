@@ -5,6 +5,7 @@ import (
 
 	"github.com/kjander0/ctf/entity"
 	"github.com/kjander0/ctf/logger"
+	"github.com/kjander0/ctf/web"
 )
 
 const (
@@ -29,6 +30,49 @@ const (
 	throttleFlagBit = 1
 	ackInputFlagBit = 2
 )
+
+type Net struct {
+	Entities []Encodable
+	Clients  []NetClient
+}
+
+type NetEntity struct {
+	Id        uint16
+	Bytes     []byte
+	Encodable Encodable
+}
+
+type Encodable interface {
+	Encode() []byte
+}
+
+type NetClient struct {
+	Client   web.Client
+	Snapshot []EntitySnapshot
+}
+
+type EntitySnapshot struct {
+	// index of entity
+	Bytes []byte
+}
+
+func (n *Net) AddEntity(entity Encodable) {
+	n.Entities = append(n.Entities, entity)
+}
+
+func (n *Net) RemoveEntity() {
+
+}
+
+func (n *Net) AddClient(client web.Client) {
+}
+
+func (n *Net) Dispatch() {
+	// create encoding of each entity
+
+	// store encodings for each client
+
+}
 
 func ReceiveInputs(world *entity.World) error {
 	for i := range world.PlayerList {
