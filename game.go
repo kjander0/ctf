@@ -48,7 +48,7 @@ func (g *Game) Run() {
 		net.SendWorldUpdate(&g.World)
 		removeDisconnectedPlayers(&g.World)
 
-		g.World.TickCount += 1
+		g.World.Tick += 1
 
 		ticker.Sleep()
 	}

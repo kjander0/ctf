@@ -40,6 +40,7 @@ let encoder = new Encoder();
 
 function sendInput(world) {
     // TODO: don't send anything if player isn't doing anything
+    // TODO: send last x inputs so server can more easily correct (no need for tick to be sent with inputs)
     let cmdBits = 0;
     let playerInput = world.player.inputState;
     if (playerInput.left) {
@@ -63,7 +64,7 @@ function sendInput(world) {
     encoder.reset();
     encoder.writeUint8(inputMsgType);
     encoder.writeUint8(flags);
-    encoder.writeUint8(world.tickCount);
+    encoder.writeUint8(playerInput.tick);
     encoder.writeUint8(cmdBits);
     if (playerInput.doShoot) {
         encoder.writeFloat64(playerInput.aimAngle);
@@ -86,12 +87,15 @@ function _doStateUpdate(world, decoder) {
     let flags = decoder.readUint8();
     world.doThrottle = ((flags & throttleFlagBit) === throttleFlagBit);
 
-    if ((flags & ackInputFlagBit) === ackInputFlagBit) {
-        world.player.unackedInputs.shift();
-        console.log("ack: ", world.player.unackedInputs.length);
+    let unacked = world.player.unackedInputs
+    THIS ACKING IS BAD CAUSE OF WRAP AT 256
+    Instead, search through unacked for input for this server tick, remove the rest
+    while (unacked.length > 0 && unacked[0].tick <= world.serverTick) {
+        unacked.shift();
     }
+    console.log(world.player.unackedInputs.length);
 
-    world.tickCount = decoder.readUint8();
+    world.serverTick = decoder.readUint8();
 
     world.serverAccumMs -= SERVER_UPDATE_MS;
     world.player.lastAckedPos = decoder.readVec();

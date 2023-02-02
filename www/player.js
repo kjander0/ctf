@@ -17,6 +17,7 @@ class Player {
 }
 
 class PlayerInputState {
+    tick = 0;
     left = false;
     right = false;
     up = false;
@@ -27,6 +28,7 @@ class PlayerInputState {
 
 function sampleInput(world) {
     let inputState = new PlayerInputState();
+    inputState.tick = world.clientTick;
     if (world.input.isActive(Input.CMD_LEFT)) {
         inputState.left = true;
     }
@@ -47,7 +49,6 @@ function sampleInput(world) {
     }
     world.player.inputState = inputState;
     world.player.unackedInputs.push(inputState);
-    console.log("push: ", world.player.unackedInputs.length);
 }
 
 function update(world) {
@@ -68,19 +69,19 @@ function update(world) {
         }
         correctedPos = correctedPos.add(dir.scale(Player.SPEED));
     }
-    WHAT the heck we doing here. Should be running on sampled input not querying commands again directly
+
     // TODO: might want to delay prediction by a tick so player sees closer to server reality
     let diff = new Vec();
-    if (world.input.isActive(Input.CMD_LEFT)) {
+    if (world.player.inputState.left) {
         diff.x -= 1;
     }
-    if (world.input.isActive(Input.CMD_RIGHT)) {
+    if (world.player.inputState.right) {
         diff.x += 1;
     }
-    if (world.input.isActive(Input.CMD_UP)) {
+    if (world.player.inputState.up) {
         diff.y += 1;
     }
-    if (world.input.isActive(Input.CMD_DOWN)) {
+    if (world.player.inputState.down) {
         diff.y -= 1;
     }
     diff = diff.scale(Player.SPEED);
@@ -89,8 +90,8 @@ function update(world) {
     world.player.prevPos = world.player.pos;
     world.player.pos = world.player.pos.add(diff);
     
+    // TODO correct position
     //world.player.pos = world.player.pos.add(world.player.correctedPos).scale(0.5);
-    // TODO: correct position with correctedPos above (interpolate overtime?)
 }
 
 function _calcAimAngle(startPos, aimPos) {

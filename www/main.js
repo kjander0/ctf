@@ -29,10 +29,11 @@ window.onload = async function() {
     await net.connect(world);
 
     function update(world) {
-        if (world.tickCount == -1) {
+        if (world.serverTick == -1) {
             return; // wait until we have a world update from server
         }
 
+        // TODO: throttle client side if clientTick > serverTick
         world.accumMs += world.deltaMs;
         let targetMs = time.CLIENT_UPDATE_MS;
         if (world.doThrottle) {
@@ -42,6 +43,11 @@ window.onload = async function() {
         if (world.accumMs < targetMs) {
             return;
         }
+
+        if (world.clientTick == -1) {
+            world.clientTick = world.serverTick;
+        }
+
         world.accumMs = Math.min(world.accumMs - targetMs, targetMs);
         
         player.sampleInput(world);
@@ -50,6 +56,8 @@ window.onload = async function() {
         weapons.update(world);
         removeDisconnectedPlayers(world);
         input.postUpdate(world); // do last
+
+        world.clientTick = (world.clientTick + 1) % 256;
     }
 
     let prevTime = window.performance.now();

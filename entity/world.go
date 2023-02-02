@@ -1,7 +1,7 @@
 package entity
 
 type World struct {
-	TickCount     uint8
+	Tick          uint8
 	PlayerList    []Player
 	LaserList     []Laser
 	NewLasers     []*Laser

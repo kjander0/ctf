@@ -39,7 +39,7 @@ func UpdateWeapons(world *World) {
 			playerInput.AimAngle,
 		}
 		// Compensate for shooter's lag by fast forwarding the end point of the laser
-		serverTick := int(world.TickCount)
+		serverTick := int(world.Tick)
 		clientTick := int(playerInput.Tick)
 		if serverTick < clientTick { // server tick has wrapped and client tick has not
 			serverTick += 256
