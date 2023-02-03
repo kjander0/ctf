@@ -88,12 +88,9 @@ function _doStateUpdate(world, decoder) {
     world.doThrottle = ((flags & throttleFlagBit) === throttleFlagBit);
 
     let unacked = world.player.unackedInputs
-    THIS ACKING IS BAD CAUSE OF WRAP AT 256
-    Instead, search through unacked for input for this server tick, remove the rest
-    while (unacked.length > 0 && unacked[0].tick <= world.serverTick) {
+    if ((flags & ackInputFlagBit) === ackInputFlagBit) {
         unacked.shift();
     }
-    console.log(world.player.unackedInputs.length);
 
     world.serverTick = decoder.readUint8();
 
@@ -112,11 +109,13 @@ function _doStateUpdate(world, decoder) {
             otherPlayer = new Player();
             otherPlayer.id = id;
             otherPlayer.graphic = world.gfx.addCircle(0x771177);
+            otherPlayer.lastAckedGraphic = world.gfx.addCircle(0xff0000, false);
             world.otherPlayers.push(otherPlayer);
         }
         otherPlayer.disconnected = false;
         otherPlayer.prevPos = otherPlayer.pos;
         otherPlayer.pos = decoder.readVec();
+        console.log("POS DIFF: ", otherPlayer.pos.sub(otherPlayer.prevPos).length())
     }
 
     let numNewLasers = decoder.readUint16();

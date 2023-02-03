@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"github.com/kjander0/ctf/logger"
 	"github.com/kjander0/ctf/mymath"
 	"github.com/kjander0/ctf/web"
 )
@@ -10,25 +11,24 @@ const (
 )
 
 type Player struct {
-	Id              uint8
-	Client          web.Client
-	Pos             mymath.Vec
-	LastAckedPos    mymath.Vec
-	Input           PlayerInput
-	PredictedInputs []PlayerInput
-	InputReceived   bool
-	DoDisconnect    bool
-	DoThrottle      bool
+	Id           uint8
+	Client       web.Client
+	Pos          mymath.Vec
+	PredictedPos mymath.Vec
+	Inputs       []PlayerInput
+	DoDisconnect bool
+	DoThrottle   bool
 }
 
 type PlayerInput struct {
-	Tick     uint8
-	Left     bool
-	Right    bool
-	Up       bool
-	Down     bool
-	DoShoot  bool
-	AimAngle float64
+	Acked      bool
+	ClientTick uint8
+	Left       bool
+	Right      bool
+	Up         bool
+	Down       bool
+	DoShoot    bool
+	AimAngle   float64
 }
 
 func NewPlayer(id uint8, client web.Client) Player {
@@ -40,22 +40,22 @@ func NewPlayer(id uint8, client web.Client) Player {
 
 func MovePlayers(world *World) {
 	for i := range world.PlayerList {
-		input := world.PlayerList[i].Input
-
-		if world.PlayerList[i].InputReceived {
-			world.PlayerList[i].LastAckedPos = world.PlayerList[i].LastAckedPos.Add(calcDisplacement(input))
+		inputs := world.PlayerList[i].Inputs
+		prevPredicted := world.PlayerList[i].PredictedPos
+		for j := range inputs {
+			if inputs[j].Acked {
+				world.PlayerList[i].Pos = world.PlayerList[i].Pos.Add(calcDisplacement(inputs[j]))
+				world.PlayerList[i].PredictedPos = world.PlayerList[i].Pos
+				continue
+			}
+			world.PlayerList[i].PredictedPos = world.PlayerList[i].PredictedPos.Add(calcDisplacement(inputs[j]))
 		}
-
-		world.PlayerList[i].Pos = world.PlayerList[i].LastAckedPos
-		for j := range world.PlayerList[i].PredictedInputs {
-			predicted := world.PlayerList[i].PredictedInputs[j]
-			world.PlayerList[i].Pos = world.PlayerList[i].Pos.Add(calcDisplacement(predicted))
-		}
+		logger.Debug("diff: ", world.PlayerList[i].PredictedPos.Sub(prevPredicted).Length())
 	}
 }
 
 func calcDisplacement(input PlayerInput) mymath.Vec {
-	// TODO: test with movement occuring in direction of last pressed key
+	// TODO: does it feel better if movement always occurs in direction of last pressed key (even if two opposing keys pressed)
 	var dir mymath.Vec
 	if input.Left {
 		dir.X -= 1

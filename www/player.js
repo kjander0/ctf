@@ -17,7 +17,7 @@ class Player {
 }
 
 class PlayerInputState {
-    tick = 0;
+    clientTick = 0;
     left = false;
     right = false;
     up = false;
@@ -28,7 +28,7 @@ class PlayerInputState {
 
 function sampleInput(world) {
     let inputState = new PlayerInputState();
-    inputState.tick = world.clientTick;
+    inputState.clientTick = world.clientTick;
     if (world.input.isActive(Input.CMD_LEFT)) {
         inputState.left = true;
     }

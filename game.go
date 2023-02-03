@@ -42,7 +42,7 @@ func (g *Game) Run() {
 		default:
 		}
 
-		net.ReceiveInputs(&g.World)
+		net.ReceiveMessages(&g.World)
 		entity.MovePlayers(&g.World)
 		entity.UpdateWeapons(&g.World)
 		net.SendWorldUpdate(&g.World)

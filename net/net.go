@@ -27,87 +27,111 @@ const (
 // Flags from server
 const (
 	throttleFlagBit = 1
+	ackInputFlagBit = 2
 )
 
-func ReceiveInputs(world *entity.World) error {
+func ReceiveMessages(world *entity.World) {
 	for i := range world.PlayerList {
-		// TODO: add inputs to list so we can correct for dropped/delayed packets, etc. If we are correcting then
-		// we probs don't have to have client ticking running faster than server.
+		processMessages(&world.PlayerList[i])
+		logger.Debug("num inputs: ", len(world.PlayerList[i].Inputs))
+	}
+}
+
+// Read and process a message from a player. Returns True if their could be more messages.
+func processMessages(player *entity.Player) {
+	// TODO: If client has spammed loads of messages, could loop here endlessly
+	inputsAdvanced := false
+outer:
+	for {
 		var msgBytes []byte
 		select {
-		case msgBytes = <-world.PlayerList[i].Client.ReadC:
+		case msgBytes = <-player.Client.ReadC:
 		default:
-			logger.Error("ReceiveInputs: no inputs available")
-			world.PlayerList[i].InputReceived = false
-			predicted := entity.PlayerInput{}
-			lastInput := world.PlayerList[i].Input
-			// Extrapolate movement only
-			predicted.Left = lastInput.Left
-			predicted.Right = lastInput.Right
-			predicted.Up = lastInput.Up
-			predicted.Down = lastInput.Down
-			world.PlayerList[i].PredictedInputs = append(world.PlayerList[i].PredictedInputs, predicted)
-			world.PlayerList[i].Input = predicted
-			continue
+			break outer
 		}
-
 		decoder := NewDecoder(msgBytes)
 		msgType := decoder.ReadUint8()
 
-		if msgType != inputMsgType {
+		switch msgType {
+		case inputMsgType:
+			inputsBefore := len(player.Inputs)
+			processInputMsg(player, decoder)
+			inputsAdvanced = len(player.Inputs) > inputsBefore
+		default:
 			logger.Error("ReceiveInputs: bad msg type: ", msgType)
-			world.PlayerList[i].DoDisconnect = true
-			continue
-		}
-
-		world.PlayerList[i].InputReceived = true
-
-		flags := decoder.ReadUint8()
-		inputTick := decoder.ReadUint8() // read tick count
-
-		// Client intentionally send inputs at slightly faster tick rate than server. This ensures that server
-		// always has an input available at each tick. However, we periodically throttle client such that we
-		// don't buffer inputs for too long.
-		// TODO: If we start sending other kinds of messages, then we will want to buffer input messages seperately to
-		// do this calculation
-		world.PlayerList[i].DoThrottle = len(world.PlayerList[i].Client.ReadC) > 1
-		cmdBits := decoder.ReadUint8()
-		var newInputState entity.PlayerInput
-
-		if (cmdBits & leftBit) == leftBit {
-			newInputState.Left = true
-		}
-
-		if (cmdBits & rightBit) == rightBit {
-			newInputState.Right = true
-		}
-
-		if (cmdBits & upBit) == upBit {
-			newInputState.Up = true
-		}
-
-		if (cmdBits & downBit) == downBit {
-			newInputState.Down = true
-		}
-
-		if (flags & shootFlagBit) == shootFlagBit {
-			newInputState.DoShoot = true
-			newInputState.AimAngle = decoder.ReadFloat64()
-			newInputState.Tick = inputTick
-		}
-
-		world.PlayerList[i].Input = newInputState
-		if len(world.PlayerList[i].PredictedInputs) > 0 {
-			world.PlayerList[i].PredictedInputs = world.PlayerList[i].PredictedInputs[1:]
-		}
-
-		if decoder.Error != nil {
-			logger.Error("ReceiveInputs: decoder error: ", decoder.Error)
-			world.PlayerList[i].DoDisconnect = true
-			continue
+			player.DoDisconnect = true
+			return
 		}
 	}
-	return nil
+
+	if inputsAdvanced {
+		return
+	}
+
+	// TODO: add inputs to list so we can correct for dropped/delayed packets, etc. If we are correcting then
+	// we probs don't have to have client ticking running faster than server.
+
+	// TODO: limit how much we predict, e.g. player has minimised game for a minute
+	logger.Error("ReceiveInputs: no inputs available")
+	predicted := entity.PlayerInput{}
+	lastInput := player.Inputs[len(player.Inputs)-1]
+	// Extrapolate movement only
+	predicted.Left = lastInput.Left
+	predicted.Right = lastInput.Right
+	predicted.Up = lastInput.Up
+	predicted.Down = lastInput.Down
+	player.Inputs = append(player.Inputs, predicted)
+}
+
+func processInputMsg(player *entity.Player, decoder Decoder) {
+	flags := decoder.ReadUint8()
+	clientTick := decoder.ReadUint8() // read tick count
+
+	// Client intentionally send inputs at slightly faster tick rate than server. This ensures that server
+	// always has an input available at each tick. However, we periodically throttle client such that we
+	// don't buffer inputs for too long.
+	// TODO: If we start sending other kinds of messages, then we will want to buffer input messages seperately to
+	// do this calculation
+	player.DoThrottle = len(player.Client.ReadC) > 1
+	cmdBits := decoder.ReadUint8()
+	var newInputState entity.PlayerInput
+	newInputState.Acked = true
+	if (cmdBits & leftBit) == leftBit {
+		newInputState.Left = true
+	}
+
+	if (cmdBits & rightBit) == rightBit {
+		newInputState.Right = true
+	}
+
+	if (cmdBits & upBit) == upBit {
+		newInputState.Up = true
+	}
+
+	if (cmdBits & downBit) == downBit {
+		newInputState.Down = true
+	}
+
+	if (flags & shootFlagBit) == shootFlagBit {
+		newInputState.DoShoot = true
+		newInputState.AimAngle = decoder.ReadFloat64()
+		newInputState.ClientTick = clientTick
+	}
+
+	if decoder.Error != nil {
+		logger.Error("ReceiveInputs: decoder error: ", decoder.Error)
+		player.DoDisconnect = true
+		return
+	}
+
+	for i := range player.Inputs {
+		if !player.Inputs[i].Acked {
+			player.Inputs[i] = newInputState
+			return
+		}
+	}
+
+	player.Inputs = append(player.Inputs, newInputState)
 }
 
 // Sends world state to all players
@@ -130,19 +154,37 @@ func SendWorldUpdate(world *entity.World) error {
 }
 
 func prepareWorldUpdateForPlayer(world *entity.World, playerIndex int) []byte {
+	// TODO: if we start delta encoding at the byte level, then we will want each field to line up with the same bytes
+	// for each message. Otherwise comparing bytes for different fields which are likely to be different.
+	player := &world.PlayerList[playerIndex]
 	var buf bytes.Buffer
 	encoder := NewEncoder(&buf)
 
 	var flags uint8
-	if world.PlayerList[playerIndex].DoThrottle {
+	if player.DoThrottle {
 		flags |= throttleFlagBit
+	}
+
+	inputIndex := 0
+	for inputIndex = range player.Inputs {
+		if !player.Inputs[inputIndex].Acked {
+			break
+		}
+	}
+	if inputIndex > 0 {
+		flags |= ackInputFlagBit
+		player.Inputs = player.Inputs[inputIndex:]
 	}
 
 	encoder.WriteUint8(stateUpdateMsgType)
 	encoder.WriteUint8(flags)
 	encoder.WriteUint8(world.Tick)
 
-	encoder.WriteVec(world.PlayerList[playerIndex].Pos)
+	if inputIndex > 0 {
+		encoder.WriteUint8(player.Inputs[inputIndex-1].ClientTick)
+	}
+
+	encoder.WriteVec(player.Pos)
 
 	encoder.WriteUint8(uint8(len(world.PlayerList) - 1))
 	for i := range world.PlayerList {
@@ -150,7 +192,7 @@ func prepareWorldUpdateForPlayer(world *entity.World, playerIndex int) []byte {
 			continue
 		}
 		encoder.WriteUint8(world.PlayerList[i].Id)
-		encoder.WriteVec(world.PlayerList[i].Pos)
+		encoder.WriteVec(world.PlayerList[i].PredictedPos)
 	}
 
 	var numNewLasers uint16
@@ -158,7 +200,7 @@ func prepareWorldUpdateForPlayer(world *entity.World, playerIndex int) []byte {
 	encoder.WriteUint16(0) // placeholder number of new lasers
 	for i := range world.NewLasers {
 		laser := world.NewLasers[i]
-		if laser.PlayerId == world.PlayerList[playerIndex].Id {
+		if laser.PlayerId == player.Id {
 			continue
 		}
 		encoder.WriteUint8(laser.PlayerId)

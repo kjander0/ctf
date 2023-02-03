@@ -24,6 +24,12 @@ func UpdateWeapons(world *World) {
 	// Spawn new lasers
 	world.NewLasers = world.NewLasers[:0]
 	for i := range world.PlayerList {
+		Problem, if we are correcting multiple inputs then we need to step position between new lasersi
+		Perhaps in an outer loop we can do this for one input at a time
+		e.g. for {
+			move(input)
+			shoot(input)
+		}
 		playerInput := world.PlayerList[i].Input
 		if !playerInput.DoShoot {
 			continue
@@ -40,7 +46,7 @@ func UpdateWeapons(world *World) {
 		}
 		// Compensate for shooter's lag by fast forwarding the end point of the laser
 		serverTick := int(world.Tick)
-		clientTick := int(playerInput.Tick)
+		clientTick := int(playerInput.ClientTick)
 		if serverTick < clientTick { // server tick has wrapped and client tick has not
 			serverTick += 256
 		}
