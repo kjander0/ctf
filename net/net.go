@@ -8,6 +8,12 @@ import (
 )
 
 const (
+	pendingInputThreshold = 0
+	maxActiveInputs       = 20
+	maxMotionPredictions  = 5
+)
+
+const (
 	inputMsgType       uint8 = 0
 	stateUpdateMsgType uint8 = 1
 )
@@ -26,37 +32,43 @@ const (
 
 // Flags from server
 const (
-	throttleFlagBit = 1
-	ackInputFlagBit = 2
+	ackInputFlagBit = 1
 )
 
 func ReceiveMessages(world *entity.World) {
 	for i := range world.PlayerList {
 		processMessages(&world.PlayerList[i])
-		logger.Debug("num inputs: ", len(world.PlayerList[i].Inputs))
 	}
 }
 
 // Read and process a message from a player. Returns True if their could be more messages.
 func processMessages(player *entity.Player) {
 	// TODO: If client has spammed loads of messages, could loop here endlessly
-	inputsAdvanced := false
 outer:
 	for {
 		var msgBytes []byte
+		var readOk bool
 		select {
-		case msgBytes = <-player.Client.ReadC:
+		case msgBytes, readOk = <-player.Client.ReadC:
+			if !readOk {
+				player.DoDisconnect = true
+				return
+			}
 		default:
 			break outer
 		}
+
 		decoder := NewDecoder(msgBytes)
 		msgType := decoder.ReadUint8()
 
 		switch msgType {
 		case inputMsgType:
-			inputsBefore := len(player.Inputs)
-			processInputMsg(player, decoder)
-			inputsAdvanced = len(player.Inputs) > inputsBefore
+			err := readInputMsg(player, decoder)
+			if err != nil {
+				player.DoDisconnect = true
+				return
+			}
+			player.GotFirstInput = true
 		default:
 			logger.Error("ReceiveInputs: bad msg type: ", msgType)
 			player.DoDisconnect = true
@@ -64,38 +76,37 @@ outer:
 		}
 	}
 
-	if inputsAdvanced {
-		return
+	if player.GotFirstInput {
+		stageInputs(player)
+
+		// IF player ticking too slow:
+		// - server predictions will grow
+		// - server will still be responsive since any received input corrects a prediction immediately
+		// - server will drop excessove active inputs resulting in player correction
+		// IF player ticking too fast:
+		// - server pending inputs will grow
+		// - server will not be responsive as it takes time to get through pending list
+		// - server will start droping extra pending inputs to keep pace
+		if len(player.ActiveInputs) > maxActiveInputs {
+			player.ActiveInputs = player.ActiveInputs[len(player.ActiveInputs)-maxActiveInputs:]
+			logger.Error("DROPING ACTIVE INPUTS")
+		}
+		if len(player.PendingInputs) > pendingInputThreshold {
+			player.PendingInputs = player.PendingInputs[1:]
+			logger.Error("DROPING A PENDING INPUTS")
+		}
 	}
 
-	// TODO: add inputs to list so we can correct for dropped/delayed packets, etc. If we are correcting then
-	// we probs don't have to have client ticking running faster than server.
-
-	// TODO: limit how much we predict, e.g. player has minimised game for a minute
-	logger.Error("ReceiveInputs: no inputs available")
-	predicted := entity.PlayerInput{}
-	lastInput := player.Inputs[len(player.Inputs)-1]
-	// Extrapolate movement only
-	predicted.Left = lastInput.Left
-	predicted.Right = lastInput.Right
-	predicted.Up = lastInput.Up
-	predicted.Down = lastInput.Down
-	player.Inputs = append(player.Inputs, predicted)
 }
 
-func processInputMsg(player *entity.Player, decoder Decoder) {
+func readInputMsg(player *entity.Player, decoder Decoder) error {
 	flags := decoder.ReadUint8()
-	clientTick := decoder.ReadUint8() // read tick count
-
-	// Client intentionally send inputs at slightly faster tick rate than server. This ensures that server
-	// always has an input available at each tick. However, we periodically throttle client such that we
-	// don't buffer inputs for too long.
-	// TODO: If we start sending other kinds of messages, then we will want to buffer input messages seperately to
-	// do this calculation
-	player.DoThrottle = len(player.Client.ReadC) > 1
-	cmdBits := decoder.ReadUint8()
 	var newInputState entity.PlayerInput
 	newInputState.Acked = true
+
+	newInputState.ClientTick = decoder.ReadUint8() // read tick count
+
+	cmdBits := decoder.ReadUint8()
 	if (cmdBits & leftBit) == leftBit {
 		newInputState.Left = true
 	}
@@ -115,23 +126,60 @@ func processInputMsg(player *entity.Player, decoder Decoder) {
 	if (flags & shootFlagBit) == shootFlagBit {
 		newInputState.DoShoot = true
 		newInputState.AimAngle = decoder.ReadFloat64()
-		newInputState.ClientTick = clientTick
 	}
 
 	if decoder.Error != nil {
 		logger.Error("ReceiveInputs: decoder error: ", decoder.Error)
-		player.DoDisconnect = true
-		return
+		return decoder.Error
 	}
+	player.LastInput = newInputState
 
-	for i := range player.Inputs {
-		if !player.Inputs[i].Acked {
-			player.Inputs[i] = newInputState
-			return
+	player.PendingInputs = append(player.PendingInputs, newInputState)
+
+	return nil
+}
+
+func stageInputs(player *entity.Player) {
+	// Ack any unacked inputs
+	for i := range player.ActiveInputs {
+		if len(player.PendingInputs) == 0 {
+			break
+		}
+		if !player.ActiveInputs[i].Acked {
+			player.ActiveInputs[i] = player.PendingInputs[0]
+			player.PendingInputs = player.PendingInputs[1:]
 		}
 	}
 
-	player.Inputs = append(player.Inputs, newInputState)
+	// Add a pending input to the active input list if possible
+	if len(player.PendingInputs) > 0 {
+		player.ActiveInputs = append(player.ActiveInputs, player.PendingInputs[0])
+		player.PendingInputs = player.PendingInputs[1:]
+		return
+	}
+
+	// TODO: add inputs to list so we can correct for dropped/delayed packets, etc. If we are correcting then
+	// we probs don't have to have client ticking running faster than server.
+
+	// TODO: limit how many inputs we buffer, e.g. player has minimised game for a minute would be over throusand buffered
+	numUnacked := 0
+	for i := range player.ActiveInputs {
+		if !player.ActiveInputs[i].Acked {
+			numUnacked += 1
+		}
+	}
+
+	predicted := entity.PlayerInput{}
+	logger.Debug("active: ", numUnacked, " / ", len(player.ActiveInputs), " pending: ", len(player.PendingInputs))
+	// Extrapolation of movement for a limited number of ticks
+	if numUnacked < maxMotionPredictions {
+		predicted.Left = player.LastInput.Left
+		predicted.Right = player.LastInput.Right
+		predicted.Up = player.LastInput.Up
+		predicted.Down = player.LastInput.Down
+	}
+
+	player.ActiveInputs = append(player.ActiveInputs, predicted)
 }
 
 // Sends world state to all players
@@ -161,27 +209,24 @@ func prepareWorldUpdateForPlayer(world *entity.World, playerIndex int) []byte {
 	encoder := NewEncoder(&buf)
 
 	var flags uint8
-	if player.DoThrottle {
-		flags |= throttleFlagBit
-	}
 
-	inputIndex := 0
-	for inputIndex = range player.Inputs {
-		if !player.Inputs[inputIndex].Acked {
-			break
+	numAcked := 0
+	for i := range player.ActiveInputs {
+		if player.ActiveInputs[i].Acked {
+			numAcked += 1
 		}
 	}
-	if inputIndex > 0 {
+	if numAcked > 0 {
 		flags |= ackInputFlagBit
-		player.Inputs = player.Inputs[inputIndex:]
 	}
 
 	encoder.WriteUint8(stateUpdateMsgType)
 	encoder.WriteUint8(flags)
 	encoder.WriteUint8(world.Tick)
 
-	if inputIndex > 0 {
-		encoder.WriteUint8(player.Inputs[inputIndex-1].ClientTick)
+	if numAcked > 0 {
+		encoder.WriteUint8(player.ActiveInputs[numAcked-1].ClientTick)
+		player.ActiveInputs = player.ActiveInputs[numAcked:]
 	}
 
 	encoder.WriteVec(player.Pos)

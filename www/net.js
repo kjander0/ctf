@@ -18,6 +18,10 @@ async function connect(world) {
         consumeMessage(event.data, world);
     });
 
+    socket.addEventListener('close', function (event) {
+        console.log("Websocket closed");
+    });
+
     return connectPromise;
 }
 
@@ -33,8 +37,7 @@ const downBit = 8;
 const shootFlagBit = 1;
 
 // Flags from server
-const throttleFlagBit = 1;
-const ackInputFlagBit = 2;
+const ackInputFlagBit = 1;
 
 let encoder = new Encoder();
 
@@ -64,12 +67,11 @@ function sendInput(world) {
     encoder.reset();
     encoder.writeUint8(inputMsgType);
     encoder.writeUint8(flags);
-    encoder.writeUint8(playerInput.tick);
+    encoder.writeUint8(playerInput.clientTick);
     encoder.writeUint8(cmdBits);
     if (playerInput.doShoot) {
         encoder.writeFloat64(playerInput.aimAngle);
     }
-
 	socket.send(encoder.getView());
 }
 
@@ -85,14 +87,20 @@ function consumeMessage(msg, world) {
 
 function _doStateUpdate(world, decoder) {
     let flags = decoder.readUint8();
-    world.doThrottle = ((flags & throttleFlagBit) === throttleFlagBit);
+
+    world.serverTick = decoder.readUint8();
 
     let unacked = world.player.unackedInputs
     if ((flags & ackInputFlagBit) === ackInputFlagBit) {
-        unacked.shift();
+        let ackedTick = decoder.readUint8();
+        let i = 0;
+        for (i = 0; i < unacked.length; i++) {
+            if (unacked[i].clientTick === ackedTick) {
+                break;
+            }
+        }
+        unacked.splice(0, i+1);
     }
-
-    world.serverTick = decoder.readUint8();
 
     world.serverAccumMs -= SERVER_UPDATE_MS;
     world.player.lastAckedPos = decoder.readVec();
@@ -130,4 +138,4 @@ function _doStateUpdate(world, decoder) {
     }
 }
 
-export {connect, sendInput};
+export {connect, sendInput, socket};

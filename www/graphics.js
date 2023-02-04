@@ -60,10 +60,11 @@ class Graphics {
 
 function update(world) {
     // Limit extrapolation to +/- one tick
-    //world.serverAccumMs = Math.max(-time.SERVER_UPDATE_MS, Math.min(2 * time.SERVER_UPDATE_MS, world.serverAccumMs + world.deltaMs));
-    world.serverAccumMs += world.deltaMs;
+    world.serverAccumMs = Math.max(-time.SERVER_UPDATE_MS, Math.min(2 * time.SERVER_UPDATE_MS, world.serverAccumMs + world.deltaMs));
+    //world.serverAccumMs += world.deltaMs;
+
     let lerpFraction = world.accumMs/time.SERVER_UPDATE_MS;
-    let lerpPos = extrapolateVec(world.player.prevPos, world.player.pos, lerpFraction);
+    let lerpPos = lerpVec(world.player.prevPos, world.player.pos, lerpFraction);
     world.player.graphic.x = lerpPos.x;
     world.player.graphic.y = lerpPos.y;
     world.player.lastAckedGraphic.x = world.player.lastAckedPos.x;

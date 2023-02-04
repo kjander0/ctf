@@ -1,6 +1,8 @@
 package entity
 
 import (
+	"math"
+
 	"github.com/kjander0/ctf/logger"
 	"github.com/kjander0/ctf/mymath"
 	"github.com/kjander0/ctf/web"
@@ -11,13 +13,15 @@ const (
 )
 
 type Player struct {
-	Id           uint8
-	Client       web.Client
-	Pos          mymath.Vec
-	PredictedPos mymath.Vec
-	Inputs       []PlayerInput
-	DoDisconnect bool
-	DoThrottle   bool
+	Id            uint8
+	Client        web.Client
+	Pos           mymath.Vec
+	PredictedPos  mymath.Vec
+	ActiveInputs  []PlayerInput
+	PendingInputs []PlayerInput
+	LastInput     PlayerInput
+	GotFirstInput bool
+	DoDisconnect  bool
 }
 
 type PlayerInput struct {
@@ -38,20 +42,60 @@ func NewPlayer(id uint8, client web.Client) Player {
 	}
 }
 
-func MovePlayers(world *World) {
+func UpdatePlayers(world *World) {
+	world.NewLasers = world.NewLasers[:0]
 	for i := range world.PlayerList {
-		inputs := world.PlayerList[i].Inputs
-		prevPredicted := world.PlayerList[i].PredictedPos
-		for j := range inputs {
-			if inputs[j].Acked {
-				world.PlayerList[i].Pos = world.PlayerList[i].Pos.Add(calcDisplacement(inputs[j]))
-				world.PlayerList[i].PredictedPos = world.PlayerList[i].Pos
-				continue
-			}
-			world.PlayerList[i].PredictedPos = world.PlayerList[i].PredictedPos.Add(calcDisplacement(inputs[j]))
+		player := &world.PlayerList[i]
+		player.PredictedPos = player.Pos
+		for _, input := range player.ActiveInputs {
+			movePlayer(player, input)
+			spawnProjectile(world, player, input)
 		}
-		logger.Debug("diff: ", world.PlayerList[i].PredictedPos.Sub(prevPredicted).Length())
 	}
+}
+
+func movePlayer(player *Player, input PlayerInput) {
+	disp := calcDisplacement(input)
+	if input.Acked {
+		player.Pos = player.Pos.Add(disp)
+		player.PredictedPos = player.Pos
+		return
+	}
+	player.PredictedPos = player.PredictedPos.Add(disp)
+}
+
+func spawnProjectile(world *World, player *Player, input PlayerInput) {
+	if !input.DoShoot {
+		return
+	}
+
+	dir := mymath.Vec{X: math.Cos(input.AimAngle), Y: math.Sin(input.AimAngle)}
+	newLaser := Laser{
+		player.Id,
+		mymath.Line{
+			Start: player.Pos,
+			End:   player.Pos,
+		},
+		dir,
+		input.AimAngle,
+	}
+	// TODO: CANT TRUST ClientTick!!! (they could set to anything, even more reason to limit or remove completely fast forwarding here)
+	// Compensate for shooter's lag by fast forwarding the end point of the laser
+	serverTick := int(world.Tick)
+	clientTick := int(input.ClientTick)
+	if serverTick < clientTick { // server tick has wrapped and client tick has not
+		serverTick += 256
+	}
+	// TODO limit tick difference so we arn't teleporting lasers too dramatically.
+	// Maybe no fast forwarding for fired laser, no prediction either.
+	tickDiff := serverTick - clientTick
+	logger.Debug("tickdiff ", tickDiff)
+	for j := 0; j < tickDiff; j += 1 {
+		newLaser.Line.End = newLaser.Line.End.Add(newLaser.Dir.Scale(LaserSpeed))
+	}
+
+	world.LaserList = append(world.LaserList, newLaser)
+	world.NewLasers = append(world.NewLasers, &world.LaserList[len(world.LaserList)-1])
 }
 
 func calcDisplacement(input PlayerInput) mymath.Vec {

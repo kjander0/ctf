@@ -33,12 +33,9 @@ window.onload = async function() {
             return; // wait until we have a world update from server
         }
 
-        // TODO: throttle client side if clientTick > serverTick
         world.accumMs += world.deltaMs;
-        let targetMs = time.CLIENT_UPDATE_MS;
-        if (world.doThrottle) {
-            targetMs = time.THROTTLED_UPDATE_MS;
-        }
+        let targetMs = time.SERVER_UPDATE_MS;
+        console.log("client tick: ", world.clientTick, " server tick: ", world.serverTick);
 
         if (world.accumMs < targetMs) {
             return;
@@ -49,11 +46,11 @@ window.onload = async function() {
         }
 
         world.accumMs = Math.min(world.accumMs - targetMs, targetMs);
-        
         player.sampleInput(world);
         net.sendInput(world);
-        player.update(world);
+        // move projectiles before spawning new ones (gives an additional tick for lagg compensation)
         weapons.update(world);
+        player.update(world);
         removeDisconnectedPlayers(world);
         input.postUpdate(world); // do last
 
@@ -62,6 +59,9 @@ window.onload = async function() {
 
     let prevTime = window.performance.now();
     pixiApp.ticker.add(function () {
+        if (net.socket.readyState === WebSocket.CLOSED) {
+            return;
+        }
         // TODO: want elapsedMS to be bounded
         world.deltaMs = pixiApp.ticker.elapsedMS;
         update(world);

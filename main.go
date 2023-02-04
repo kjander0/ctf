@@ -6,6 +6,7 @@ import (
 )
 
 // TODO
+// - Generate a www/config.js from a config.go for shared parameters (tick rate, etc)
 // - improve precision of ticker (sleep in smaller intervals?)
 // - binary messages to save bandwidth
 // - 32 bit float to save bandwidth
