@@ -90,21 +90,18 @@ function _doStateUpdate(world, decoder) {
 
     world.serverTick = decoder.readUint8();
 
-    let unacked = world.player.unackedInputs
+    let ackedTick = -1;
     if ((flags & ackInputFlagBit) === ackInputFlagBit) {
-        let ackedTick = decoder.readUint8();
-        let i = 0;
-        for (i = 0; i < unacked.length; i++) {
-            if (unacked[i].clientTick === ackedTick) {
-                break;
-            }
-        }
-        unacked.splice(0, i+1);
+        ackedTick = decoder.readUint8();
     }
 
-    world.serverAccumMs -= UPDATE_MS;
-    world.player.lastAckedPos = decoder.readVec();
-    //world.player.posPredictions.ack(world.player.lastAckedPos);
+    let pos = decoder.readVec(); // NOTE: we arn't using latest value from server if it isn't acking something
+    if (ackedTick != -1) {
+        let total = world.player.predictedInputs.unacked.length;
+        let numAcked = world.player.predictedInputs.ack(ackedTick);
+        world.player.lastAckedPos = pos;
+        console.log("num acked: ", numAcked, " / ", total);
+    }
 
 
     for (let otherPlayer of world.otherPlayers) {

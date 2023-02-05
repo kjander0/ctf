@@ -7,7 +7,6 @@ class World {
     serverTick = -1; // from server (0-255)
     deltaMs = 1000.0/60.0;
     accumMs = time.UPDATE_MS;
-    serverAccumMs = 0; // time accumulation for server updates from server
     player;
     otherPlayers = [];
     laserList = [];

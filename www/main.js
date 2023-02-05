@@ -22,14 +22,14 @@ window.onload = async function() {
 
     let world = new World(pixiApp);
     world.player = new player.Player();
-    world.player.graphic = world.gfx.addCircle(0x00AA33);
+    world.player.graphic = world.gfx.addCircle(0x00AA33, false);
     world.player.lastAckedGraphic = world.gfx.addCircle(0xFF0000, false);
     world.player.correctedGraphic = world.gfx.addCircle(0x0000FF, false);
 
     await net.connect(world);
 
     function update(world) {
-        if (world.serverTick == -1) {
+        if (world.serverTick === -1) {
             return; // wait until we have a world update from server
         }
 
@@ -39,7 +39,7 @@ window.onload = async function() {
             return;
         }
 
-        if (world.clientTick == -1) {
+        if (world.clientTick === -1) {
             world.clientTick = world.serverTick;
         }
 

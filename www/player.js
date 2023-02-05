@@ -1,13 +1,13 @@
 import { Vec } from "./math.js";
 import { Input } from "./input.js";
+import {Predicted} from "./predicted.js"
 
 class Player {
     static SPEED = 2.5;
 
     id;
     inputState = null;
-    posPredictions = new PredictionHistory(new Vec());
-    unackedInputs = [];
+    predictedInputs = new Predicted();
     lastAckedPos = new Vec();
     // direction numbers
     // 4 3 2
@@ -16,7 +16,6 @@ class Player {
     lastAckedDirNum = 0; // used for extrapolating movement of other players
     prevPos = new Vec();
     pos = new Vec();
-    predictedPos = new Vec();
     correctedPos = new Vec();
     graphic;
     lastAckedGraphic;
@@ -55,7 +54,7 @@ function sampleInput(world) {
         inputState.aimAngle = _calcAimAngle(world.player.pos, aimPos);
     }
     world.player.inputState = inputState;
-    world.player.unackedInputs.push(inputState);
+    world.player.predictedInputs.predict(inputState, world.clientTick);
 }
 
 function update(world) {
@@ -63,8 +62,10 @@ function update(world) {
         _moveOtherPlayer(other);
     }
 
-    let correctedPos = new Vec(world.player.lastAckedPos);
-    for (let inputState of world.player.unackedInputs) {
+    world.player.correctedPos = new Vec(world.player.lastAckedPos);
+    // TODO: make dirFromInput function so we don't have these 4 if confitions repeated twice
+    for (let unacked of world.player.predictedInputs.unacked) {
+        let inputState = unacked.val;
         let dir = new Vec();
         if (inputState.left) {
             dir.x -= 1;
@@ -78,7 +79,7 @@ function update(world) {
         if (inputState.down) {
             dir.y -= 1;
         }
-        correctedPos = correctedPos.add(dir.scale(Player.SPEED));
+        world.player.correctedPos = world.player.correctedPos.add(dir.scale(Player.SPEED));
     }
 
     // TODO: might want to delay prediction by a tick so player sees closer to server reality
@@ -96,7 +97,6 @@ function update(world) {
         diff.y -= 1;
     }
     diff = diff.scale(Player.SPEED);
-    world.player.correctedPos = correctedPos.add(diff);
 
     world.player.prevPos = world.player.pos;
     world.player.pos = world.player.pos.add(diff);
@@ -106,7 +106,7 @@ function update(world) {
     if (corrLen > Player.SPEED) {
         correction = correction.scale(Player.SPEED / corrLen);
     }
-    world.player.pos = world.player.pos.add(correction);
+    //world.player.pos = world.player.pos.add(correction);
 }
 
 function _moveOtherPlayer(player) {
@@ -115,8 +115,10 @@ function _moveOtherPlayer(player) {
     let disp = player.lastAckedPos.sub(player.pos);
     let dispLen = disp.length();
 
-    // TODO: limit how many ticks we predict
-    if (dispLen < 1e-3 && player.lastAckedDirNum != 0) {
+    // If we are already at the last acked pos, predict a new one
+    if (dispLen < 1e-3 && player.lastAckedDirNum !== 0) {
+        // TODO: limit how many ticks we predict
+        player.predictedInputs.predict(player.lastAckedDirNum, world.serverTick); // TODO: server tick is correct right?
         player.predictedPos = player.pos.add(_dirFromNum(player.lastAckedDirNum).scale(Player.SPEED));
     }
 

@@ -158,7 +158,8 @@ func processInputMsg(player *entity.Player, decoder Decoder) {
 	}
 
 	if player.InputsAdvanced {
-		// have already grown input buffer, replace with latest'
+		// have already grown input buffer, replace with latest
+		logger.Debug("Already advanced input, overwriting input")
 		player.Inputs[len(player.Inputs)-1] = newInputState
 		return
 	}
@@ -216,6 +217,9 @@ func prepareWorldUpdateForPlayer(world *entity.World, playerIndex int) []byte {
 
 	if numAcked > 0 {
 		encoder.WriteUint8(player.Inputs[numAcked-1].ClientTick)
+		if !player.Inputs[numAcked-1].Acked {
+			logger.Panic("OH NO")
+		}
 		player.Inputs = player.Inputs[numAcked:]
 	}
 
