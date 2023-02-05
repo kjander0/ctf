@@ -2,12 +2,16 @@ package web
 
 import (
 	"math/rand"
+	"sync"
 	"time"
+
+	"github.com/kjander0/ctf/logger"
 )
 
 const (
 	delayMs  = 250
-	jitterMs = 100
+	jitterMs = 250
+	lossRate = 0.01
 )
 
 // Channel for adding artificial delay/jitter to data
@@ -32,6 +36,7 @@ func (dc *DelayChannel) Start() {
 		close(dc.OutC)
 	}()
 
+	var mutex sync.Mutex
 	for {
 		select {
 		case data, ok := <-dc.InC:
@@ -42,18 +47,34 @@ func (dc *DelayChannel) Start() {
 			durationMs := delayMs
 			if jitterMs > 0 {
 				durationMs += rand.Intn(jitterMs) - jitterMs/2
+				if durationMs < 0 {
+					durationMs = 0
+				}
 			}
-			if durationMs < 0 {
-				durationMs = 0
+
+			if lossRate > 0 {
+				if rand.Float64() <= lossRate {
+					logger.Debug("SIMULATING LOSS")
+					durationMs += 2 * delayMs
+				}
 			}
+
 			duration := time.Duration(durationMs) * time.Millisecond
 
-			time.AfterFunc(duration, func() {
+			go func() {
+				timer := time.NewTimer(duration)
+
+				defer mutex.Unlock()
+				mutex.Lock()
+
+				<-timer.C
+
 				select {
 				case <-endC:
 				case triggerC <- true:
 				}
-			})
+			}()
+
 			dc.queue = append(dc.queue, data)
 		case <-triggerC:
 			dc.OutC <- dc.queue[0]

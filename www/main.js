@@ -34,10 +34,8 @@ window.onload = async function() {
         }
 
         world.accumMs += world.deltaMs;
-        let targetMs = time.SERVER_UPDATE_MS;
-        console.log("client tick: ", world.clientTick, " server tick: ", world.serverTick);
 
-        if (world.accumMs < targetMs) {
+        if (world.accumMs < time.UPDATE_MS) {
             return;
         }
 
@@ -45,7 +43,7 @@ window.onload = async function() {
             world.clientTick = world.serverTick;
         }
 
-        world.accumMs = Math.min(world.accumMs - targetMs, targetMs);
+        world.accumMs = Math.min(world.accumMs - time.UPDATE_MS, time.UPDATE_MS);
         player.sampleInput(world);
         net.sendInput(world);
         // move projectiles before spawning new ones (gives an additional tick for lagg compensation)

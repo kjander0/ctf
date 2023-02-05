@@ -13,15 +13,15 @@ const (
 )
 
 type Player struct {
-	Id            uint8
-	Client        web.Client
-	Pos           mymath.Vec
-	PredictedPos  mymath.Vec
-	ActiveInputs  []PlayerInput
-	PendingInputs []PlayerInput
-	LastInput     PlayerInput
-	GotFirstInput bool
-	DoDisconnect  bool
+	Id             uint8
+	Client         web.Client
+	Pos            mymath.Vec
+	PredictedPos   mymath.Vec
+	Inputs         []PlayerInput
+	LastInput      PlayerInput
+	InputsAdvanced bool
+	GotFirstInput  bool
+	DoDisconnect   bool
 }
 
 type PlayerInput struct {
@@ -33,6 +33,30 @@ type PlayerInput struct {
 	Down       bool
 	DoShoot    bool
 	AimAngle   float64
+}
+
+var dirMap = [3][3]int{
+	{4, 3, 2},
+	{5, 0, 1},
+	{6, 7, 8},
+}
+
+func (in PlayerInput) GetDirNum() int {
+	row := 1
+	col := 1
+	if in.Left {
+		col -= 1
+	}
+	if in.Right {
+		col += 1
+	}
+	if in.Up {
+		row += 1
+	}
+	if in.Down {
+		row -= 1
+	}
+	return dirMap[row][col]
 }
 
 func NewPlayer(id uint8, client web.Client) Player {
@@ -47,7 +71,7 @@ func UpdatePlayers(world *World) {
 	for i := range world.PlayerList {
 		player := &world.PlayerList[i]
 		player.PredictedPos = player.Pos
-		for _, input := range player.ActiveInputs {
+		for _, input := range player.Inputs {
 			movePlayer(player, input)
 			spawnProjectile(world, player, input)
 		}

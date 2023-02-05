@@ -6,10 +6,17 @@ class Player {
 
     id;
     inputState = null;
+    posPredictions = new PredictionHistory(new Vec());
     unackedInputs = [];
     lastAckedPos = new Vec();
+    // direction numbers
+    // 4 3 2
+    // 5 0 1
+    // 6 7 8
+    lastAckedDirNum = 0; // used for extrapolating movement of other players
     prevPos = new Vec();
     pos = new Vec();
+    predictedPos = new Vec();
     correctedPos = new Vec();
     graphic;
     lastAckedGraphic;
@@ -52,6 +59,10 @@ function sampleInput(world) {
 }
 
 function update(world) {
+    for (let other of world.otherPlayers) {
+        _moveOtherPlayer(other);
+    }
+
     let correctedPos = new Vec(world.player.lastAckedPos);
     for (let inputState of world.player.unackedInputs) {
         let dir = new Vec();
@@ -90,8 +101,35 @@ function update(world) {
     world.player.prevPos = world.player.pos;
     world.player.pos = world.player.pos.add(diff);
     
-    // TODO correct position
-    //world.player.pos = world.player.pos.add(world.player.correctedPos).scale(0.5);
+    let correction = world.player.correctedPos.sub(world.player.pos);
+    let corrLen = correction.length();
+    if (corrLen > Player.SPEED) {
+        correction = correction.scale(Player.SPEED / corrLen);
+    }
+    world.player.pos = world.player.pos.add(correction);
+}
+
+function _moveOtherPlayer(player) {
+    // TODO: predict and correct other player movement
+    player.prevPos = player.pos;
+    let disp = player.lastAckedPos.sub(player.pos);
+    let dispLen = disp.length();
+
+    // TODO: limit how many ticks we predict
+    if (dispLen < 1e-3 && player.lastAckedDirNum != 0) {
+        player.predictedPos = player.pos.add(_dirFromNum(player.lastAckedDirNum).scale(Player.SPEED));
+    }
+
+    let moveLen = dispLen;
+    if (moveLen > Player.SPEED) {
+        moveLen = Math.floor(moveLen / Player.SPEED) * Player.SPEED;
+    } // TODO else limit to player.Speed!!!
+
+    if (dispLen > 0) {
+        disp = disp.scale(moveLen / dispLen);
+    }
+    player.pos = player.pos.add(disp);
+    player.predictedPos.set(player.pos);
 }
 
 function _calcAimAngle(startPos, aimPos) {
@@ -100,6 +138,38 @@ function _calcAimAngle(startPos, aimPos) {
         return 0;
     }
     return Math.atan2(dir.y, dir.x);
+}
+
+// direction numbers
+// 4 3 2
+// 5 0 1
+// 6 7 8
+function _dirFromNum(num) {
+    if (num == 1) {
+        return new Vec(1, 0);
+    }
+    if (num == 2) {
+        return new Vec(1, 1);
+    }
+    if (num == 3) {
+        return new Vec(0, 1);
+    }
+    if (num == 4) {
+        return new Vec(-1, -1);
+    }
+    if (num == 5) {
+        return new Vec(-1, 0);
+    }
+    if (num == 6) {
+        return new Vec(-1, -1);
+    }
+    if (num == 7) {
+        return new Vec(0, -1);
+    }
+    if (num == 8) {
+        return new Vec(1, -1);
+    }
+    return new Vec(0, 0);
 }
 
 export {Player, PlayerInputState, sampleInput, update}

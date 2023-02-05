@@ -1,3 +1,3 @@
-const SERVER_UPDATE_MS = 1000.0 / 30;
+const UPDATE_MS = 1000.0 / 30;
 
-export {SERVER_UPDATE_MS};
+export {UPDATE_MS};

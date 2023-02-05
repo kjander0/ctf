@@ -1,6 +1,6 @@
 import { Encoder, Decoder } from "./encode.js";
 import { Player} from "./player.js";
-import { SERVER_UPDATE_MS } from "./time.js";
+import { UPDATE_MS } from "./time.js";
 import { Laser } from "./weapons.js";
 
 let socket;
@@ -102,8 +102,10 @@ function _doStateUpdate(world, decoder) {
         unacked.splice(0, i+1);
     }
 
-    world.serverAccumMs -= SERVER_UPDATE_MS;
+    world.serverAccumMs -= UPDATE_MS;
     world.player.lastAckedPos = decoder.readVec();
+    //world.player.posPredictions.ack(world.player.lastAckedPos);
+
 
     for (let otherPlayer of world.otherPlayers) {
         otherPlayer.disconnected = true;
@@ -121,9 +123,8 @@ function _doStateUpdate(world, decoder) {
             world.otherPlayers.push(otherPlayer);
         }
         otherPlayer.disconnected = false;
-        otherPlayer.prevPos = otherPlayer.pos;
-        otherPlayer.pos = decoder.readVec();
-        console.log("POS DIFF: ", otherPlayer.pos.sub(otherPlayer.prevPos).length())
+        otherPlayer.lastAckedPos = decoder.readVec();
+        otherPlayer.lastAckedDirNum = decoder.readUint8();
     }
 
     let numNewLasers = decoder.readUint16();
