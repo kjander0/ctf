@@ -129,9 +129,15 @@ function _doStateUpdate(world, decoder) {
     for (let i = 0; i < numNewLasers; i++) {
         let id = decoder.readUint8();
         let player = world.otherPlayers.find(p => id === p.id);
+        if (player === undefined) {
+            player = world.player;
+        }
         let laserEnd = decoder.readVec();
         let aimAngle = decoder.readFloat64();
-        let newLaser = new Laser(player.pos, aimAngle);
+        let newLaser = new Laser(player.lastAckedPos, aimAngle);
+        if (player === world.player) {
+            newLaser.compensated = true;
+        }
         newLaser.line.end.set(laserEnd);
         world.laserList.push(newLaser);
     }

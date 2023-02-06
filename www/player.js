@@ -5,7 +5,7 @@ import * as conf from "./conf.js"
 
 class Player {
     static SPEED = 2.5;
-    static MAX_INPUT_PREDICTIONS = 30;
+    static MAX_INPUT_PREDICTIONS = 60;
     static MAX_DIR_PREDICTIONS = 5;
 
     id;

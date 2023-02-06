@@ -4,7 +4,6 @@ import (
 	"math"
 
 	"github.com/kjander0/ctf/conf"
-	"github.com/kjander0/ctf/logger"
 	"github.com/kjander0/ctf/mymath"
 	"github.com/kjander0/ctf/web"
 )
@@ -99,20 +98,6 @@ func spawnProjectile(world *World, player *Player, input PlayerInput) {
 		},
 		dir,
 		input.AimAngle,
-	}
-	// TODO: CANT TRUST ClientTick!!! (they could set to anything, even more reason to limit or remove completely fast forwarding here)
-	// Compensate for shooter's lag by fast forwarding the end point of the laser
-	serverTick := int(world.Tick)
-	clientTick := int(input.ClientTick)
-	if serverTick < clientTick { // server tick has wrapped and client tick has not
-		serverTick += 256
-	}
-	// TODO limit tick difference so we arn't teleporting lasers too dramatically.
-	// Maybe no fast forwarding for fired laser, no prediction either.
-	tickDiff := serverTick - clientTick
-	logger.Debug("tickdiff ", tickDiff)
-	for j := 0; j < tickDiff; j += 1 {
-		newLaser.Line.End = newLaser.Line.End.Add(newLaser.Dir.Scale(conf.Shared.LaserSpeed))
 	}
 
 	world.LaserList = append(world.LaserList, newLaser)

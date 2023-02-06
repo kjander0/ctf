@@ -109,7 +109,7 @@ outer:
 	// TODO: use circular buffer of inputs so this dropping is taken care of
 	if len(player.Inputs) > maxBufferedInputs {
 		logger.Debug("predicted input overflows input buffer, DROPPING an input")
-		player.Inputs = player.Inputs[1:]
+		player.Inputs = player.Inputs[1:] // TODO: remove a predicted input, not an acked one!
 	}
 }
 
@@ -240,9 +240,6 @@ func prepareWorldUpdateForPlayer(world *entity.World, playerIndex int) []byte {
 	encoder.WriteUint16(0) // placeholder number of new lasers
 	for i := range world.NewLasers {
 		laser := world.NewLasers[i]
-		if laser.PlayerId == player.Id {
-			continue
-		}
 		encoder.WriteUint8(laser.PlayerId)
 		encoder.WriteVec(laser.Line.End)
 		encoder.WriteFloat64(laser.Angle)

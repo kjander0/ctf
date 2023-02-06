@@ -16,9 +16,9 @@ func UpdateProjectiles(world *World) {
 	// Move lasers forward
 	for i := range world.LaserList {
 		line := world.LaserList[i].Line
-		dir := line.End.Sub(line.Start).Normalize()
+		dir := world.LaserList[i].Dir
 		line.Start = line.End
-		line.End = line.End.Add(dir.Scale(float64(conf.Shared.LaserSpeed)))
+		line.End = line.End.Add(dir.Scale(conf.Shared.LaserSpeed))
 		world.LaserList[i].Line = line
 	}
 }
