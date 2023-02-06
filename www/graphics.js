@@ -1,6 +1,6 @@
 import {lerpVec, extrapolateVec} from "./interpolate.js"
 import { Vec } from "./math.js";
-import * as time from "./time.js"
+import * as conf from "./conf.js"
 
 class Graphics {
     camContainer;
@@ -59,7 +59,7 @@ class Graphics {
 }
 
 function update(world) {
-    let lerpFraction = world.accumMs/time.UPDATE_MS;
+    let lerpFraction = world.accumMs/conf.UPDATE_MS;
     let lerpPos = lerpVec(world.player.prevPos, world.player.pos, lerpFraction);
     world.player.graphic.x = lerpPos.x;
     world.player.graphic.y = lerpPos.y;
@@ -69,11 +69,11 @@ function update(world) {
     world.player.correctedGraphic.y = world.player.correctedPos.y;
 
     for (let other of world.otherPlayers) {
-        let lerpPos = lerpVec(other.prevPos, other.predictedPos, lerpFraction);
+        let lerpPos = lerpVec(other.prevPos, other.pos, lerpFraction);
         other.graphic.x = lerpPos.x;
         other.graphic.y = lerpPos.y;
-        other.lastAckedGraphic.x = other.pos.x;
-        other.lastAckedGraphic.y = other.pos.y;
+        //other.lastAckedGraphic.x = other.lastAckedPos.x;
+        //other.lastAckedGraphic.y = other.lastAckedPos.y;
     }
 
     let lineGfx = world.gfx.lineGfx;

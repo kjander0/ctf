@@ -1,16 +1,20 @@
 import { Encoder, Decoder } from "./encode.js";
 import { Player} from "./player.js";
-import { UPDATE_MS } from "./time.js";
 import { Laser } from "./weapons.js";
 
 let socket;
 
 async function connect(world) {
-    socket = new WebSocket('ws://localhost:8000/ws');
+    socket = new WebSocket('ws://' + window.location.host + '/ws');
     socket.binaryType = 'arraybuffer';
     let connectPromise = new Promise(function(resolve, reject) {
         socket.addEventListener('open', function (event) {
             resolve();
+        });
+
+        socket.addEventListener('close', function (event) {
+            reject();
+            console.log("Websocket closed");
         });
     });
 
@@ -18,9 +22,7 @@ async function connect(world) {
         consumeMessage(event.data, world);
     });
 
-    socket.addEventListener('close', function (event) {
-        console.log("Websocket closed");
-    });
+
 
     return connectPromise;
 }
@@ -97,10 +99,8 @@ function _doStateUpdate(world, decoder) {
 
     let pos = decoder.readVec(); // NOTE: we arn't using latest value from server if it isn't acking something
     if (ackedTick != -1) {
-        let total = world.player.predictedInputs.unacked.length;
-        let numAcked = world.player.predictedInputs.ack(ackedTick);
+        world.player.predictedInputs.ack(ackedTick);
         world.player.lastAckedPos = pos;
-        console.log("num acked: ", numAcked, " / ", total);
     }
 
 
@@ -122,6 +122,7 @@ function _doStateUpdate(world, decoder) {
         otherPlayer.disconnected = false;
         otherPlayer.lastAckedPos = decoder.readVec();
         otherPlayer.lastAckedDirNum = decoder.readUint8();
+        otherPlayer.predictedDirs.ack(otherPlayer.lastAckedDirNum, world.serverTick);
     }
 
     let numNewLasers = decoder.readUint16();

@@ -10,9 +10,11 @@ import * as input from "./input.js";
 import * as player from "./player.js";
 import * as weapons from "./weapons.js";
 import * as net from "./net.js";
-import * as time from "./time.js";
+import * as conf from "./conf.js";
 
 window.onload = async function() {
+    await conf.retrieveConf(); // important to do this first
+
     let container = document.body;
     let pixiApp = new PIXI.Application({
         resizeTo: container,
@@ -22,7 +24,7 @@ window.onload = async function() {
 
     let world = new World(pixiApp);
     world.player = new player.Player();
-    world.player.graphic = world.gfx.addCircle(0x00AA33, false);
+    world.player.graphic = world.gfx.addCircle(0x00AA33);
     world.player.lastAckedGraphic = world.gfx.addCircle(0xFF0000, false);
     world.player.correctedGraphic = world.gfx.addCircle(0x0000FF, false);
 
@@ -35,7 +37,7 @@ window.onload = async function() {
 
         world.accumMs += world.deltaMs;
 
-        if (world.accumMs < time.UPDATE_MS) {
+        if (world.accumMs < conf.UPDATE_MS) {
             return;
         }
 
@@ -43,7 +45,7 @@ window.onload = async function() {
             world.clientTick = world.serverTick;
         }
 
-        world.accumMs = Math.min(world.accumMs - time.UPDATE_MS, time.UPDATE_MS);
+        world.accumMs = Math.min(world.accumMs - conf.UPDATE_MS, conf.UPDATE_MS);
         player.sampleInput(world);
         net.sendInput(world);
         // move projectiles before spawning new ones (gives an additional tick for lagg compensation)
@@ -75,6 +77,10 @@ function removeDisconnectedPlayers(world) {
             continue;
         }
         world.gfx.remove(otherPlayer.graphic);
+        world.gfx.remove(otherPlayer.lastAckedGraphic);
+        if (otherPlayer.correctedGraphic) {
+            world.gfx.remove(otherPlayer.correctedGraphic);
+        }
         world.otherPlayers.splice(i, 1);
     }
 }

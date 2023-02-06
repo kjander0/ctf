@@ -1,8 +1,7 @@
 import { Vec, Line } from "./math.js";
+import * as conf from "./conf.js";
 
 class Laser {
-    static SPEED = 8;
-
     line = new Line();
     dir = new Vec();
 
@@ -20,7 +19,7 @@ function update(world) {
     for (let laser of world.laserList) {
         let line = laser.line;
         line.start.set(line.end);
-        line.end = line.end.add(laser.dir.scale(Laser.SPEED));
+        line.end = line.end.add(laser.dir.scale(conf.LASER_SPEED));
     }
 
     if (world.player.inputState.doShoot) {

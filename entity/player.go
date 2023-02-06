@@ -3,13 +3,10 @@ package entity
 import (
 	"math"
 
+	"github.com/kjander0/ctf/conf"
 	"github.com/kjander0/ctf/logger"
 	"github.com/kjander0/ctf/mymath"
 	"github.com/kjander0/ctf/web"
-)
-
-const (
-	PlayerSpeed = 2.5
 )
 
 type Player struct {
@@ -51,10 +48,10 @@ func (in PlayerInput) GetDirNum() int {
 		col += 1
 	}
 	if in.Up {
-		row += 1
+		row -= 1
 	}
 	if in.Down {
-		row -= 1
+		row += 1
 	}
 	return dirMap[row][col]
 }
@@ -115,7 +112,7 @@ func spawnProjectile(world *World, player *Player, input PlayerInput) {
 	tickDiff := serverTick - clientTick
 	logger.Debug("tickdiff ", tickDiff)
 	for j := 0; j < tickDiff; j += 1 {
-		newLaser.Line.End = newLaser.Line.End.Add(newLaser.Dir.Scale(LaserSpeed))
+		newLaser.Line.End = newLaser.Line.End.Add(newLaser.Dir.Scale(conf.Shared.LaserSpeed))
 	}
 
 	world.LaserList = append(world.LaserList, newLaser)
@@ -137,5 +134,5 @@ func calcDisplacement(input PlayerInput) mymath.Vec {
 	if input.Down {
 		dir.Y -= 1
 	}
-	return dir.Scale(PlayerSpeed)
+	return dir.Scale(conf.Shared.PlayerSpeed)
 }

@@ -1,11 +1,8 @@
 package entity
 
 import (
+	"github.com/kjander0/ctf/conf"
 	"github.com/kjander0/ctf/mymath"
-)
-
-const (
-	LaserSpeed = 8
 )
 
 type Laser struct {
@@ -21,7 +18,7 @@ func UpdateProjectiles(world *World) {
 		line := world.LaserList[i].Line
 		dir := line.End.Sub(line.Start).Normalize()
 		line.Start = line.End
-		line.End = line.End.Add(dir.Scale(LaserSpeed))
+		line.End = line.End.Add(dir.Scale(float64(conf.Shared.LaserSpeed)))
 		world.LaserList[i].Line = line
 	}
 }
