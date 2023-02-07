@@ -29,6 +29,7 @@ async function connect(world) {
 
 const inputMsgType = 0;
 const stateUpdateMsgType = 1;
+const initMsgType = 2;
 
 const leftBit = 1;
 const rightBit = 2;
@@ -82,12 +83,20 @@ function consumeMessage(msg, world) {
     let msgType = decoder.readUint8();
     switch (msgType) {
         case stateUpdateMsgType:
-            _doStateUpdate(world, decoder);
+            _processUpdateMsg(world, decoder);
             break;
+        case initMsgType:
+            _processInitMsg(world, decoder);
+            break
     }
 }
 
-function _doStateUpdate(world, decoder) {
+function _processInitMsg(world, decoder) {
+    world.player.id = decoder.readUint8();
+    Read number of bytes in each row
+}
+
+function _processUpdateMsg(world, decoder) {
     let flags = decoder.readUint8();
 
     world.serverTick = decoder.readUint8();

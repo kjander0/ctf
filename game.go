@@ -45,7 +45,7 @@ func (g *Game) Run() {
 		net.ReceiveMessages(&g.World)
 		entity.UpdatePlayers(&g.World)
 		entity.UpdateProjectiles(&g.World)
-		net.SendWorldUpdate(&g.World)
+		net.SendMessages(&g.World)
 		removeDisconnectedPlayers(&g.World)
 
 		g.World.Tick += 1

@@ -8,8 +8,14 @@ import (
 	"github.com/kjander0/ctf/web"
 )
 
+const (
+	PlayerStateJoining = iota
+	PlayerStateAlive
+)
+
 type Player struct {
 	Id             uint8
+	State          int
 	Client         web.Client
 	Pos            mymath.Vec
 	PredictedPos   mymath.Vec
@@ -58,6 +64,7 @@ func (in PlayerInput) GetDirNum() int {
 func NewPlayer(id uint8, client web.Client) Player {
 	return Player{
 		Id:     id,
+		State:  PlayerStateJoining,
 		Client: client,
 	}
 }

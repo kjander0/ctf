@@ -23,6 +23,7 @@ const (
 const (
 	inputMsgType       uint8 = 0
 	stateUpdateMsgType uint8 = 1
+	initMsgType        uint8 = 2
 )
 
 const (
@@ -174,14 +175,21 @@ func processInputMsg(player *entity.Player, decoder Decoder) {
 }
 
 // Sends world state to all players
-func SendWorldUpdate(world *entity.World) error {
+func SendMessages(world *entity.World) error {
 	// TODO: Encode snap shot of entities once. Store unacked snapshots for each entity. Send only delta between
 	// latest snapshot and last acked snapshot. Could delta per-byte and use bitflag to tell which bytes changed
 	for i := range world.PlayerList {
-		updateBytes := prepareWorldUpdateForPlayer(world, i)
+		var msgBytes []byte
+		switch world.PlayerList[i].State {
+		case entity.PlayerStateJoining:
+			msgBytes = prepareInitMsg(world, i)
+			world.PlayerList[i].State = entity.PlayerStateAlive
+		case entity.PlayerStateAlive:
+			msgBytes = prepareWorldUpdate(world, i)
+		}
 
 		select {
-		case world.PlayerList[i].Client.WriteC <- updateBytes:
+		case world.PlayerList[i].Client.WriteC <- msgBytes:
 		default:
 			logger.Error("SendWorldUpdate: WriteC would block, disconnecting player")
 			world.PlayerList[i].DoDisconnect = true
@@ -192,7 +200,22 @@ func SendWorldUpdate(world *entity.World) error {
 	return nil
 }
 
-func prepareWorldUpdateForPlayer(world *entity.World, playerIndex int) []byte {
+func prepareInitMsg(world *entity.World, playerIndex int) []byte {
+	buf := bytes.Buffer{}
+	encoder := NewEncoder(&buf)
+	encoder.WriteUint8(initMsgType)
+	encoder.WriteUint8(world.PlayerList[playerIndex].Id)
+	// TODO: encode world once, send to all joining players
+	for i := range world.Level.Rows {
+		encoder.WriteBytes(world.Level.Rows[i])
+	}
+	if encoder.Error != nil {
+		logger.Panic("prepareInitMsg: encoder error: ", encoder.Error)
+	}
+	return buf.Bytes()
+}
+
+func prepareWorldUpdate(world *entity.World, playerIndex int) []byte {
 	// TODO: if we start delta encoding at the byte level, then we will want each field to line up with the same bytes
 	// for each message. Otherwise comparing bytes for different fields which are likely to be different.
 	player := &world.PlayerList[playerIndex]
@@ -248,7 +271,7 @@ func prepareWorldUpdateForPlayer(world *entity.World, playerIndex int) []byte {
 	encoder.WriteUint16At(numNewLasers, numLasersOffset)
 
 	if encoder.Error != nil {
-		logger.Panic("SendWorldUpdate: encoder error: ", encoder.Error)
+		logger.Panic("prepareWorldUpdate: encoder error: ", encoder.Error)
 	}
 
 	return buf.Bytes()

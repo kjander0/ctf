@@ -28,6 +28,14 @@ func (e *Encoder) WriteUint8(val uint8) {
 	e.Offset += 1
 }
 
+func (e *Encoder) WriteBytes(val []byte) {
+	if e.Error != nil {
+		return
+	}
+	e.Buf.Write(val)
+	e.Offset += len(val)
+}
+
 func (e *Encoder) WriteUint16(val uint16) {
 	if e.Error != nil {
 		return
