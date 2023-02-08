@@ -1,15 +1,11 @@
 package main
 
 import (
+	"github.com/kjander0/ctf/conf"
 	"github.com/kjander0/ctf/entity"
 	"github.com/kjander0/ctf/logger"
 	"github.com/kjander0/ctf/net"
 	"github.com/kjander0/ctf/web"
-)
-
-const (
-	TickRate = 30.0
-	TickSecs = 1.0 / TickRate
 )
 
 // TODO: Game struct should really be a game runner, providing players and update ticks to each game
@@ -26,7 +22,7 @@ func NewGame(clientC chan web.Client) Game {
 }
 
 func (g *Game) Run() {
-	ticker := NewTicker(TickRate)
+	ticker := NewTicker(float64(conf.Shared.TickRate))
 	ticker.Start()
 
 	for {

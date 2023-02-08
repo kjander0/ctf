@@ -15,7 +15,8 @@ import (
 // - server will start drop extra inputs to keep pace
 
 const (
-	maxBufferedInputs    = 20 // needs to be large enough to allow catchup of burst of delayed inputs
+	// TODO: these can be shared values if server prediction/correction is made to be the same
+	maxBufferedInputs    = 60 // needs to be large enough to allow catchup of burst of delayed inputs
 	maxMotionPredictions = 5  // too much motion extrapolation causes overshoot
 	maxReadsPerTick      = 10
 )
@@ -45,12 +46,12 @@ const (
 
 func ReceiveMessages(world *entity.World) {
 	for i := range world.PlayerList {
-		processMessages(&world.PlayerList[i])
+		processMessages(world, &world.PlayerList[i])
 	}
 }
 
 // Read and process a message from a player. Returns True if their could be more messages.
-func processMessages(player *entity.Player) {
+func processMessages(world *entity.World, player *entity.Player) {
 	// TODO: If client has spammed loads of messages, could loop here endlessly (limit reads per tick)
 	player.InputsAdvanced = false
 outer:
@@ -84,34 +85,23 @@ outer:
 		}
 	}
 
-	if player.InputsAdvanced || !player.GotFirstInput {
+	if !player.GotFirstInput {
 		return
 	}
 
-	// Input buffer has not grown, so we predict an input instead
-	numUnacked := 0
-	for i := range player.Inputs {
-		if !player.Inputs[i].Acked {
-			numUnacked += 1
-		}
-	}
-
+	// Predict next ticks input
 	predicted := entity.PlayerInput{}
 	// Extrapolation of movement for a limited number of ticks
-	if numUnacked < maxMotionPredictions {
+	numPredicted := len(player.PredictedInputs.Predicted)
+	if numPredicted < maxMotionPredictions {
 		predicted.Left = player.LastInput.Left
 		predicted.Right = player.LastInput.Right
 		predicted.Up = player.LastInput.Up
 		predicted.Down = player.LastInput.Down
+	} else {
+		logger.Debug("reached motion prediction limit")
 	}
-
-	player.Inputs = append(player.Inputs, predicted)
-
-	// TODO: use circular buffer of inputs so this dropping is taken care of
-	if len(player.Inputs) > maxBufferedInputs {
-		logger.Debug("predicted input overflows input buffer, DROPPING an input")
-		player.Inputs = player.Inputs[1:] // TODO: remove a predicted input, not an acked one!
-	}
+	player.PredictedInputs.Predict(predicted)
 }
 
 func processInputMsg(player *entity.Player, decoder Decoder) {
@@ -151,27 +141,7 @@ func processInputMsg(player *entity.Player, decoder Decoder) {
 
 	player.LastInput = newInputState
 
-	for i := range player.Inputs {
-		if !player.Inputs[i].Acked {
-			player.Inputs[i] = newInputState
-			return
-		}
-	}
-
-	if player.InputsAdvanced {
-		// have already grown input buffer, replace with latest
-		logger.Debug("Already advanced input, overwriting input")
-		player.Inputs[len(player.Inputs)-1] = newInputState
-		return
-	}
-
-	player.Inputs = append(player.Inputs, newInputState)
-	player.InputsAdvanced = true
-
-	if len(player.Inputs) > maxBufferedInputs {
-		logger.Debug("new input overflows input buffer, DROPPING an input")
-		player.Inputs = player.Inputs[1:]
-	}
+	player.PredictedInputs.Ack(newInputState, newInputState.ClientTick)
 }
 
 // Sends world state to all players
@@ -224,12 +194,8 @@ func prepareWorldUpdate(world *entity.World, playerIndex int) []byte {
 
 	var flags uint8
 
-	numAcked := 0
-	for i := range player.Inputs {
-		if player.Inputs[i].Acked {
-			numAcked += 1
-		}
-	}
+	numAcked := len(player.PredictedInputs.Acked)
+
 	if numAcked > 0 {
 		flags |= ackInputFlagBit
 	}
@@ -239,12 +205,9 @@ func prepareWorldUpdate(world *entity.World, playerIndex int) []byte {
 	encoder.WriteUint8(world.Tick)
 
 	if numAcked > 0 {
-		encoder.WriteUint8(player.Inputs[numAcked-1].ClientTick)
-		if !player.Inputs[numAcked-1].Acked {
-			logger.Panic("OH NO")
-		}
-		player.Inputs = player.Inputs[numAcked:]
+		encoder.WriteUint8(player.PredictedInputs.Acked[numAcked-1].ClientTick)
 	}
+	player.PredictedInputs.ClearAcked()
 
 	encoder.WriteVec(player.Pos)
 

@@ -19,9 +19,8 @@ type Player struct {
 	Client         web.Client
 	Pos            mymath.Vec
 	PredictedPos   mymath.Vec
-	Inputs         []PlayerInput
+	PredictedInputs PredictedInputs
 	LastInput      PlayerInput
-	InputsAdvanced bool
 	GotFirstInput  bool
 	DoDisconnect   bool
 }

@@ -14,8 +14,8 @@ class Predicted {
         if (isNaN(tick)) {
             throw "bad tick parameter"
         }
-        this.unacked.push(new Prediction(val, tick));
-        if (this.unacked.length > this.capacity) {
+        let len = this.unacked.push(new Prediction(val, tick));
+        if (len > this.capacity) {
             console.log("prediction buffer full, dropping one");
             this.unacked.splice(0, 1);
         }
@@ -26,14 +26,18 @@ class Predicted {
             throw "bad tick parameter"
         }
         let numAcked = 0;
+        let found = false;
         for (let h of this.unacked) {
             if (h.tick === tick) {
+                found = true;
                 numAcked++;
                 break;
             }
             numAcked++;
         }
+        console.log(found, numAcked);
         this.unacked.splice(0, numAcked);
+
         return numAcked;
     }
 

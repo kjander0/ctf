@@ -131,7 +131,7 @@ function _processUpdateMsg(world, decoder) {
         otherPlayer.disconnected = false;
         otherPlayer.lastAckedPos = decoder.readVec();
         otherPlayer.lastAckedDirNum = decoder.readUint8();
-        otherPlayer.predictedDirs.ack(otherPlayer.lastAckedDirNum, world.serverTick);
+        otherPlayer.predictedDirs.ack(world.serverTick);
     }
 
     let numNewLasers = decoder.readUint16();

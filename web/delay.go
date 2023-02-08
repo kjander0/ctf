@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	delayMs  = 100
-	jitterMs = 20
+	delayMs  = 200
+	jitterMs = 200
 	lossRate = 0.001
 )
 

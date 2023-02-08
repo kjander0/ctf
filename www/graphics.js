@@ -72,8 +72,8 @@ function update(world) {
         let lerpPos = lerpVec(other.prevPos, other.pos, lerpFraction);
         other.graphic.x = lerpPos.x;
         other.graphic.y = lerpPos.y;
-        //other.lastAckedGraphic.x = other.lastAckedPos.x;
-        //other.lastAckedGraphic.y = other.lastAckedPos.y;
+        other.lastAckedGraphic.x = other.lastAckedPos.x;
+        other.lastAckedGraphic.y = other.lastAckedPos.y;
     }
 
     let lineGfx = world.gfx.lineGfx;

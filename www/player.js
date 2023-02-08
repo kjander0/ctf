@@ -116,9 +116,8 @@ function update(world) {
 function _moveOtherPlayer(player, world) {
     player.prevPos = player.pos;
     player.pos = player.lastAckedPos;
-
     for (let predicted of player.predictedDirs.unacked) {
-        let disp = _dirFromNum(predicted.val).scale(conf.PLAYER_SPEED)
+        let disp = _dirFromNum(predicted.val).scale(conf.PLAYER_SPEED);
         player.pos = player.pos.add(disp);
     }
 
