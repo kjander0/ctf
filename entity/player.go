@@ -4,6 +4,7 @@ import (
 	"math"
 
 	"github.com/kjander0/ctf/conf"
+	"github.com/kjander0/ctf/logger"
 	"github.com/kjander0/ctf/mymath"
 	"github.com/kjander0/ctf/web"
 )
@@ -13,27 +14,31 @@ const (
 	PlayerStateAlive
 )
 
+const (
+	// TODO: these can be shared values if server prediction/correction is made to be the same
+	maxPredictedInputs   = 60 // needs to be large enough to allow catchup of burst of delayed inputs
+	maxMotionPredictions = 5  // too much motion extrapolation causes overshoot
+)
+
 type Player struct {
-	Id             uint8
-	State          int
-	Client         web.Client
-	Pos            mymath.Vec
-	PredictedPos   mymath.Vec
+	Id              uint8
+	State           int
+	Client          web.Client
+	Pos             mymath.Vec
+	PredictedPos    mymath.Vec
 	PredictedInputs PredictedInputs
-	LastInput      PlayerInput
-	GotFirstInput  bool
-	DoDisconnect   bool
+	LastInput       PlayerInput
+	GotFirstInput   bool
+	DoDisconnect    bool
 }
 
 type PlayerInput struct {
-	Acked      bool
-	ClientTick uint8
-	Left       bool
-	Right      bool
-	Up         bool
-	Down       bool
-	DoShoot    bool
-	AimAngle   float64
+	Left     bool
+	Right    bool
+	Up       bool
+	Down     bool
+	DoShoot  bool
+	AimAngle float64
 }
 
 var dirMap = [3][3]int{
@@ -62,9 +67,10 @@ func (in PlayerInput) GetDirNum() int {
 
 func NewPlayer(id uint8, client web.Client) Player {
 	return Player{
-		Id:     id,
-		State:  PlayerStateJoining,
-		Client: client,
+		Id:              id,
+		State:           PlayerStateJoining,
+		Client:          client,
+		PredictedInputs: NewPredictedInputs(maxPredictedInputs),
 	}
 }
 
@@ -72,42 +78,63 @@ func UpdatePlayers(world *World) {
 	world.NewLasers = world.NewLasers[:0]
 	for i := range world.PlayerList {
 		player := &world.PlayerList[i]
-		player.PredictedPos = player.Pos
-		for _, input := range player.Inputs {
-			movePlayer(player, input)
-			spawnProjectile(world, player, input)
+		processAckedInputs(world, player)
+		processPredictedInputs(world, player)
+		if !player.GotFirstInput {
+			continue
 		}
+		predictNextInput(world, player)
 	}
 }
 
-func movePlayer(player *Player, input PlayerInput) {
-	disp := calcDisplacement(input)
-	if input.Acked {
+func processAckedInputs(world *World, player *Player) {
+	for _, input := range player.PredictedInputs.Acked {
+		disp := calcDisplacement(input)
 		player.Pos = player.Pos.Add(disp)
-		player.PredictedPos = player.Pos
-		return
+
+		if !input.DoShoot {
+			continue
+		}
+
+		dir := mymath.Vec{X: math.Cos(input.AimAngle), Y: math.Sin(input.AimAngle)}
+		newLaser := Laser{
+			player.Id,
+			mymath.Line{
+				Start: player.Pos,
+				End:   player.Pos,
+			},
+			dir,
+			input.AimAngle,
+		}
+
+		world.LaserList = append(world.LaserList, newLaser)
+		world.NewLasers = append(world.NewLasers, &world.LaserList[len(world.LaserList)-1])
 	}
-	player.PredictedPos = player.PredictedPos.Add(disp)
 }
 
-func spawnProjectile(world *World, player *Player, input PlayerInput) {
-	if !input.DoShoot {
-		return
-	}
+func processPredictedInputs(world *World, player *Player) {
+	player.PredictedPos = player.Pos
 
-	dir := mymath.Vec{X: math.Cos(input.AimAngle), Y: math.Sin(input.AimAngle)}
-	newLaser := Laser{
-		player.Id,
-		mymath.Line{
-			Start: player.Pos,
-			End:   player.Pos,
-		},
-		dir,
-		input.AimAngle,
+	for _, prediction := range player.PredictedInputs.Predicted {
+		disp := calcDisplacement(prediction.input)
+		player.PredictedPos = player.PredictedPos.Add(disp)
 	}
+}
 
-	world.LaserList = append(world.LaserList, newLaser)
-	world.NewLasers = append(world.NewLasers, &world.LaserList[len(world.LaserList)-1])
+func predictNextInput(world *World, player *Player) {
+	// Predict next ticks input
+	predicted := PlayerInput{}
+	// Extrapolation of movement for a limited number of ticks
+	numPredicted := len(player.PredictedInputs.Predicted)
+	if numPredicted < maxMotionPredictions {
+		predicted.Left = player.LastInput.Left
+		predicted.Right = player.LastInput.Right
+		predicted.Up = player.LastInput.Up
+		predicted.Down = player.LastInput.Down
+	} else {
+		logger.Debug("reached motion prediction limit")
+	}
+	player.PredictedInputs.Predict(predicted, world.Tick+1)
 }
 
 func calcDisplacement(input PlayerInput) mymath.Vec {

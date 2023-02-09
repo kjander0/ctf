@@ -35,7 +35,6 @@ class Predicted {
             }
             numAcked++;
         }
-        console.log(found, numAcked);
         this.unacked.splice(0, numAcked);
 
         return numAcked;

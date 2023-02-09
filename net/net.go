@@ -15,10 +15,7 @@ import (
 // - server will start drop extra inputs to keep pace
 
 const (
-	// TODO: these can be shared values if server prediction/correction is made to be the same
-	maxBufferedInputs    = 60 // needs to be large enough to allow catchup of burst of delayed inputs
-	maxMotionPredictions = 5  // too much motion extrapolation causes overshoot
-	maxReadsPerTick      = 10
+	maxReadsPerTick = 10
 )
 
 const (
@@ -52,8 +49,6 @@ func ReceiveMessages(world *entity.World) {
 
 // Read and process a message from a player. Returns True if their could be more messages.
 func processMessages(world *entity.World, player *entity.Player) {
-	// TODO: If client has spammed loads of messages, could loop here endlessly (limit reads per tick)
-	player.InputsAdvanced = false
 outer:
 	for i := 0; i < maxReadsPerTick; i++ {
 		var msgBytes []byte
@@ -84,32 +79,12 @@ outer:
 			return
 		}
 	}
-
-	if !player.GotFirstInput {
-		return
-	}
-
-	// Predict next ticks input
-	predicted := entity.PlayerInput{}
-	// Extrapolation of movement for a limited number of ticks
-	numPredicted := len(player.PredictedInputs.Predicted)
-	if numPredicted < maxMotionPredictions {
-		predicted.Left = player.LastInput.Left
-		predicted.Right = player.LastInput.Right
-		predicted.Up = player.LastInput.Up
-		predicted.Down = player.LastInput.Down
-	} else {
-		logger.Debug("reached motion prediction limit")
-	}
-	player.PredictedInputs.Predict(predicted)
 }
 
 func processInputMsg(player *entity.Player, decoder Decoder) {
 	flags := decoder.ReadUint8()
 	var newInputState entity.PlayerInput
-	newInputState.Acked = true
-
-	newInputState.ClientTick = decoder.ReadUint8() // read tick count
+	clientTick := decoder.ReadUint8() // read tick count
 
 	cmdBits := decoder.ReadUint8()
 	if (cmdBits & leftBit) == leftBit {
@@ -141,7 +116,7 @@ func processInputMsg(player *entity.Player, decoder Decoder) {
 
 	player.LastInput = newInputState
 
-	player.PredictedInputs.Ack(newInputState, newInputState.ClientTick)
+	player.PredictedInputs.Ack(newInputState, clientTick)
 }
 
 // Sends world state to all players
@@ -176,7 +151,9 @@ func prepareInitMsg(world *entity.World, playerIndex int) []byte {
 	encoder.WriteUint8(initMsgType)
 	encoder.WriteUint8(world.PlayerList[playerIndex].Id)
 	// TODO: encode world once, send to all joining players
+	encoder.WriteUint16(uint16(len(world.Level.Rows)))
 	for i := range world.Level.Rows {
+		encoder.WriteUint16(uint16(len(world.Level.Rows[i])))
 		encoder.WriteBytes(world.Level.Rows[i])
 	}
 	if encoder.Error != nil {
@@ -205,7 +182,7 @@ func prepareWorldUpdate(world *entity.World, playerIndex int) []byte {
 	encoder.WriteUint8(world.Tick)
 
 	if numAcked > 0 {
-		encoder.WriteUint8(player.PredictedInputs.Acked[numAcked-1].ClientTick)
+		encoder.WriteUint8(player.PredictedInputs.LastAckedTick)
 	}
 	player.PredictedInputs.ClearAcked()
 

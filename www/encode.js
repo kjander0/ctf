@@ -42,8 +42,10 @@ class Encoder {
 class Decoder {
     _dv;
     _offset = 0;
+    _buf;
 
     constructor(buf) {
+        this._buf = buf;
         this._dv = new DataView(buf);
     }
 
@@ -77,6 +79,12 @@ class Decoder {
         let y = this._dv.getFloat64(this._offset);
         this._offset += 8;
         return new Vec(x, y);
+    }
+
+    uint8Array(size) {
+        let arr = new Uint8Array(this._buf, this._offset, size);
+        this._offset += size;
+        return arr;
     }
 }
 

@@ -93,7 +93,15 @@ function consumeMessage(msg, world) {
 
 function _processInitMsg(world, decoder) {
     world.player.id = decoder.readUint8();
-    Read number of bytes in each row
+    let numRows = decoder.readUint16();
+    let rows = [];
+    for (let i = 0; i < numRows; i++) {
+        let numTiles = decoder.readUint16();
+        let arr = decoder.uint8Array(numTiles);
+        rows.push(Array.from(arr));
+    }
+    // TODO: once init received, change player network state and create level elsewhere
+    world.gfx.addLevel(rows);
 }
 
 function _processUpdateMsg(world, decoder) {

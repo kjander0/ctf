@@ -1,6 +1,7 @@
 import {lerpVec, extrapolateVec} from "./interpolate.js"
 import { Vec } from "./math.js";
 import * as conf from "./conf.js"
+import {TileMap} from "./tilemap.js"
 
 class Graphics {
     camContainer;
@@ -50,6 +51,20 @@ class Graphics {
         }
         this.camContainer.addChild(p);
         return p;
+    }
+
+    addLevel(rows) {
+        let g = new PIXI.Graphics();
+        g.beginFill(0x555555);
+        for (let r = 0; r < rows.length; r++) {
+            for (let c = 0; c < rows[r].length; c++) {
+                if (rows[r][c] == TileMap.EMPTY) {
+                    continue;
+                }
+                g.drawRect(c * TileMap.TILE_SIZE, r * TileMap.TILE_SIZE, TileMap.TILE_SIZE, TileMap.TILE_SIZE);
+            }
+        }
+        this.camContainer.addChild(g);
     }
 
     remove(graphic) {
