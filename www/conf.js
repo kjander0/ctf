@@ -1,5 +1,6 @@
 let shared = null;
 let UPDATE_MS;
+let TILE_SIZE;
 let PLAYER_SPEED;
 let LASER_SPEED;
 
@@ -11,6 +12,7 @@ async function retrieveConf()
              if (xmlHttp.status == 200) {
                 shared = JSON.parse(xmlHttp.responseText);
                 UPDATE_MS = 1000 / shared.TickRate;
+                TILE_SIZE = shared.TileSize;
                 PLAYER_SPEED = shared.PlayerSpeed;
                 LASER_SPEED = shared.LaserSpeed;
                 resolve();
@@ -24,4 +26,4 @@ async function retrieveConf()
     return promise;
 }
 
-export {retrieveConf, UPDATE_MS, PLAYER_SPEED, LASER_SPEED};
+export {retrieveConf, UPDATE_MS, TILE_SIZE, PLAYER_SPEED, LASER_SPEED};

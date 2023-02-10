@@ -68,6 +68,7 @@ func (in PlayerInput) GetDirNum() int {
 func NewPlayer(id uint8, client web.Client) Player {
 	return Player{
 		Id:              id,
+		Pos:             mymath.Vec{50, 50},
 		State:           PlayerStateJoining,
 		Client:          client,
 		PredictedInputs: NewPredictedInputs(maxPredictedInputs),
@@ -91,6 +92,7 @@ func processAckedInputs(world *World, player *Player) {
 	for _, input := range player.PredictedInputs.Acked {
 		disp := calcDisplacement(input)
 		player.Pos = player.Pos.Add(disp)
+		player.Pos = constrainPlayerPos(world, player.Pos)
 
 		if !input.DoShoot {
 			continue
@@ -118,7 +120,27 @@ func processPredictedInputs(world *World, player *Player) {
 	for _, prediction := range player.PredictedInputs.Predicted {
 		disp := calcDisplacement(prediction.input)
 		player.PredictedPos = player.PredictedPos.Add(disp)
+		player.PredictedPos = constrainPlayerPos(world, player.PredictedPos)
 	}
+}
+
+func constrainPlayerPos(world *World, pos mymath.Vec) mymath.Vec {
+	// TODO: if pass in prev pos, can eliminate some collision checks
+	tileSample := world.Map.SampleSolidTiles(pos, conf.Shared.PlayerRadius)
+	logger.Debug("sample size: ", len(tileSample))
+	tileSize := float64(conf.Shared.TileSize)
+	tileRect := mymath.Rect{Size: mymath.Vec{tileSize, tileSize}}
+	playerCircle := mymath.Circle{Radius: conf.Shared.PlayerRadius}
+	for _, tilePos := range tileSample {
+		playerCircle.Pos = pos
+		tileRect.Pos = tilePos
+		overlaps, overlap := mymath.CircleRectOverlap(playerCircle, tileRect)
+		if !overlaps {
+			continue
+		}
+		pos = pos.Add(overlap)
+	}
+	return pos
 }
 
 func predictNextInput(world *World, player *Player) {
@@ -152,5 +174,9 @@ func calcDisplacement(input PlayerInput) mymath.Vec {
 	if input.Down {
 		dir.Y -= 1
 	}
-	return dir.Scale(conf.Shared.PlayerSpeed)
+	len := dir.Length()
+	if len < 1e-6 {
+		return dir
+	}
+	return dir.Scale(conf.Shared.PlayerSpeed / len)
 }

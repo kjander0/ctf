@@ -70,40 +70,14 @@ function update(world) {
     // TODO: make dirFromInput function so we don't have these 4 if confitions repeated twice
     for (let unacked of world.player.predictedInputs.unacked) {
         let inputState = unacked.val;
-        let dir = new Vec();
-        if (inputState.left) {
-            dir.x -= 1;
-        }
-        if (inputState.right) {
-            dir.x += 1;
-        }
-        if (inputState.up) {
-            dir.y += 1;
-        }
-        if (inputState.down) {
-            dir.y -= 1;
-        }
-        world.player.correctedPos = world.player.correctedPos.add(dir.scale(conf.PLAYER_SPEED));
+        let disp = _calcDisplacement(inputState);
+        world.player.correctedPos = world.player.correctedPos.add(disp);
     }
 
     // TODO: might want to delay prediction by a tick so player sees closer to server reality
-    let diff = new Vec();
-    if (world.player.inputState.left) {
-        diff.x -= 1;
-    }
-    if (world.player.inputState.right) {
-        diff.x += 1;
-    }
-    if (world.player.inputState.up) {
-        diff.y += 1;
-    }
-    if (world.player.inputState.down) {
-        diff.y -= 1;
-    }
-    diff = diff.scale(conf.PLAYER_SPEED);
-
+    let disp = _calcDisplacement(world.player.inputState);
     world.player.prevPos = world.player.pos;
-    world.player.pos = world.player.pos.add(diff);
+    world.player.pos = world.player.pos.add(disp);
     
     let correction = world.player.correctedPos.sub(world.player.pos);
     let corrLen = correction.length();
@@ -135,6 +109,27 @@ function _calcAimAngle(startPos, aimPos) {
         return 0;
     }
     return Math.atan2(dir.y, dir.x);
+}
+
+function _calcDisplacement(input) {
+    let dir = new Vec();
+    if (input.left) {
+        dir.x -= 1;
+    }
+    if (input.right) {
+        dir.x += 1;
+    }
+    if (input.up) {
+        dir.y += 1;
+    }
+    if (input.down) {
+        dir.y -= 1;
+    }
+    let len = dir.length();
+    if (len < 1e-6) {
+        return dir;
+    }
+    return dir.scale(conf.PLAYER_SPEED/len);
 }
 
 // direction numbers

@@ -22,8 +22,6 @@ async function connect(world) {
         consumeMessage(event.data, world);
     });
 
-
-
     return connectPromise;
 }
 
@@ -157,6 +155,11 @@ function _processUpdateMsg(world, decoder) {
         }
         newLaser.line.end.set(laserEnd);
         world.laserList.push(newLaser);
+    }
+
+    let numNewHits = decoder.readUint16();
+    for (let i = 0; i < numNewHits; i++) {
+        world.hits.push(decoder.readVec());
     }
 }
 

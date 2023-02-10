@@ -1,7 +1,7 @@
-import {lerpVec, extrapolateVec} from "./interpolate.js"
+import {lerpVec, extrapolateVec} from "./interpolate.js";
 import { Vec } from "./math.js";
-import * as conf from "./conf.js"
-import {TileMap} from "./tilemap.js"
+import {TileMap} from "./tilemap.js";
+import * as conf from "./conf.js";
 
 class Graphics {
     camContainer;
@@ -61,7 +61,7 @@ class Graphics {
                 if (rows[r][c] == TileMap.EMPTY) {
                     continue;
                 }
-                g.drawRect(c * TileMap.TILE_SIZE, r * TileMap.TILE_SIZE, TileMap.TILE_SIZE, TileMap.TILE_SIZE);
+                g.drawRect(c * conf.TILE_SIZE, (r) * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE);
             }
         }
         this.camContainer.addChild(g);
@@ -82,6 +82,9 @@ function update(world) {
     world.player.lastAckedGraphic.y = world.player.lastAckedPos.y;
     world.player.correctedGraphic.x = world.player.correctedPos.x;
     world.player.correctedGraphic.y = world.player.correctedPos.y;
+
+    world.gfx.moveCamera(lerpPos.x, lerpPos.y);
+
 
     for (let other of world.otherPlayers) {
         let lerpPos = lerpVec(other.prevPos, other.pos, lerpFraction);

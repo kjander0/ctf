@@ -151,10 +151,10 @@ func prepareInitMsg(world *entity.World, playerIndex int) []byte {
 	encoder.WriteUint8(initMsgType)
 	encoder.WriteUint8(world.PlayerList[playerIndex].Id)
 	// TODO: encode world once, send to all joining players
-	encoder.WriteUint16(uint16(len(world.Level.Rows)))
-	for i := range world.Level.Rows {
-		encoder.WriteUint16(uint16(len(world.Level.Rows[i])))
-		encoder.WriteBytes(world.Level.Rows[i])
+	encoder.WriteUint16(uint16(len(world.Map.Rows)))
+	for i := range world.Map.Rows {
+		encoder.WriteUint16(uint16(len(world.Map.Rows[i])))
+		encoder.WriteBytes(world.Map.Rows[i])
 	}
 	if encoder.Error != nil {
 		logger.Panic("prepareInitMsg: encoder error: ", encoder.Error)
@@ -209,6 +209,11 @@ func prepareWorldUpdate(world *entity.World, playerIndex int) []byte {
 		numNewLasers += 1
 	}
 	encoder.WriteUint16At(numNewLasers, numLasersOffset)
+
+	encoder.WriteUint16(uint16(len(world.NewHits)))
+	for i := range world.NewHits {
+		encoder.WriteVec(world.NewHits[i])
+	}
 
 	if encoder.Error != nil {
 		logger.Panic("prepareWorldUpdate: encoder error: ", encoder.Error)

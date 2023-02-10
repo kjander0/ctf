@@ -1,11 +1,14 @@
 package entity
 
+import "github.com/kjander0/ctf/mymath"
+
 type World struct {
 	Tick          uint8
-	Level         Level
+	Map           Map
 	PlayerList    []Player
 	LaserList     []Laser
 	NewLasers     []*Laser
+	NewHits       []mymath.Vec
 	freePlayerIds []uint8
 	playerIdCount int
 }
@@ -37,9 +40,12 @@ func NewWorld() World {
 		{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1},
 		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
 	}
-	level := Level{rows}
+	// rows = [][]uint8{
+	// 	{0, 1},
+	// 	{0, 0},
+	// }
 	return World{
-		Level: level,
+		Map: Map{rows},
 	}
 }
 
