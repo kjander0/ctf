@@ -53,7 +53,7 @@ func CircleRectOverlap(c Circle, r Rect) (bool, Vec) {
 }
 
 // Overlap from circle to line
-func CircleLineOverlap(circle Circle, l Line) (bool, Vec) {
+func LineCircleOverlap(circle Circle, l Line) (bool, Vec) {
 	u := l.Start.Sub(circle.Pos)
 	v := l.End.Sub(l.Start)
 	a := v.Dot(v)
@@ -70,7 +70,7 @@ func CircleLineOverlap(circle Circle, l Line) (bool, Vec) {
 		return false, u
 	}
 	pos := l.Start.Add(v.Scale(t1))
-	return true, l.End.Sub(pos)
+	return true, pos.Sub(l.End)
 }
 
 func LineRectOverlap(l Line, r Rect) (bool, Vec) {
@@ -98,7 +98,7 @@ func LineRectOverlap(l Line, r Rect) (bool, Vec) {
 	}
 
 	if intersects {
-		return true, l.End.Sub(intersection)
+		return true, intersection.Sub(l.End)
 	}
 	return false, intersection
 }

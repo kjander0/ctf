@@ -7,6 +7,7 @@ import (
 )
 
 // TODO
+// - Client should probs start dropping world updates when minimised (otherwise they see million lasers spawned in)
 // - TCP NODELAY, server and client
 // - Generate a www/config.js from a config.go for shared parameters (tick rate, etc)
 // - improve precision of ticker (sleep in smaller intervals?)

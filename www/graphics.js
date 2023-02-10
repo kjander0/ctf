@@ -67,6 +67,15 @@ class Graphics {
         this.camContainer.addChild(g);
     }
 
+    addHit(pos) {
+        let g = new PIXI.Graphics();
+        g.beginFill(0xff0000);
+        g.drawCircle(pos.x, pos.y, 2);
+        g.endFill();
+        this.camContainer.addChild(g);
+        return g;
+    }
+
     remove(graphic) {
         this.camContainer.removeChild(graphic);
         graphic.destroy();

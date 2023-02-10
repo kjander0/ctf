@@ -159,7 +159,8 @@ function _processUpdateMsg(world, decoder) {
 
     let numNewHits = decoder.readUint16();
     for (let i = 0; i < numNewHits; i++) {
-        world.hits.push(decoder.readVec());
+        let hitPos = decoder.readVec();
+        world.gfx.addHit(hitPos);
     }
 }
 
