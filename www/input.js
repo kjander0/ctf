@@ -18,7 +18,8 @@ class Input {
     static CMD_UP = 2;
     static CMD_DOWN = 3;
     static CMD_SHOOT = 4;
-    static CMD_LAST = 5; // MUST BE LAST
+    static CMD_SECONDARY = 5;
+    static CMD_LAST = 6; // MUST BE LAST
 
     _pixiApp;
     _commands = [];
@@ -40,8 +41,15 @@ class Input {
         document.addEventListener("keydown", (event) => this._onKeyDown(event));
         document.addEventListener("keyup", (event) => this._onKeyUp(event));
         pixiApp.stage.addEventListener("mousedown", (event) => this._onMouseDown(event));
+        pixiApp.stage.addEventListener("rightdown", (event) => this._onMouseDown(event));
         pixiApp.stage.addEventListener("mouseup", (event) => this._onMouseUp(event));
+        pixiApp.stage.addEventListener("rightup", (event) => this._onMouseUp(event));
         pixiApp.stage.addEventListener("mousemove", (event) => this._onMouseMove(event));
+        // Suppress right click context menu
+        document.addEventListener('contextmenu', (event) => {
+            event.preventDefault();
+            return false;
+        }, false);
     }
 
     getCommand(cmdIndex) {
@@ -92,6 +100,9 @@ class Input {
     
     _onMouseDown(event) {
         let cmdIndex = Input.CMD_SHOOT;
+        if (event.button === 2) {
+            cmdIndex = Input.CMD_SECONDARY;
+        }
         let cmd = this._commands[cmdIndex];
         if (cmd === undefined) {
             return;
@@ -104,6 +115,9 @@ class Input {
     
     _onMouseUp(event) {
         let cmdIndex = Input.CMD_SHOOT;
+        if (event.button === 2) {
+            cmdIndex = Input.CMD_SECONDARY;
+        }
         let cmd = this._commands[cmdIndex];
         if (cmd === undefined) {
             return;

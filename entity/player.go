@@ -24,6 +24,7 @@ type Player struct {
 	Id              uint8
 	State           int
 	Client          web.Client
+	Health          int
 	Pos             mymath.Vec
 	PredictedPos    mymath.Vec
 	PredictedInputs PredictedInputs
@@ -68,6 +69,7 @@ func (in PlayerInput) GetDirNum() int {
 func NewPlayer(id uint8, client web.Client) Player {
 	return Player{
 		Id:              id,
+		Health:          conf.Shared.PlayerHealth,
 		Pos:             mymath.Vec{50, 50},
 		State:           PlayerStateJoining,
 		Client:          client,

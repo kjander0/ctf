@@ -12,6 +12,7 @@ type SharedParams struct {
 	TileSize     int
 	PlayerSpeed  float64
 	PlayerRadius float64
+	PlayerHealth int
 	LaserSpeed   float64
 }
 
@@ -20,6 +21,7 @@ var Shared = SharedParams{
 	TileSize:     16,
 	PlayerSpeed:  2,
 	PlayerRadius: 10,
+	PlayerHealth: 10,
 	LaserSpeed:   7,
 }
 

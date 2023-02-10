@@ -24,8 +24,7 @@ func UpdateProjectiles(world *World) {
 		world.LaserList[i].Line = line
 	}
 
-	// Check collisions against walls
-
+	// Check collisions
 	for i := len(world.LaserList) - 1; i >= 0; i-- { // reverse iterate for removing elements
 		line := world.LaserList[i].Line
 		hitDist, hitPos := checkWallHit(world, line)
@@ -36,6 +35,10 @@ func UpdateProjectiles(world *World) {
 		}
 
 		if player != nil {
+			player.Health -= 1
+			if player.Health <= 0 {
+				player.DoDisconnect = true
+			}
 			hitPos = playerHitPos
 		}
 

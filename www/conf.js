@@ -2,6 +2,7 @@ let shared = null;
 let UPDATE_MS;
 let TILE_SIZE;
 let PLAYER_SPEED;
+let PLAYER_HEALTH;
 let LASER_SPEED;
 
 async function retrieveConf()
@@ -14,6 +15,7 @@ async function retrieveConf()
                 UPDATE_MS = 1000 / shared.TickRate;
                 TILE_SIZE = shared.TileSize;
                 PLAYER_SPEED = shared.PlayerSpeed;
+                PLAYER_HEALTH = shared.PlayerHealth;
                 LASER_SPEED = shared.LaserSpeed;
                 resolve();
                 return;
