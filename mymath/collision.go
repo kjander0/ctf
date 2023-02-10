@@ -66,7 +66,7 @@ func LineCircleOverlap(circle Circle, l Line) (bool, Vec) {
 	sqrt := math.Sqrt(discriminant)
 	t1 := (-b - sqrt) / (2 * a)
 	t2 := (-b + sqrt) / (2 * a)
-	if t2 < 0 || t1 > 1 {
+	if t2 <= 0 || t1 >= 1 {
 		return false, u
 	}
 	pos := l.Start.Add(v.Scale(t1))

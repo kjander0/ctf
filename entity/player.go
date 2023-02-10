@@ -127,7 +127,6 @@ func processPredictedInputs(world *World, player *Player) {
 func constrainPlayerPos(world *World, pos mymath.Vec) mymath.Vec {
 	// TODO: if pass in prev pos, can eliminate some collision checks
 	tileSample := world.Map.SampleSolidTiles(pos, conf.Shared.PlayerRadius)
-	logger.Debug("sample size: ", len(tileSample))
 	tileSize := float64(conf.Shared.TileSize)
 	tileRect := mymath.Rect{Size: mymath.Vec{tileSize, tileSize}}
 	playerCircle := mymath.Circle{Radius: conf.Shared.PlayerRadius}
