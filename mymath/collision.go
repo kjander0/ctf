@@ -2,26 +2,10 @@ package mymath
 
 import (
 	"math"
-
-	"github.com/kjander0/ctf/logger"
 )
-
-// Overlap from c0 to c1
-func CircleOverlap(c0 Circle, c1 Circle) (bool, Vec) {
-	disp := c1.Pos.Sub(c0.Pos)
-	dispLen := disp.Length()
-	overlapLen := (c0.Radius + c1.Radius) - dispLen
-	if overlapLen <= 0 {
-		return false, disp
-	}
-
-	return true, disp.Scale(overlapLen / dispLen)
-}
 
 // Overlap from rect to circle
 func CircleRectOverlap(c Circle, r Rect) (bool, Vec) {
-	var overlap Vec
-
 	closestLine := r.ClosestSide(c.Pos)
 	closestPoint := closestLine.ClosestPoint(c.Pos)
 
@@ -36,19 +20,18 @@ func CircleRectOverlap(c Circle, r Rect) (bool, Vec) {
 	sepLen := sepAxis.Length()
 
 	if sepLen >= c.Radius && !centreInside {
-		return false, overlap
+		return false, Vec{}
 	}
 
 	// Make sepAxis unit vector
 	if sepLen < 1e-6 {
-		logger.Debug("doing the crappy overlap case")
 		rectMid := r.Pos.Add(r.Size.Scale(0.5))
 		sepAxis = closestPoint.Sub(rectMid)
 		sepLen = sepAxis.Length()
 	}
-	sepAxis = sepAxis.Scale(1 / sepLen)
+	sepAxis = sepAxis.Scale(1.0 / sepLen)
 
-	overlap = closestPoint.Sub(c.Pos.Add(sepAxis.Scale(-c.Radius)))
+	overlap := closestPoint.Sub(c.Pos.Add(sepAxis.Scale(-c.Radius)))
 	return true, overlap
 }
 
@@ -73,7 +56,7 @@ func LineCircleOverlap(circle Circle, l Line) (bool, Vec) {
 	return true, pos.Sub(l.End)
 }
 
-func LineRectOverlap(l Line, r Rect) (bool, Vec) {
+func LineRectOverlap(l Line, r Rect) (bool, Vec, Vec) {
 	u := l.End.Sub(l.Start)
 
 	if r.ContainsPoint(l.Start) {
@@ -83,22 +66,27 @@ func LineRectOverlap(l Line, r Rect) (bool, Vec) {
 
 	var intersects bool
 	var intersection Vec
+	var normal Vec
 	if u.X > 0 {
 		intersects, intersection = l.Intersection(r.LeftLine())
+		normal = Vec{-1, 0}
 	} else {
 		intersects, intersection = l.Intersection(r.RightLine())
+		normal = Vec{1, 0}
 	}
 
 	if !intersects {
 		if u.Y > 0 {
 			intersects, intersection = l.Intersection(r.BottomLine())
+			normal = Vec{0, -1}
 		} else {
 			intersects, intersection = l.Intersection(r.TopLine())
+			normal = Vec{0, 1}
 		}
 	}
 
 	if intersects {
-		return true, intersection.Sub(l.End)
+		return true, intersection.Sub(l.End), normal
 	}
-	return false, intersection
+	return false, intersection, normal
 }

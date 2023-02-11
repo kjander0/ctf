@@ -1,6 +1,7 @@
 import { Encoder, Decoder } from "./encode.js";
 import { Player} from "./player.js";
 import { Laser } from "./weapons.js";
+import { Map } from "./map.js"
 
 let socket;
 
@@ -36,6 +37,7 @@ const downBit = 8;
 
 // Flags from client
 const shootFlagBit = 1;
+const secondaryFlagBit = 2;
 
 // Flags from server
 const ackInputFlagBit = 1;
@@ -64,13 +66,16 @@ function sendInput(world) {
     if (playerInput.doShoot) {
         flags |= shootFlagBit;
     }
+    if (playerInput.doSecondary) {
+        flags |= secondaryFlagBit;
+    }
 
     encoder.reset();
     encoder.writeUint8(inputMsgType);
     encoder.writeUint8(flags);
     encoder.writeUint8(playerInput.clientTick);
     encoder.writeUint8(cmdBits);
-    if (playerInput.doShoot) {
+    if (playerInput.doShoot || playerInput.doSecondary) {
         encoder.writeFloat64(playerInput.aimAngle);
     }
 	socket.send(encoder.getView());
@@ -98,6 +103,7 @@ function _processInitMsg(world, decoder) {
         let arr = decoder.uint8Array(numTiles);
         rows.push(Array.from(arr));
     }
+    world.map = new Map(rows);
     // TODO: once init received, change player network state and create level elsewhere
     world.gfx.addLevel(rows);
 }
@@ -117,7 +123,6 @@ function _processUpdateMsg(world, decoder) {
         world.player.predictedInputs.ack(ackedTick);
         world.player.lastAckedPos = pos;
     }
-
 
     for (let otherPlayer of world.otherPlayers) {
         otherPlayer.disconnected = true;
@@ -142,6 +147,7 @@ function _processUpdateMsg(world, decoder) {
 
     let numNewLasers = decoder.readUint16();
     for (let i = 0; i < numNewLasers; i++) {
+        let type = decoder.readUint8();
         let id = decoder.readUint8();
         let player = world.otherPlayers.find(p => id === p.id);
         if (player === undefined) {
@@ -149,7 +155,7 @@ function _processUpdateMsg(world, decoder) {
         }
         let laserEnd = decoder.readVec();
         let aimAngle = decoder.readFloat64();
-        let newLaser = new Laser(player.lastAckedPos, aimAngle);
+        let newLaser = new Laser(type, id, player.lastAckedPos, aimAngle);
         if (player === world.player) {
             newLaser.compensated = true;
         }

@@ -33,7 +33,8 @@ const (
 
 // Flags from client
 const (
-	shootFlagBit = 1
+	shootFlagBit     = 1
+	secondaryFlagBit = 2
 )
 
 // Flags from server
@@ -104,7 +105,12 @@ func processInputMsg(player *entity.Player, decoder Decoder) {
 	}
 
 	if (flags & shootFlagBit) == shootFlagBit {
-		newInputState.DoShoot = true
+		newInputState.ShootPrimary = true
+		newInputState.AimAngle = decoder.ReadFloat64()
+	}
+
+	if (flags & secondaryFlagBit) == secondaryFlagBit {
+		newInputState.ShootSecondary = true
 		newInputState.AimAngle = decoder.ReadFloat64()
 	}
 
@@ -203,6 +209,7 @@ func prepareWorldUpdate(world *entity.World, playerIndex int) []byte {
 	encoder.WriteUint16(0) // placeholder number of new lasers
 	for i := range world.NewLasers {
 		laser := world.NewLasers[i]
+		encoder.WriteUint8(laser.Type)
 		encoder.WriteUint8(laser.PlayerId)
 		encoder.WriteVec(laser.Line.End)
 		encoder.WriteFloat64(laser.Angle)

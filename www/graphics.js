@@ -1,6 +1,6 @@
 import {lerpVec, extrapolateVec} from "./interpolate.js";
 import { Vec } from "./math.js";
-import {TileMap} from "./tilemap.js";
+import {Map} from "./map.js";
 import * as conf from "./conf.js";
 
 class Graphics {
@@ -58,7 +58,7 @@ class Graphics {
         g.beginFill(0x555555);
         for (let r = 0; r < rows.length; r++) {
             for (let c = 0; c < rows[r].length; c++) {
-                if (rows[r][c] == TileMap.EMPTY) {
+                if (rows[r][c] == Map.EMPTY) {
                     continue;
                 }
                 g.drawRect(c * conf.TILE_SIZE, (r) * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE);
@@ -107,6 +107,7 @@ function update(world) {
     lineGfx.clear();
     lineGfx.lineStyle(1, 0xff0000, 1);
     for (let laser of world.laserList) {
+        console.log(laser.line);
         lineGfx.moveTo(laser.line.start.x, laser.line.start.y);
         lineGfx.lineTo(laser.line.end.x, laser.line.end.y);
     }

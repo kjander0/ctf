@@ -7,6 +7,7 @@ class World {
     serverTick = -1; // from server (0-255)
     deltaMs = 1000.0/60.0;
     accumMs = conf.UPDATE_MS;
+    map;
     player;
     otherPlayers = [];
     laserList = [];

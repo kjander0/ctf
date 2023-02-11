@@ -33,6 +33,7 @@ class PlayerInputState {
     up = false;
     down = false;
     doShoot = false;
+    doSecondary = false;
     aimAngle = 0;
 }
 
@@ -57,6 +58,14 @@ function sampleInput(world) {
         let aimPos = world.gfx.unproject(shootCmd.mousePos);
         inputState.aimAngle = _calcAimAngle(world.player.pos, aimPos);
     }
+
+    let secondaryCmd = world.input.getCommand(Input.CMD_SECONDARY);
+    if (secondaryCmd.wasActivated) {
+        inputState.doSecondary = true;
+        let aimPos = world.gfx.unproject(secondaryCmd.mousePos);
+        inputState.aimAngle = _calcAimAngle(world.player.pos, aimPos);
+    }
+
     world.player.inputState = inputState;
     world.player.predictedInputs.predict(inputState, world.clientTick);
 }

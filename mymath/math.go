@@ -99,6 +99,10 @@ func (l Line) Translate(offset Vec) Line {
 	return l
 }
 
+func (l Line) Midpoint() Vec {
+	return l.Start.Add(l.End).Scale(0.5)
+}
+
 func (r *Rect) ClosestPoint(p Vec) Vec {
 	closestPoint := r.Pos
 
@@ -239,6 +243,6 @@ func (v Vec) Rotate(angle float64) Vec {
 	return Vec{mag * math.Cos(currentAngle), mag * math.Sin(currentAngle)}
 }
 
-func (l Line) Midpoint() Vec {
-	return l.Start.Add(l.End).Scale(0.5)
+func (v Vec) Reflect(normal Vec) Vec {
+	return v.Sub(normal.Scale(2.0 * v.Dot(normal)))
 }

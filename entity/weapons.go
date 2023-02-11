@@ -2,10 +2,18 @@ package entity
 
 import (
 	"github.com/kjander0/ctf/conf"
+	"github.com/kjander0/ctf/logger"
 	"github.com/kjander0/ctf/mymath"
 )
 
+const (
+	ProjTypeLaser = uint8(iota)
+	ProjTypeBouncy
+	ProjTypeMissile
+)
+
 type Laser struct {
+	Type     uint8
 	PlayerId uint8
 	Line     mymath.Line
 	Dir      mymath.Vec
@@ -27,7 +35,7 @@ func UpdateProjectiles(world *World) {
 	// Check collisions
 	for i := len(world.LaserList) - 1; i >= 0; i-- { // reverse iterate for removing elements
 		line := world.LaserList[i].Line
-		hitDist, hitPos := checkWallHit(world, line)
+		hitDist, hitPos, normal := checkWallHit(world, line)
 		player, playerHitPos := checkPlayerHit(world, &world.LaserList[i], hitDist)
 
 		if hitDist < 0 && player == nil { // no hit occured
@@ -37,9 +45,13 @@ func UpdateProjectiles(world *World) {
 		if player != nil {
 			player.Health -= 1
 			if player.Health <= 0 {
-				player.DoDisconnect = true
+				logger.Debug("PLAYER DEAD")
+				//player.DoDisconnect = true
 			}
 			hitPos = playerHitPos
+		} else if world.LaserList[i].Type == ProjTypeBouncy {
+			bounce(&world.LaserList[i], hitPos, normal)
+			continue
 		}
 
 		world.NewHits = append(world.NewHits, hitPos)
@@ -48,16 +60,16 @@ func UpdateProjectiles(world *World) {
 	}
 }
 
-func checkWallHit(world *World, line mymath.Line) (float64, mymath.Vec) {
+func checkWallHit(world *World, line mymath.Line) (float64, mymath.Vec, mymath.Vec) {
 	tileSize := float64(conf.Shared.TileSize)
 	tileRect := mymath.Rect{Size: mymath.Vec{tileSize, tileSize}}
 	lineLen := line.Length()
 	tileSample := world.Map.SampleSolidTiles(line.End, lineLen)
-	var hitPos mymath.Vec
+	var hitPos, normal mymath.Vec
 	hitDist := -1.0
 	for _, tilePos := range tileSample {
 		tileRect.Pos = tilePos
-		overlaps, overlap := mymath.LineRectOverlap(line, tileRect)
+		overlaps, overlap, rectNormal := mymath.LineRectOverlap(line, tileRect)
 		if !overlaps {
 			continue
 		}
@@ -66,9 +78,10 @@ func checkWallHit(world *World, line mymath.Line) (float64, mymath.Vec) {
 		if hitDist < 0 || dist < hitDist {
 			hitPos = hit
 			hitDist = dist
+			normal = rectNormal
 		}
 	}
-	return hitDist, hitPos
+	return hitDist, hitPos, normal
 }
 
 func checkPlayerHit(world *World, laser *Laser, hitDist float64) (*Player, mymath.Vec) {
@@ -92,4 +105,13 @@ func checkPlayerHit(world *World, laser *Laser, hitDist float64) (*Player, mymat
 		}
 	}
 	return player, hitPos
+}
+
+func bounce(laser *Laser, hitPos mymath.Vec, normal mymath.Vec) {
+	incident := laser.Line.End.Sub(laser.Line.Start)
+	len := incident.Length()
+	newLen := len - hitPos.Sub(laser.Line.Start).Length()
+	laser.Dir = incident.Reflect(normal).Normalize()
+	laser.Line.Start = hitPos
+	laser.Line.End = hitPos.Add(laser.Dir.Scale(newLen))
 }

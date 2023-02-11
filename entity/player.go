@@ -34,12 +34,13 @@ type Player struct {
 }
 
 type PlayerInput struct {
-	Left     bool
-	Right    bool
-	Up       bool
-	Down     bool
-	DoShoot  bool
-	AimAngle float64
+	Left           bool
+	Right          bool
+	Up             bool
+	Down           bool
+	ShootPrimary   bool
+	ShootSecondary bool
+	AimAngle       float64
 }
 
 var dirMap = [3][3]int{
@@ -96,12 +97,13 @@ func processAckedInputs(world *World, player *Player) {
 		player.Pos = player.Pos.Add(disp)
 		player.Pos = constrainPlayerPos(world, player.Pos)
 
-		if !input.DoShoot {
+		if !input.ShootPrimary && !input.ShootSecondary {
 			continue
 		}
 
 		dir := mymath.Vec{X: math.Cos(input.AimAngle), Y: math.Sin(input.AimAngle)}
-		newLaser := Laser{
+		laser := Laser{
+			ProjTypeLaser,
 			player.Id,
 			mymath.Line{
 				Start: player.Pos,
@@ -111,8 +113,15 @@ func processAckedInputs(world *World, player *Player) {
 			input.AimAngle,
 		}
 
-		world.LaserList = append(world.LaserList, newLaser)
-		world.NewLasers = append(world.NewLasers, &world.LaserList[len(world.LaserList)-1])
+		if input.ShootPrimary {
+			world.LaserList = append(world.LaserList, laser)
+			world.NewLasers = append(world.NewLasers, &world.LaserList[len(world.LaserList)-1])
+		}
+		if input.ShootSecondary {
+			laser.Type = ProjTypeBouncy
+			world.LaserList = append(world.LaserList, laser)
+			world.NewLasers = append(world.NewLasers, &world.LaserList[len(world.LaserList)-1])
+		}
 	}
 }
 
