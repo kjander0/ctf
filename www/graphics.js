@@ -58,7 +58,7 @@ class Graphics {
         g.beginFill(0x555555);
         for (let r = 0; r < rows.length; r++) {
             for (let c = 0; c < rows[r].length; c++) {
-                if (rows[r][c] == Map.EMPTY) {
+                if (rows[r][c] !== Map.WALL) {
                     continue;
                 }
                 g.drawRect(c * conf.TILE_SIZE, (r) * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE);

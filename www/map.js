@@ -4,6 +4,8 @@ import { Vec } from "./math.js"
 class Map {
     static EMPTY = 0;
     static WALL = 1;
+    static JAIL = 2;
+    static SPAWN = 3;
 
     rows;
 
@@ -22,7 +24,7 @@ class Map {
                 if (r < 0 || r >= this.rows.length || c < 0 || c >= this.rows[r].length) {
                     continue;
                 }
-                if (this.rows[r][c] == Map.EMPTY) {
+                if (this.rows[r][c] != Map.WALL) {
                     continue;
                 }
                 samples.push(new Vec(c, r).scale(conf.TILE_SIZE));

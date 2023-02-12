@@ -178,7 +178,7 @@ class Line {
             if (compareFloat(this.start.sub(other.start).cross(v), 0, 1e-6)) { // Collinear
                 let vLenSquared = v.dot(v);
                 let t0 = this.start.sub(other.start).dot(v) / vLenSquared;
-                let t1 = this.end.sub(other.Start).dot(v) / vLenSquared;
+                let t1 = this.end.sub(other.start).dot(v) / vLenSquared;
                 if (t0 > t1) {
                     t0, t1 = t1, t0;
                 }

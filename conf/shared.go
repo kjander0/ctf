@@ -8,21 +8,23 @@ import (
 )
 
 type SharedParams struct {
-	TickRate     int
-	TileSize     int
-	PlayerSpeed  float64
-	PlayerRadius float64
-	PlayerHealth int
-	LaserSpeed   float64
+	TickRate      int
+	TileSize      int
+	PlayerSpeed   float64
+	PlayerRadius  float64
+	PlayerHealth  int
+	JailTimeTicks int
+	LaserSpeed    float64
 }
 
 var Shared = SharedParams{
-	TickRate:     30,
-	TileSize:     16,
-	PlayerSpeed:  2,
-	PlayerRadius: 10,
-	PlayerHealth: 10,
-	LaserSpeed:   7,
+	TickRate:      30,
+	TileSize:      16,
+	PlayerSpeed:   2,
+	PlayerRadius:  10,
+	PlayerHealth:  10,
+	JailTimeTicks: 300,
+	LaserSpeed:    7,
 }
 
 func WriteSharedParams(filePath string) {

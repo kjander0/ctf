@@ -1,17 +1,50 @@
 package entity
 
 import (
+	"math/rand"
+
 	"github.com/kjander0/ctf/conf"
 	"github.com/kjander0/ctf/mymath"
 )
 
 const (
-	TileEmpty = 0
-	TileSolid = iota
+	TileEmpty = iota
+	TileWall
+	TileJail
+	TileSpawn
 )
 
 type Map struct {
-	Rows [][]uint8
+	Rows   [][]uint8
+	Jails  []mymath.Vec
+	Spawns []mymath.Vec
+}
+
+func NewMap(rows [][]uint8) Map {
+	newMap := Map{
+		Rows: rows,
+	}
+
+	// Find spawn/jail spots
+	for r := range rows {
+		for c := range rows[r] {
+			if rows[r][c] == TileJail {
+				newMap.Jails = append(newMap.Jails, TileCentre(r, c))
+			} else if rows[r][c] == TileSpawn {
+				newMap.Spawns = append(newMap.Spawns, TileCentre(r, c))
+			}
+		}
+	}
+
+	return newMap
+}
+
+func (m *Map) RandomJailLocation() mymath.Vec {
+	return m.Jails[rand.Intn(len(m.Jails))]
+}
+
+func (m *Map) RandomSpawnLocation() mymath.Vec {
+	return m.Spawns[rand.Intn(len(m.Spawns))]
 }
 
 func (m *Map) SampleSolidTiles(pos mymath.Vec, radius float64) []mymath.Vec {
@@ -26,11 +59,19 @@ func (m *Map) SampleSolidTiles(pos mymath.Vec, radius float64) []mymath.Vec {
 				continue
 			}
 			tile := m.Rows[r][c]
-			if tile == TileEmpty {
+			if tile != TileWall {
 				continue
 			}
-			samples = append(samples, mymath.Vec{float64(c), float64(r)}.Scale(tileSize))
+			samples = append(samples, TileBottomLeft(r, c))
 		}
 	}
 	return samples
+}
+
+func TileCentre(row int, col int) mymath.Vec {
+	return mymath.Vec{float64(col) + 0.5, float64(row) + 0.5}.Scale(float64(conf.Shared.TileSize))
+}
+
+func TileBottomLeft(row int, col int) mymath.Vec {
+	return mymath.Vec{float64(col), float64(row)}.Scale(float64(conf.Shared.TileSize))
 }

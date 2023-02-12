@@ -11,6 +11,8 @@ import (
 
 const (
 	PlayerStateJoining = iota
+	PlayerStateWaitingForInput
+	PlayerStateJailed
 	PlayerStateAlive
 )
 
@@ -29,8 +31,8 @@ type Player struct {
 	PredictedPos    mymath.Vec
 	PredictedInputs PredictedInputs
 	LastInput       PlayerInput
-	GotFirstInput   bool
 	DoDisconnect    bool
+	JailTimeTicks   int
 }
 
 type PlayerInput struct {
@@ -70,9 +72,9 @@ func (in PlayerInput) GetDirNum() int {
 func NewPlayer(id uint8, client web.Client) Player {
 	return Player{
 		Id:              id,
-		Health:          conf.Shared.PlayerHealth,
-		Pos:             mymath.Vec{50, 50},
 		State:           PlayerStateJoining,
+		Health:          conf.Shared.PlayerHealth,
+		Pos:             mymath.Vec{},
 		Client:          client,
 		PredictedInputs: NewPredictedInputs(maxPredictedInputs),
 	}
@@ -82,11 +84,21 @@ func UpdatePlayers(world *World) {
 	world.NewLasers = world.NewLasers[:0]
 	for i := range world.PlayerList {
 		player := &world.PlayerList[i]
-		processAckedInputs(world, player)
-		processPredictedInputs(world, player)
-		if !player.GotFirstInput {
+
+		if player.State <= PlayerStateWaitingForInput {
 			continue
 		}
+
+		if player.State == PlayerStateJailed {
+			player.JailTimeTicks -= 1
+			if player.JailTimeTicks <= 0 {
+				player.State = PlayerStateAlive
+				player.Pos = world.Map.RandomSpawnLocation()
+			}
+		}
+
+		processAckedInputs(world, player)
+		processPredictedInputs(world, player)
 		predictNextInput(world, player)
 	}
 }

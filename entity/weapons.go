@@ -2,7 +2,6 @@ package entity
 
 import (
 	"github.com/kjander0/ctf/conf"
-	"github.com/kjander0/ctf/logger"
 	"github.com/kjander0/ctf/mymath"
 )
 
@@ -45,8 +44,10 @@ func UpdateProjectiles(world *World) {
 		if player != nil {
 			player.Health -= 1
 			if player.Health <= 0 {
-				logger.Debug("PLAYER DEAD")
-				//player.DoDisconnect = true
+				player.Pos = world.Map.RandomJailLocation()
+				player.Health = conf.Shared.PlayerHealth
+				player.JailTimeTicks = conf.Shared.JailTimeTicks
+				player.State = PlayerStateJailed
 			}
 			hitPos = playerHitPos
 		} else if world.LaserList[i].Type == ProjTypeBouncy {

@@ -22,7 +22,7 @@ function circleRectOverlap(c, r) {
 	// Make sepAxis unit vector
 	if (sepLen < 1e-6) {
 		rectMid = r.pos.add(r.size.scale(0.5));
-		sepAxis = closestPoint.Sub(rectMid);
+		sepAxis = closestPoint.sub(rectMid);
 		sepLen = sepAxis.length();
 	}
 	sepAxis = sepAxis.scale(1.0 / sepLen);

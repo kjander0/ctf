@@ -22,11 +22,13 @@ func NewPredictedInputs(capacity int) PredictedInputs {
 }
 
 func (p *PredictedInputs) Predict(input PlayerInput, tick uint8) {
+	prediction := InputPrediction{input, tick}
 	if len(p.Predicted) == p.capacity {
+		// Shift predictions (dropping oldest)
 		logger.Debug("dropping a prediction")
-		return
+		p.Predicted = p.Predicted[1:]
 	}
-	p.Predicted = append(p.Predicted, InputPrediction{input, tick})
+	p.Predicted = append(p.Predicted, prediction)
 }
 
 func (p *PredictedInputs) Ack(input PlayerInput, tick uint8) {

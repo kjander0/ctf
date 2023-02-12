@@ -3,6 +3,7 @@ package net
 import (
 	"bytes"
 
+	"github.com/kjander0/ctf/conf"
 	"github.com/kjander0/ctf/entity"
 	"github.com/kjander0/ctf/logger"
 )
@@ -73,7 +74,12 @@ outer:
 			if player.DoDisconnect {
 				return
 			}
-			player.GotFirstInput = true
+			if player.State == entity.PlayerStateWaitingForInput {
+				player.Pos = world.Map.RandomJailLocation()
+				logger.Debug("Spawn: ", player.Pos)
+				player.State = entity.PlayerStateJailed
+				player.JailTimeTicks = conf.Shared.JailTimeTicks
+			}
 		default:
 			logger.Error("ReceiveInputs: bad msg type: ", msgType)
 			player.DoDisconnect = true
@@ -134,8 +140,12 @@ func SendMessages(world *entity.World) error {
 		switch world.PlayerList[i].State {
 		case entity.PlayerStateJoining:
 			msgBytes = prepareInitMsg(world, i)
-			world.PlayerList[i].State = entity.PlayerStateAlive
+			world.PlayerList[i].State = entity.PlayerStateWaitingForInput
+		case entity.PlayerStateWaitingForInput:
+			fallthrough
 		case entity.PlayerStateAlive:
+			fallthrough
+		case entity.PlayerStateJailed:
 			msgBytes = prepareWorldUpdate(world, i)
 		}
 
