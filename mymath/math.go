@@ -247,6 +247,13 @@ func (v Vec) Reflect(normal Vec) Vec {
 	return v.Sub(normal.Scale(2.0 * v.Dot(normal)))
 }
 
+func MinInt(a int, b int) int {
+	if a <= b {
+		return a
+	}
+	return b
+}
+
 func MaxInt(a int, b int) int {
 	if a >= b {
 		return a

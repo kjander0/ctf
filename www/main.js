@@ -65,7 +65,7 @@ window.onload = async function() {
         // TODO: want elapsedMS to be bounded
         world.deltaMs = pixiApp.ticker.elapsedMS;
         update(world);
-        graphics.update(world);
+        world.gfx.update(world);
         prevTime = window.performance.now();
 	});
 };

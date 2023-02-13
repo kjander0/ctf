@@ -18,6 +18,7 @@ type SharedParams struct {
 	LaserSpeed      float64
 	LaserTimeTicks  int
 	LaserEnergyCost int
+	BouncySpeed     float64
 }
 
 var Shared = SharedParams{
@@ -26,11 +27,12 @@ var Shared = SharedParams{
 	PlayerSpeed:     2,
 	PlayerRadius:    10,
 	PlayerHealth:    10,
-	PlayerEnergy:    10,
+	PlayerEnergy:    60,
 	JailTimeTicks:   300,
-	LaserSpeed:      7,
-	LaserTimeTicks:  30,
-	LaserEnergyCost: 30,
+	LaserSpeed:      6,
+	LaserTimeTicks:  45,
+	LaserEnergyCost: 12,
+	BouncySpeed:     8,
 }
 
 func WriteSharedParams(filePath string) {

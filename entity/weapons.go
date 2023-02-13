@@ -34,10 +34,14 @@ func UpdateProjectiles(world *World) {
 
 	// Move lasers forward
 	for i := range world.LaserList {
+		speed := conf.Shared.LaserSpeed
+		if world.LaserList[i].Type == ProjTypeBouncy {
+			speed = conf.Shared.BouncySpeed
+		}
 		line := world.LaserList[i].Line
 		dir := world.LaserList[i].Dir
 		line.Start = line.End
-		line.End = line.End.Add(dir.Scale(conf.Shared.LaserSpeed))
+		line.End = line.End.Add(dir.Scale(speed))
 		world.LaserList[i].Line = line
 	}
 

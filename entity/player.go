@@ -92,7 +92,7 @@ func UpdatePlayers(world *World) {
 			continue
 		}
 
-		player.Energy = mymath.MaxInt(conf.Shared.PlayerEnergy, player.Energy+1)
+		player.Energy = mymath.MinInt(conf.Shared.PlayerEnergy, player.Energy+1)
 
 		if player.State == PlayerStateJailed {
 			player.JailTimeTicks -= 1

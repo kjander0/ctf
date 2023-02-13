@@ -22,6 +22,7 @@ class Player {
     prevPos = new Vec();
     pos = new Vec();
     correctedPos = new Vec();
+    energy = conf.PLAYER_ENERGY;
     graphic;
     lastAckedGraphic;
     correctedGraphic;
@@ -55,17 +56,17 @@ function sampleInput(world) {
     }
     let shootCmd = world.input.getCommand(Input.CMD_SHOOT);
     if (shootCmd.wasActivated) {
-        sound.laser.play();
-        console.log("PLAY LASER");
-        inputState.doShoot = true;
-        let aimPos = world.gfx.unproject(shootCmd.mousePos);
-        inputState.aimAngle = _calcAimAngle(world.player.pos, aimPos);
+        if (world.player.energy >= conf.LASER_ENERGY_COST) {
+            sound.laser.play();
+            inputState.doShoot = true;
+            let aimPos = world.gfx.unproject(shootCmd.mousePos);
+            inputState.aimAngle = _calcAimAngle(world.player.pos, aimPos);
+        }
     }
 
     let secondaryCmd = world.input.getCommand(Input.CMD_SECONDARY);
     if (secondaryCmd.wasActivated) {
         sound.bouncy.play();
-        console.log("PLAY BOUNCY");
         inputState.doSecondary = true;
         let aimPos = world.gfx.unproject(secondaryCmd.mousePos);
         inputState.aimAngle = _calcAimAngle(world.player.pos, aimPos);

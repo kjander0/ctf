@@ -44,7 +44,6 @@ class Input {
         document.addEventListener("mousemove", (event) => this._onMouseMove(event));
         // Suppress right click context menu
         document.addEventListener('contextmenu', (event) => {
-            console.log("console menu");
             event.preventDefault();
             return false;
         }, false);
@@ -97,7 +96,6 @@ class Input {
     }
     
     _onMouseDown(event) {
-        console.log(event);
         let cmdIndex = Input.CMD_SHOOT;
         if (event.button === 2) {
             cmdIndex = Input.CMD_SECONDARY;

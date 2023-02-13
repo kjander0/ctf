@@ -4,15 +4,19 @@ import {Map} from "./map.js";
 import * as conf from "./conf.js";
 
 class Graphics {
+    pixiApp;
     camContainer;
     screenRect;
     lineGfx = new PIXI.Graphics();
+    uiGfx = new PIXI.Graphics();
 
     constructor(pixiApp) {
+        this.pixiApp = pixiApp;
         this.screenRect = pixiApp.screen;
         this.camContainer = new PIXI.Container();
         this.camContainer.scale.y = -1;
         pixiApp.stage.addChild(this.camContainer);
+        pixiApp.stage.addChild(this.uiGfx);
         this.camContainer.addChild(this.lineGfx);
         pixiApp.renderer.on("resize", (w, h) => { this.resize(w, h) });
         this.resize(this.screenRect.width, this.screenRect.height);
@@ -80,36 +84,48 @@ class Graphics {
         this.camContainer.removeChild(graphic);
         graphic.destroy();
     }
+
+    update(world) {
+        let lerpFraction = world.accumMs/conf.UPDATE_MS;
+        let lerpPos = lerpVec(world.player.prevPos, world.player.pos, lerpFraction);
+        world.player.graphic.x = lerpPos.x;
+        world.player.graphic.y = lerpPos.y;
+        world.player.lastAckedGraphic.x = world.player.lastAckedPos.x;
+        world.player.lastAckedGraphic.y = world.player.lastAckedPos.y;
+        world.player.correctedGraphic.x = world.player.correctedPos.x;
+        world.player.correctedGraphic.y = world.player.correctedPos.y;
+    
+        this.moveCamera(lerpPos.x, lerpPos.y);
+    
+    
+        for (let other of world.otherPlayers) {
+            let lerpPos = lerpVec(other.prevPos, other.pos, lerpFraction);
+            other.graphic.x = lerpPos.x;
+            other.graphic.y = lerpPos.y;
+            other.lastAckedGraphic.x = other.lastAckedPos.x;
+            other.lastAckedGraphic.y = other.lastAckedPos.y;
+        }
+    
+        this.lineGfx.clear();
+        this.lineGfx.lineStyle(1, 0xff0000, 1);
+        for (let laser of world.laserList) {
+            this.lineGfx.moveTo(laser.line.start.x, laser.line.start.y);
+            this.lineGfx.lineTo(laser.line.end.x, laser.line.end.y);
+        }
+    
+        // Draw UI
+        this.uiGfx.clear();
+        let border = 10;
+        let barWidth = 80;
+        let barHeight = 10;
+        this.uiGfx.beginFill(0xaaaa00);
+        let ratio = world.player.energy / conf.PLAYER_ENERGY;
+        this.uiGfx.drawRect(this.screenRect.width/2 - barWidth/2, this.screenRect.height - barHeight - border, barWidth * ratio, barHeight);
+        this.uiGfx.endFill();
+        this.uiGfx.lineStyle(2, 0xaa2222);
+        this.uiGfx.drawRect(this.screenRect.width/2 - barWidth/2, this.screenRect.height - barHeight - border, barWidth, barHeight);
+        this.pixiApp.stage.addChild(this.uiGfx);
+    }
 }
 
-function update(world) {
-    let lerpFraction = world.accumMs/conf.UPDATE_MS;
-    let lerpPos = lerpVec(world.player.prevPos, world.player.pos, lerpFraction);
-    world.player.graphic.x = lerpPos.x;
-    world.player.graphic.y = lerpPos.y;
-    world.player.lastAckedGraphic.x = world.player.lastAckedPos.x;
-    world.player.lastAckedGraphic.y = world.player.lastAckedPos.y;
-    world.player.correctedGraphic.x = world.player.correctedPos.x;
-    world.player.correctedGraphic.y = world.player.correctedPos.y;
-
-    world.gfx.moveCamera(lerpPos.x, lerpPos.y);
-
-
-    for (let other of world.otherPlayers) {
-        let lerpPos = lerpVec(other.prevPos, other.pos, lerpFraction);
-        other.graphic.x = lerpPos.x;
-        other.graphic.y = lerpPos.y;
-        other.lastAckedGraphic.x = other.lastAckedPos.x;
-        other.lastAckedGraphic.y = other.lastAckedPos.y;
-    }
-
-    let lineGfx = world.gfx.lineGfx;
-    lineGfx.clear();
-    lineGfx.lineStyle(1, 0xff0000, 1);
-    for (let laser of world.laserList) {
-        lineGfx.moveTo(laser.line.start.x, laser.line.start.y);
-        lineGfx.lineTo(laser.line.end.x, laser.line.end.y);
-    }
-}
-
-export {Graphics, update}
+export {Graphics};

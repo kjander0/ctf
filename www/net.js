@@ -120,6 +120,7 @@ function _processUpdateMsg(world, decoder) {
     }
 
     let pos = decoder.readVec(); // NOTE: we arn't using latest value from server if it isn't acking something
+    world.player.energy = decoder.readUint8();
     if (ackedTick != -1) {
         world.player.predictedInputs.ack(ackedTick);
         world.player.lastAckedPos = pos;

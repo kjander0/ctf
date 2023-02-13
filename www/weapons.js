@@ -34,6 +34,10 @@ function update(world) {
 
     for (let i = world.laserList.length-1; i >= 0; i--) {
         let laser = world.laserList[i];
+        let speed = conf.LASER_SPEED;
+        if (laser.type === Laser.TYPE_BOUNCY) {
+            speed = conf.BOUNCY_SPEED;
+        }
         // TODO: are client and server moving laser at same time on same tick?
         let numberSteps = 1;
         if (!laser.compensated) {
@@ -49,9 +53,8 @@ function update(world) {
         for (let j = 0; j < numberSteps; j++) {
             let line = laser.line;
             line.start.set(line.end);
-            line.end = line.end.add(laser.dir.scale(conf.LASER_SPEED));
+            line.end = line.end.add(laser.dir.scale(speed));
             if (processCollisions(world, laser)) {
-                console.log("removed");
                 world.laserList[i] = world.laserList[world.laserList.length-1];
                 world.laserList.splice(world.laserList.length-1, 1);
                 break;

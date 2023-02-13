@@ -205,6 +205,7 @@ func prepareWorldUpdate(world *entity.World, playerIndex int) []byte {
 	player.PredictedInputs.ClearAcked()
 
 	encoder.WriteVec(player.Pos)
+	encoder.WriteUint8(uint8(player.Energy))
 
 	encoder.WriteUint8(uint8(len(world.PlayerList) - 1))
 	for i := range world.PlayerList {
