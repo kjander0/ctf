@@ -12,15 +12,25 @@ const (
 )
 
 type Laser struct {
-	Type     uint8
-	PlayerId uint8
-	Line     mymath.Line
-	Dir      mymath.Vec
-	Angle    float64
+	Type        uint8
+	PlayerId    uint8
+	Line        mymath.Line
+	Dir         mymath.Vec
+	Angle       float64
+	ActiveTicks int
 }
 
 func UpdateProjectiles(world *World) {
 	world.NewHits = world.NewHits[:0]
+
+	// Remove old lasers
+	for i := len(world.LaserList) - 1; i >= 0; i-- {
+		world.LaserList[i].ActiveTicks += 1
+		if world.LaserList[i].ActiveTicks > conf.Shared.LaserTimeTicks {
+			world.LaserList[i] = world.LaserList[len(world.LaserList)-1]
+			world.LaserList = world.LaserList[:len(world.LaserList)-1]
+		}
+	}
 
 	// Move lasers forward
 	for i := range world.LaserList {
@@ -59,6 +69,9 @@ func UpdateProjectiles(world *World) {
 		world.LaserList[i] = world.LaserList[len(world.LaserList)-1]
 		world.LaserList = world.LaserList[:len(world.LaserList)-1]
 	}
+
+	// Stage new lasers to be moved forward on the next tick in sync with clients
+	world.LaserList = append(world.LaserList, world.NewLasers...)
 }
 
 func checkWallHit(world *World, line mymath.Line) (float64, mymath.Vec, mymath.Vec) {

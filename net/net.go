@@ -112,11 +112,13 @@ func processInputMsg(player *entity.Player, decoder Decoder) {
 
 	if (flags & shootFlagBit) == shootFlagBit {
 		newInputState.ShootPrimary = true
-		newInputState.AimAngle = decoder.ReadFloat64()
 	}
 
 	if (flags & secondaryFlagBit) == secondaryFlagBit {
 		newInputState.ShootSecondary = true
+	}
+
+	if newInputState.ShootPrimary || newInputState.ShootSecondary {
 		newInputState.AimAngle = decoder.ReadFloat64()
 	}
 

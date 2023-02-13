@@ -7,7 +7,7 @@ type World struct {
 	Map           Map
 	PlayerList    []Player
 	LaserList     []Laser
-	NewLasers     []*Laser
+	NewLasers     []Laser
 	NewHits       []mymath.Vec
 	freePlayerIds []uint8
 	playerIdCount int

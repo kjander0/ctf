@@ -37,16 +37,14 @@ class Input {
         for (let i = 0; i < Input.CMD_LAST; i++) {
             this._commands.push(new Command(i));
         }
-
         document.addEventListener("keydown", (event) => this._onKeyDown(event));
         document.addEventListener("keyup", (event) => this._onKeyUp(event));
-        pixiApp.stage.addEventListener("mousedown", (event) => this._onMouseDown(event));
-        pixiApp.stage.addEventListener("rightdown", (event) => this._onMouseDown(event));
-        pixiApp.stage.addEventListener("mouseup", (event) => this._onMouseUp(event));
-        pixiApp.stage.addEventListener("rightup", (event) => this._onMouseUp(event));
-        pixiApp.stage.addEventListener("mousemove", (event) => this._onMouseMove(event));
+        document.addEventListener("mousedown", (event) => this._onMouseDown(event));
+        document.addEventListener("mouseup", (event) => this._onMouseUp(event));
+        document.addEventListener("mousemove", (event) => this._onMouseMove(event));
         // Suppress right click context menu
         document.addEventListener('contextmenu', (event) => {
+            console.log("console menu");
             event.preventDefault();
             return false;
         }, false);
@@ -99,6 +97,7 @@ class Input {
     }
     
     _onMouseDown(event) {
+        console.log(event);
         let cmdIndex = Input.CMD_SHOOT;
         if (event.button === 2) {
             cmdIndex = Input.CMD_SECONDARY;
@@ -107,7 +106,10 @@ class Input {
         if (cmd === undefined) {
             return;
         }
-        cmd.mousePos = new Vec(event.globalX, event.globalY);
+
+        let globalPos = new PIXI.Point();
+        this._pixiApp.renderer.events.mapPositionToPoint(globalPos, event.clientX, event.clientY);
+        cmd.mousePos = new Vec(globalPos.x, globalPos.y);
         cmd.active = true;
         cmd.wasActivated = true;
         cmd._pressed = true;
@@ -122,7 +124,9 @@ class Input {
         if (cmd === undefined) {
             return;
         }
-        cmd.mousePos = new Vec(event.globalX, event.globalY);
+        let globalPos = new PIXI.Point();
+        this._pixiApp.renderer.events.mapPositionToPoint(globalPos, event.clientX, event.clientY);
+        cmd.mousePos = new Vec(globalPos.x, globalPos.y);
         cmd._pressed = false;
     }
     

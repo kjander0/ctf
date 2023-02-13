@@ -2,6 +2,7 @@ import { Vec } from "./math.js"
 import { Input } from "./input.js"
 import {Predicted} from "./predicted.js"
 import * as conf from "./conf.js"
+import * as sound from "./sound.js"
 
 class Player {
     static SPEED = 2.5;
@@ -54,6 +55,8 @@ function sampleInput(world) {
     }
     let shootCmd = world.input.getCommand(Input.CMD_SHOOT);
     if (shootCmd.wasActivated) {
+        sound.laser.play();
+        console.log("PLAY LASER");
         inputState.doShoot = true;
         let aimPos = world.gfx.unproject(shootCmd.mousePos);
         inputState.aimAngle = _calcAimAngle(world.player.pos, aimPos);
@@ -61,6 +64,8 @@ function sampleInput(world) {
 
     let secondaryCmd = world.input.getCommand(Input.CMD_SECONDARY);
     if (secondaryCmd.wasActivated) {
+        sound.bouncy.play();
+        console.log("PLAY BOUNCY");
         inputState.doSecondary = true;
         let aimPos = world.gfx.unproject(secondaryCmd.mousePos);
         inputState.aimAngle = _calcAimAngle(world.player.pos, aimPos);

@@ -12,6 +12,7 @@ class Laser {
     line = new Line();
     dir = new Vec();
     compensated = false;
+    activeTicks = 0;
 
     constructor(type, playerId, pos, angle) {
         this.type = type;
@@ -23,12 +24,17 @@ class Laser {
 }
 
 function update(world) {
-    // TODO: lagg compensate new lasers from other players based on how far ahead
-    // my client side prediction is
-    // - Note: it would be nice to have some top level controls for shooter/target lagg compensation for tuning
+    for (let i = world.laserList.length-1; i >= 0; i--) {
+        world.laserList[i].activeTicks += 1;
+        if (world.laserList[i].activeTicks > conf.LASER_TIME_TICKS) {
+            world.laserList[i] = world.laserList[world.laserList.length-1];
+            world.laserList.splice(world.laserList.length-1, 1);
+        }
+    }
+
     for (let i = world.laserList.length-1; i >= 0; i--) {
         let laser = world.laserList[i];
-        // TODO: make sure shooter and others move laser for the first time on the same server tick
+        // TODO: are client and server moving laser at same time on same tick?
         let numberSteps = 1;
         if (!laser.compensated) {
             laser.compensated = true;
@@ -37,6 +43,7 @@ function update(world) {
                 tickDiff += 256;
             }
             numberSteps += tickDiff;
+            laser.activeTicks += tickDiff;
         }
 
         for (let j = 0; j < numberSteps; j++) {
@@ -44,6 +51,7 @@ function update(world) {
             line.start.set(line.end);
             line.end = line.end.add(laser.dir.scale(conf.LASER_SPEED));
             if (processCollisions(world, laser)) {
+                console.log("removed");
                 world.laserList[i] = world.laserList[world.laserList.length-1];
                 world.laserList.splice(world.laserList.length-1, 1);
                 break;

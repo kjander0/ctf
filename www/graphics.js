@@ -107,7 +107,6 @@ function update(world) {
     lineGfx.clear();
     lineGfx.lineStyle(1, 0xff0000, 1);
     for (let laser of world.laserList) {
-        console.log(laser.line);
         lineGfx.moveTo(laser.line.start.x, laser.line.start.y);
         lineGfx.lineTo(laser.line.end.x, laser.line.end.y);
     }

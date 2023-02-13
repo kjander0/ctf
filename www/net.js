@@ -1,7 +1,8 @@
 import { Encoder, Decoder } from "./encode.js";
 import { Player} from "./player.js";
 import { Laser } from "./weapons.js";
-import { Map } from "./map.js"
+import { Map } from "./map.js";
+import * as sound from "./sound.js";
 
 let socket;
 
@@ -166,6 +167,7 @@ function _processUpdateMsg(world, decoder) {
     let numNewHits = decoder.readUint16();
     for (let i = 0; i < numNewHits; i++) {
         let hitPos = decoder.readVec();
+        sound.hit.play();
         world.gfx.addHit(hitPos);
     }
 }

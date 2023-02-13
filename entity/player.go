@@ -115,24 +115,22 @@ func processAckedInputs(world *World, player *Player) {
 
 		dir := mymath.Vec{X: math.Cos(input.AimAngle), Y: math.Sin(input.AimAngle)}
 		laser := Laser{
-			ProjTypeLaser,
-			player.Id,
-			mymath.Line{
+			Type:     ProjTypeLaser,
+			PlayerId: player.Id,
+			Line: mymath.Line{
 				Start: player.Pos,
 				End:   player.Pos,
 			},
-			dir,
-			input.AimAngle,
+			Dir:   dir,
+			Angle: input.AimAngle,
 		}
 
 		if input.ShootPrimary {
-			world.LaserList = append(world.LaserList, laser)
-			world.NewLasers = append(world.NewLasers, &world.LaserList[len(world.LaserList)-1])
+			world.NewLasers = append(world.NewLasers, laser)
 		}
 		if input.ShootSecondary {
 			laser.Type = ProjTypeBouncy
-			world.LaserList = append(world.LaserList, laser)
-			world.NewLasers = append(world.NewLasers, &world.LaserList[len(world.LaserList)-1])
+			world.NewLasers = append(world.NewLasers, laser)
 		}
 	}
 }

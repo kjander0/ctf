@@ -5,6 +5,7 @@ let PLAYER_SPEED;
 let PLAYER_HEALTH;
 let PLAYER_RADIUS;
 let LASER_SPEED;
+let LASER_TIME_TICKS;
 
 async function retrieveConf()
 {
@@ -19,6 +20,7 @@ async function retrieveConf()
                 PLAYER_HEALTH = shared.PlayerHealth;
                 PLAYER_RADIUS = shared.PlayerRadius;
                 LASER_SPEED = shared.LaserSpeed;
+                LASER_TIME_TICKS= shared.LaserTimeTicks;
                 resolve();
                 return;
             }
@@ -30,4 +32,4 @@ async function retrieveConf()
     return promise;
 }
 
-export {retrieveConf, UPDATE_MS, TILE_SIZE, PLAYER_SPEED, PLAYER_RADIUS, LASER_SPEED};
+export {retrieveConf, UPDATE_MS, TILE_SIZE, PLAYER_SPEED, PLAYER_RADIUS, LASER_SPEED, LASER_TIME_TICKS};
