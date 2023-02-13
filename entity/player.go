@@ -27,6 +27,7 @@ type Player struct {
 	State           int
 	Client          web.Client
 	Health          int
+	Energy          int
 	Pos             mymath.Vec
 	PredictedPos    mymath.Vec
 	PredictedInputs PredictedInputs
@@ -74,6 +75,7 @@ func NewPlayer(id uint8, client web.Client) Player {
 		Id:              id,
 		State:           PlayerStateJoining,
 		Health:          conf.Shared.PlayerHealth,
+		Energy:          conf.Shared.PlayerEnergy,
 		Pos:             mymath.Vec{},
 		Client:          client,
 		PredictedInputs: NewPredictedInputs(maxPredictedInputs),
@@ -82,12 +84,15 @@ func NewPlayer(id uint8, client web.Client) Player {
 
 func UpdatePlayers(world *World) {
 	world.NewLasers = world.NewLasers[:0]
+
 	for i := range world.PlayerList {
 		player := &world.PlayerList[i]
 
 		if player.State <= PlayerStateWaitingForInput {
 			continue
 		}
+
+		player.Energy = mymath.MaxInt(conf.Shared.PlayerEnergy, player.Energy+1)
 
 		if player.State == PlayerStateJailed {
 			player.JailTimeTicks -= 1
@@ -125,7 +130,8 @@ func processAckedInputs(world *World, player *Player) {
 			Angle: input.AimAngle,
 		}
 
-		if input.ShootPrimary {
+		if input.ShootPrimary && player.Energy >= conf.Shared.LaserEnergyCost {
+			player.Energy -= conf.Shared.LaserEnergyCost
 			world.NewLasers = append(world.NewLasers, laser)
 		}
 		if input.ShootSecondary {

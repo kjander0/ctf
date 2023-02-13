@@ -246,3 +246,10 @@ func (v Vec) Rotate(angle float64) Vec {
 func (v Vec) Reflect(normal Vec) Vec {
 	return v.Sub(normal.Scale(2.0 * v.Dot(normal)))
 }
+
+func MaxInt(a int, b int) int {
+	if a >= b {
+		return a
+	}
+	return b
+}

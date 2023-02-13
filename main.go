@@ -14,7 +14,6 @@ import (
 // - improve precision of ticker (sleep in smaller intervals?)
 // - binary messages to save bandwidth
 // - 32 bit float to save bandwidth
-// - test with artificial delay, jitter, loss
 // - sanitise user input (assume bytes could be anything)
 // - remove debug delay/jitter
 
