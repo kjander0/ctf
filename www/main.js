@@ -24,7 +24,8 @@ window.onload = async function() {
 
     let world = new World(pixiApp);
     world.player = new player.Player();
-    world.player.graphic = world.gfx.addCircle(0x00AA33);
+    world.player.graphic = world.gfx.addPlayer();
+    //world.player.graphic = world.gfx.addCircle(0x00AA33);
     world.player.lastAckedGraphic = world.gfx.addCircle(0xFF0000, false);
     world.player.correctedGraphic = world.gfx.addCircle(0x0000FF, false);
 
@@ -64,7 +65,7 @@ window.onload = async function() {
         }
         // TODO: want elapsedMS to be bounded
         world.deltaMs = pixiApp.ticker.elapsedMS;
-        update(world);
+        update(world); // TODO: can't assume called at 60fps, e.g. my display getting 75fps (might want a custom timer?)
         world.gfx.update(world);
         prevTime = window.performance.now();
 	});

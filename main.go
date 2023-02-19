@@ -17,6 +17,11 @@ import (
 // - sanitise user input (assume bytes could be anything)
 // - remove debug delay/jitter
 
+// GRAPHICS IDEAS
+// - 3d models rendered 2d, normal maps too
+// - models should have an inner skeleton with different coloured/styled armour (like mobile suits)
+// - global illumination based on surrounding ships/walls
+
 func main() {
 	conf.WriteSharedParams("www/shared.json")
 	webserver := web.NewWebServer()

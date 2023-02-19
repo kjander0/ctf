@@ -11,10 +11,11 @@ class Graphics {
     uiGfx = new PIXI.Graphics();
 
     constructor(pixiApp) {
+        console.log(pixiApp);
         this.pixiApp = pixiApp;
         this.screenRect = pixiApp.screen;
         this.camContainer = new PIXI.Container();
-        this.camContainer.scale.y = -1;
+        this.camContainer.scale.set(1, -1);
         pixiApp.stage.addChild(this.camContainer);
         pixiApp.stage.addChild(this.uiGfx);
         this.camContainer.addChild(this.lineGfx);
@@ -39,6 +40,70 @@ class Graphics {
     resize(screenWidth, screenHeight) {
         console.log("resize: ", screenWidth, screenHeight);
         this.moveCamera(screenWidth/2, screenHeight/2);
+    }
+
+    addPlayer() {
+        const geometry = new PIXI.Geometry()
+            .addAttribute('aVertexPosition', // the attribute name
+                [   0, 0,
+                    30, 0,
+                    30, 30,
+                    0, 30],
+                2)
+            .addAttribute('aTextureCoord',
+                [   0, 0,
+                    1, 0,
+                    1, 1,
+                    0, 1],
+                2)
+            .addIndex([0, 1, 2, 0, 2, 3]);
+        
+        const vertSrc = `
+precision highp float;
+attribute vec2 aVertexPosition;
+attribute vec2 aTextureCoord;
+
+uniform mat3 projectionMatrix;
+
+varying vec2 vTextureCoord;
+
+void main(void){
+   gl_Position = vec4((projectionMatrix * vec3(aVertexPosition, 1.0)).xy, 0.0, 1.0);
+   vTextureCoord = aTextureCoord;
+}`;
+
+        const fragSrc = `
+precision mediump float;
+varying vec2 vTextureCoord;
+
+uniform sampler2D uSampler;
+
+void main(void) {
+    gl_FragColor = texture2D(uSampler, vTextureCoord);
+}`;
+
+        const tex = PIXI.Texture.from('assets/ship.png');
+
+        const uniforms = {
+            uSampler: tex,
+        };
+
+        const shader = PIXI.Shader.from(vertSrc, fragSrc, uniforms);
+        console.log(shader.program.vertexSrc);
+        const quad = new PIXI.Mesh(geometry, shader);
+        const quadContainer = new PIXI.Container();
+        quadContainer.addChild(quad);
+        quadContainer.x = 200;
+        this.camContainer.addChild(quadContainer);
+        console.log(quad);
+        return quadContainer;
+
+        // let sprite = PIXI.Sprite.from('assets/ship.png');
+        // sprite.anchor.set(0.5);
+        // sprite.width = 30;
+        // sprite.height = 30;
+        // this.camContainer.addChild(sprite);
+        // return sprite;
     }
 
     addCircle(color, fill=true) {
@@ -86,6 +151,13 @@ class Graphics {
     }
 
     update(world) {
+        // TODO SPRITE RENDERING
+        // use meshses and attach shaders to them
+        // renderer.render() draw all normal maps to a texture (what resolution?)
+        // normals texture as input, loop through lights to draw normal map lighting
+        // feed normal map lighting into filter for final rendering
+
+
         let lerpFraction = world.accumMs/conf.UPDATE_MS;
         let lerpPos = lerpVec(world.player.prevPos, world.player.pos, lerpFraction);
         world.player.graphic.x = lerpPos.x;
@@ -124,7 +196,6 @@ class Graphics {
         this.uiGfx.endFill();
         this.uiGfx.lineStyle(2, 0xaa2222);
         this.uiGfx.drawRect(this.screenRect.width/2 - barWidth/2, this.screenRect.height - barHeight - border, barWidth, barHeight);
-        this.pixiApp.stage.addChild(this.uiGfx);
     }
 }
 
