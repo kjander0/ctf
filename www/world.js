@@ -14,9 +14,9 @@ class World {
     input;
     gfx;
 
-    constructor(pixiApp) {
-        this.input = new input.Input(pixiApp);
-        this.gfx = new graphics.Graphics(pixiApp);
+    constructor() {
+        this.input = new input.Input();
+        this.gfx = new graphics.Graphics();
     }
 }
 

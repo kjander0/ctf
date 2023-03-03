@@ -3,31 +3,24 @@
 // - handle switching browser tab (ignore first huge delta time, etc)
 // - serve minified versions of PIXI for release
 // - bundle the js
+// - juicify (screen shake on death)
 
 import {World} from "./world.js"
-import * as graphics from "./graphics.js";
 import * as input from "./input.js";
 import * as player from "./player.js";
 import * as weapons from "./weapons.js";
 import * as net from "./net.js";
 import * as conf from "./conf.js";
+import * as gfx from "./gfx/gfx.js";
 
 window.onload = async function() {
     await conf.retrieveConf(); // important to do this first
 
-    let container = document.body;
-    let pixiApp = new PIXI.Application({
-        resizeTo: container,
-        backgroundColor: 0x000000
-    });    
-    container.appendChild(pixiApp.view);
+    const canvas = document.getElementById("glcanvas");
+    gfx.init(canvas);
 
-    let world = new World(pixiApp);
+    let world = new World();
     world.player = new player.Player();
-    world.player.graphic = world.gfx.addPlayer();
-    //world.player.graphic = world.gfx.addCircle(0x00AA33);
-    world.player.lastAckedGraphic = world.gfx.addCircle(0xFF0000, false);
-    world.player.correctedGraphic = world.gfx.addCircle(0x0000FF, false);
 
     await net.connect(world);
 

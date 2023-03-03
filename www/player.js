@@ -23,9 +23,6 @@ class Player {
     pos = new Vec();
     correctedPos = new Vec();
     energy = conf.PLAYER_ENERGY;
-    graphic;
-    lastAckedGraphic;
-    correctedGraphic;
 }
 
 class PlayerInputState {

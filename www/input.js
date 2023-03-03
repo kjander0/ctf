@@ -21,14 +21,10 @@ class Input {
     static CMD_SECONDARY = 5;
     static CMD_LAST = 6; // MUST BE LAST
 
-    _pixiApp;
     _commands = [];
     _keyMap = {};
 
-    constructor(pixiApp) {
-        this._pixiApp = pixiApp;
-        pixiApp.stage.interactive = true;
-        pixiApp.stage.hitArea = pixiApp.screen;
+    constructor() {
         this._keyMap['a'] = Input.CMD_LEFT;
         this._keyMap['d'] = Input.CMD_RIGHT;
         this._keyMap['w'] = Input.CMD_UP;
