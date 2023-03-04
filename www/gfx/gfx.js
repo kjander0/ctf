@@ -1,3 +1,5 @@
+import {Vec, Transform} from "../math.js"
+
 class Texture {
     glTexture;
     s0 = 0;
@@ -207,8 +209,8 @@ class Mesh {
     }
 
     add(x, y, s, t) {
-        [x, y] = this.transform.mulXY(x, y);
-        this.data.push(x, y);
+        const pos = this.transform.mul(x, y);
+        this.data.push(pos.x, pos.y);
         if ((this.attribBits & ATTRIB_COLOR) === ATTRIB_COLOR) {
             this.data.push(this.color[0], this.color[1], this.color[2]);
         }
@@ -386,49 +388,6 @@ class Model {
     }
 }
 
-class Transform {
-    mat = new Float32Array(9);
-
-    constructor() {
-        this.identity();
-    }
-
-    identity() {
-        this.mat[0] = 1; this.mat[3] = 0; this.mat[6] = 0;
-        this.mat[1] = 0; this.mat[4] = 1; this.mat[7] = 0;
-        this.mat[2] = 0; this.mat[5] = 0; this.mat[8] = 1;
-    }
-
-    mulXY(x, y) {
-        let newX = x * this.mat[0] + y * this.mat[3] + this.mat[6];
-        let newY = x * this.mat[1] + y * this.mat[4] + this.mat[7];
-        return [newX, newY];
-    }
-
-    combine(other) {
-        let c = new Transform();
-        c.mat[0] = this.mat[0] * other.mat[0] + this.mat[3] * other.mat[1] + this.mat[6] * other.mat[2];
-        c.mat[1] = this.mat[1] * other.mat[0] + this.mat[4] * other.mat[1] + this.mat[7] * other.mat[2];
-        c.mat[2] = this.mat[2] * other.mat[0] + this.mat[5] * other.mat[1] + this.mat[8] * other.mat[2];
-
-        c.mat[3] = this.mat[0] * other.mat[3] + this.mat[3] * other.mat[4] + this.mat[6] * other.mat[5];
-        c.mat[4] = this.mat[1] * other.mat[3] + this.mat[4] * other.mat[4] + this.mat[7] * other.mat[5];
-        c.mat[5] = this.mat[2] * other.mat[3] + this.mat[5] * other.mat[4] + this.mat[8] * other.mat[5];
-
-        c.mat[6] = this.mat[0] * other.mat[6] + this.mat[3] * other.mat[7] + this.mat[6] * other.mat[8];
-        c.mat[7] = this.mat[1] * other.mat[6] + this.mat[4] * other.mat[7] + this.mat[7] * other.mat[8];
-        c.mat[8] = this.mat[2] * other.mat[6] + this.mat[5] * other.mat[7] + this.mat[8] * other.mat[8];
-        return c;
-    }
-
-    static translation(x, y) {
-        let t = new Transform();
-        t.mat[6] = x;
-        t.mat[7] = y;
-        return t;
-    }
-}
-
 const ATTRIB_POS = 1;
 const ATTRIB_COLOR = 2;
 const ATTRIB_TEX = 4;
@@ -443,6 +402,8 @@ let gl;
 let resizeCb = function() {};
 
 let transformStack = [new Transform()];
+
+const bufferSize = new Vec();
 
 let camX = 0;
 let camY = 0;
@@ -546,6 +507,8 @@ function _onresize() {
     canvas.width = canvas.clientWidth;
     canvas.height = canvas.clientHeight;
 
+    bufferSize.set(gl.drawingBufferWidth, gl.drawingBufferHeight);
+
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
 
     const scaleX = 2 / gl.drawingBufferWidth;
@@ -558,7 +521,7 @@ function _onresize() {
         -1, -1, 0, 1,
       ];
     
-    setCamera(camX, camY);
+    _updateCamera();
 
     resizeCb(gl.drawingBufferWidth, gl.drawingBufferHeight);
 }
@@ -571,7 +534,16 @@ function setResizeCb(cb) {
 function setCamera(x, y) {
     camX = x;
     camY = y;
+    _updateCamera();
+}
+
+function _updateCamera() {
     camTransform = Transform.translation(gl.drawingBufferWidth/2.0 - camX, gl.drawingBufferHeight/2.0 - camY);
+}
+
+// camera to world coords
+function unproject(pos) {
+    return camTransform.affineInverse().mul(pos);
 }
 
 function pushTransform(t) {
@@ -714,7 +686,6 @@ function sizeOf(glType) {
 
 export {
     Shader,
-    Transform,
     Texture,
     Mesh,
     VertexAttrib,
@@ -722,6 +693,7 @@ export {
     init,
     setResizeCb,
     setCamera,
+    unproject,
     pushTransform,
     popTransform,
     getTransform,
@@ -733,6 +705,8 @@ export {
     drawModel,
     render,
     gl,
+    canvas,
+    bufferSize,
     texVertSrc,
     texFragSrc,
     ATTRIB_POS,

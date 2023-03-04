@@ -35,6 +35,12 @@ class Vec {
         return new Vec(this.x - other.x, this.y - other.y);
     }
 
+    setLength(l) {
+        let scale = l / this.length();
+        this.x *= scale;
+        this.y *= scale;
+    }
+
     length() {
         return Math.sqrt(this.x * this.x + this.y * this.y);
     }
@@ -69,6 +75,87 @@ class Vec {
 
     reflect(normal) {
         return this.sub(normal.scale(2.0 * this.dot(normal)));
+    }
+}
+
+class Transform {
+    mat = new Float32Array(9);
+
+    constructor() {
+        this.identity();
+    }
+
+    identity() {
+        this.mat[0] = 1; this.mat[3] = 0; this.mat[6] = 0;
+        this.mat[1] = 0; this.mat[4] = 1; this.mat[7] = 0;
+        this.mat[2] = 0; this.mat[5] = 0; this.mat[8] = 1;
+    }
+
+    mul(x, y) {
+        if (x instanceof Vec) {
+            y = x.y;
+            x = x.x;
+        }
+        let newX = x * this.mat[0] + y * this.mat[3] + this.mat[6];
+        let newY = x * this.mat[1] + y * this.mat[4] + this.mat[7];
+        return new Vec(newX, newY);
+    }
+
+    combine(other) {
+        let c = new Transform();
+        c.mat[0] = this.mat[0] * other.mat[0] + this.mat[3] * other.mat[1] + this.mat[6] * other.mat[2];
+        c.mat[1] = this.mat[1] * other.mat[0] + this.mat[4] * other.mat[1] + this.mat[7] * other.mat[2];
+        c.mat[2] = this.mat[2] * other.mat[0] + this.mat[5] * other.mat[1] + this.mat[8] * other.mat[2];
+
+        c.mat[3] = this.mat[0] * other.mat[3] + this.mat[3] * other.mat[4] + this.mat[6] * other.mat[5];
+        c.mat[4] = this.mat[1] * other.mat[3] + this.mat[4] * other.mat[4] + this.mat[7] * other.mat[5];
+        c.mat[5] = this.mat[2] * other.mat[3] + this.mat[5] * other.mat[4] + this.mat[8] * other.mat[5];
+
+        c.mat[6] = this.mat[0] * other.mat[6] + this.mat[3] * other.mat[7] + this.mat[6] * other.mat[8];
+        c.mat[7] = this.mat[1] * other.mat[6] + this.mat[4] * other.mat[7] + this.mat[7] * other.mat[8];
+        c.mat[8] = this.mat[2] * other.mat[6] + this.mat[5] * other.mat[7] + this.mat[8] * other.mat[8];
+        return c;
+    }
+
+    getTranslation() {
+        return new Vec(
+            this.mat[6],
+            this.mat[7],
+        );
+    }
+
+    setTranslation(x, y) {
+        if (x instanceof Vec) {
+            y = x.y;
+            x = x.x;
+        }
+        this.mat[6] = x;
+        this.mat[7] = y;
+        return this;
+    }
+
+    /** Limited to orthogonal matrix with scaling */
+	affineInverse() {
+		var rotCol0 = new Vec(this.mat[0], this.mat[1]);
+        var rotCol1 = new Vec(this.mat[3], this.mat[4]);
+        rotCol0.setLength(1 / rotCol0.length());
+        rotCol1.setLength(1 / rotCol1.length());
+        
+        let inverse = new Transform();
+         // transposed columns
+        inverse.mat[0] = rotCol0.x; inverse.mat[3] = rotCol0.y;
+        inverse.mat[1] = rotCol1.x; inverse.mat[4] = rotCol1.y;
+
+		var invTrans = inverse.mul(this.getTranslation()).scale(-1);
+		inverse.setTranslation(invTrans);		
+		return inverse;
+	}
+
+    static translation(x, y) {
+        let t = new Transform();
+        t.mat[6] = x;
+        t.mat[7] = y;
+        return t;
     }
 }
 
@@ -209,4 +296,4 @@ function compareFloat(a, b, eps) {
     return Math.abs(a - b) < eps;
 }
 
-export {Vec, Rect, Circle, Line, compareFloat};
+export {Vec, Rect, Circle, Line, Transform, compareFloat};

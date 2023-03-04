@@ -1,4 +1,5 @@
 import { Vec } from "./math.js";
+import * as gfx from "./gfx/gfx.js";
 
 class Command {
     cmdIndex;
@@ -90,6 +91,11 @@ class Input {
         }
         cmd._pressed = false;
     }
+
+    _relPos(clientX, clientY) {
+        const clientRect = gfx.canvas.getBoundingClientRect();
+        return new Vec(clientX * gfx.bufferSize.x / clientRect.width, clientY * gfx.bufferSize.y / clientRect.height);
+    }
     
     _onMouseDown(event) {
         let cmdIndex = Input.CMD_SHOOT;
@@ -101,9 +107,7 @@ class Input {
             return;
         }
 
-        let globalPos = new PIXI.Point();
-        this._pixiApp.renderer.events.mapPositionToPoint(globalPos, event.clientX, event.clientY);
-        cmd.mousePos = new Vec(globalPos.x, globalPos.y);
+        cmd.mousePos = this._relPos(event.clientX, event.clientY);
         cmd.active = true;
         cmd.wasActivated = true;
         cmd._pressed = true;
@@ -118,9 +122,7 @@ class Input {
         if (cmd === undefined) {
             return;
         }
-        let globalPos = new PIXI.Point();
-        this._pixiApp.renderer.events.mapPositionToPoint(globalPos, event.clientX, event.clientY);
-        cmd.mousePos = new Vec(globalPos.x, globalPos.y);
+        cmd.mousePos = this._relPos(event.clientX, event.clientY);
         cmd._pressed = false;
     }
     

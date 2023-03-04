@@ -13,13 +13,6 @@ class Graphics {
         gfx.setCamera(x, y);
     }
 
-    unproject(pos) {
-        let p = new PIXI.Point(pos.x, pos.y);
-        let m = this.camContainer.localTransform;
-        m.applyInverse(p, p);
-        return new Vec(p.x, p.y);
-    }
-
     drawLevel(rows) {
         gfx.setColor(0.3, 0.3, 0.3);
         for (let r = 0; r < rows.length; r++) {
@@ -36,7 +29,6 @@ class Graphics {
         if (world.map !== null) {
             this.drawLevel(world.map.rows);
         }
-
         let lerpFraction = world.accumMs/conf.UPDATE_MS;
         let lerpPos = lerpVec(world.player.prevPos, world.player.pos, lerpFraction);
         gfx.setColor(0.4, 0.8, 0.4);
@@ -44,7 +36,7 @@ class Graphics {
         gfx.setColor(0, 1, 0);
         gfx.drawCircleLine(world.player.lastAckedPos.x, world.player.lastAckedPos.y, conf.PLAYER_RADIUS);
         gfx.setColor(0, 0, 1);
-        gfx.drawCircleLine(world.player.correctedPos.x, world.player.correctedPos.x, conf.PLAYER_RADIUS);
+        gfx.drawCircleLine(world.player.correctedPos.x, world.player.correctedPos.y, conf.PLAYER_RADIUS);
     
         gfx.setCamera(lerpPos.x, lerpPos.y);
     
