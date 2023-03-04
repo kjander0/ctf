@@ -20,34 +20,40 @@ class Graphics {
         return new Vec(p.x, p.y);
     }
 
-    // drawLevel(rows) {
-    //     let g = new PIXI.Graphics();
-    //     g.beginFill(0x555555);
-    //     for (let r = 0; r < rows.length; r++) {
-    //         for (let c = 0; c < rows[r].length; c++) {
-    //             if (rows[r][c] !== Map.WALL) {
-    //                 continue;
-    //             }
-    //             g.drawRect(c * conf.TILE_SIZE, (r) * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE);
-    //         }
-    //     }
-    //     this.camContainer.addChild(g);
-    // }
+    drawLevel(rows) {
+        gfx.setColor(0.3, 0.3, 0.3);
+        for (let r = 0; r < rows.length; r++) {
+            for (let c = 0; c < rows[r].length; c++) {
+                if (rows[r][c] !== Map.WALL) {
+                    continue;
+                }
+                gfx.drawRect(c * conf.TILE_SIZE, (r) * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE);
+            }
+        }
+    }
 
     update(world) {
+        if (world.map !== null) {
+            this.drawLevel(world.map.rows);
+        }
+
         let lerpFraction = world.accumMs/conf.UPDATE_MS;
         let lerpPos = lerpVec(world.player.prevPos, world.player.pos, lerpFraction);
-        gfx.drawCircle(lerpPos.x, lerpPos.y, 30);
-        gfx.drawCircle(world.player.lastAckedPos.x, world.player.lastAckedPos.y, 30);
-        gfx.drawCircle(world.player.correctedPos.x, world.player.correctedPos.x, 30);
+        gfx.setColor(0.4, 0.8, 0.4);
+        gfx.drawCircle(lerpPos.x, lerpPos.y, conf.PLAYER_RADIUS);
+        gfx.setColor(0, 1, 0);
+        gfx.drawCircleLine(world.player.lastAckedPos.x, world.player.lastAckedPos.y, conf.PLAYER_RADIUS);
+        gfx.setColor(0, 0, 1);
+        gfx.drawCircleLine(world.player.correctedPos.x, world.player.correctedPos.x, conf.PLAYER_RADIUS);
     
         gfx.setCamera(lerpPos.x, lerpPos.y);
     
-    
         for (let other of world.otherPlayers) {
             let lerpPos = lerpVec(other.prevPos, other.pos, lerpFraction);
-            gfx.drawCircle(lerpPos.x, lerpPos.y, 30);
-            gfx.drawCircle(world.player.lastAckedPos.x, world.player.lastAckedPos.y, 30);
+            gfx.setColor(0.8, 0.4, 0.4);
+            gfx.drawCircle(lerpPos.x, lerpPos.y, conf.PLAYER_RADIUS);
+            gfx.setColor(0, 0, 1);
+            gfx.drawCircle(other.lastAckedPos.x, other.lastAckedPos.y, conf.PLAYER_RADIUS);
         }
     
         // this.lineGfx.clear();
@@ -68,6 +74,8 @@ class Graphics {
         // this.uiGfx.endFill();
         // this.uiGfx.lineStyle(2, 0xaa2222);
         // this.uiGfx.drawRect(this.screenRect.width/2 - barWidth/2, this.screenRect.height - barHeight - border, barWidth, barHeight);
+
+        gfx.render();
     }
 }
 

@@ -17,6 +17,9 @@ import (
 // - sanitise user input (assume bytes could be anything)
 // - remove debug delay/jitter
 
+// WEAPON IDEAS
+// - lock on homing missile
+
 // GRAPHICS IDEAS
 // - 3d models rendered 2d, normal maps too
 // - models should have an inner skeleton with different coloured/styled armour (like mobile suits)

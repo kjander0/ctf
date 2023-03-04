@@ -105,8 +105,6 @@ function _processInitMsg(world, decoder) {
         rows.push(Array.from(arr));
     }
     world.map = new Map(rows);
-    // TODO: once init received, change player network state and create level elsewhere
-    world.gfx.addLevel(rows);
 }
 
 function _processUpdateMsg(world, decoder) {
@@ -137,8 +135,6 @@ function _processUpdateMsg(world, decoder) {
         if (otherPlayer === undefined) {
             otherPlayer = new Player();
             otherPlayer.id = id;
-            otherPlayer.graphic = world.gfx.addCircle(0x771177);
-            otherPlayer.lastAckedGraphic = world.gfx.addCircle(0xff0000, false);
             world.otherPlayers.push(otherPlayer);
         }
         otherPlayer.disconnected = false;
@@ -169,7 +165,7 @@ function _processUpdateMsg(world, decoder) {
     for (let i = 0; i < numNewHits; i++) {
         let hitPos = decoder.readVec();
         sound.hit.play();
-        world.gfx.addHit(hitPos);
+        // TODO: handle hits
     }
 }
 

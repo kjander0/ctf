@@ -28,7 +28,6 @@ window.onload = async function() {
         if (world.serverTick === -1) {
             return; // wait until we have a world update from server
         }
-
         world.accumMs += world.deltaMs;
 
         if (world.accumMs < conf.UPDATE_MS) {
@@ -52,16 +51,18 @@ window.onload = async function() {
     }
 
     let prevTime = window.performance.now();
-    pixiApp.ticker.add(function () {
+    function onFrame() {
         if (net.socket.readyState === WebSocket.CLOSED) {
             return;
         }
-        // TODO: want elapsedMS to be bounded
-        world.deltaMs = pixiApp.ticker.elapsedMS;
+        // TODO: want deltaMS to be bounded
+        world.deltaMs = window.performance.now() - prevTime;
+        prevTime = window.performance.now();
         update(world); // TODO: can't assume called at 60fps, e.g. my display getting 75fps (might want a custom timer?)
         world.gfx.update(world);
-        prevTime = window.performance.now();
-	});
+        window.requestAnimationFrame(onFrame);
+    }
+    window.requestAnimationFrame(onFrame);
 };
 
 function removeDisconnectedPlayers(world) {
@@ -69,11 +70,6 @@ function removeDisconnectedPlayers(world) {
         let otherPlayer = world.otherPlayers[i];
         if (!otherPlayer.disconnected) {
             continue;
-        }
-        world.gfx.remove(otherPlayer.graphic);
-        world.gfx.remove(otherPlayer.lastAckedGraphic);
-        if (otherPlayer.correctedGraphic) {
-            world.gfx.remove(otherPlayer.correctedGraphic);
         }
         world.otherPlayers.splice(i, 1);
     }

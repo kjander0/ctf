@@ -251,6 +251,38 @@ class Mesh {
             );
         }
     }
+
+    addCircleLine(x, y, radius, width=1) {
+        const resolution = 36;
+        const rads = 2 * Math.PI / resolution;
+        for (let i = 0; i < resolution; i++) {
+            let rad0 = i * rads;
+            let rad1 = (i+1) * rads;
+
+            const C0 = Math.cos(rad0);
+            const C1 = Math.cos(rad1);
+            const S0 = Math.sin(rad0);
+            const S1 = Math.sin(rad1);
+
+            const X0 = x + (radius-width) * C0;
+            const X1 = x + radius * C0;
+            const X2 = x + radius * C1;
+            const X3 = x + (radius-width) * C1;
+
+            const Y0 = y + (radius-width) * S0;
+            const Y1 = y + radius * S0;
+            const Y2 = y + radius * S1;
+            const Y3 = y + (radius-width) * S1;
+
+
+            this.add(X0, Y0);
+            this.add(X1, Y1);
+            this.add(X2, Y2);
+            this.add(X0, Y0);
+            this.add(X2, Y2);
+            this.add(X3, Y3);
+        }
+    }
 };
 
 class VertexAttrib {
@@ -275,13 +307,15 @@ class Model {
     attribBits;
     drawMode;
     shader;
-    textures;
+    textures = [];
     numInstances;
 
     constructor(mesh, drawMode, shader, textures=null, extraAttribs=null, numInstances=1) {
         this.drawMode = drawMode;
         this.shader = shader;
-        this.textures = textures;
+        if (textures !== null) {
+            this.textures = textures;
+        }
         this.numInstances = numInstances;
 
         this.attribBits = mesh.attribBits;
@@ -410,7 +444,7 @@ let resizeCb = function() {};
 
 let transformStack = [new Transform()];
 
-let camX = 0
+let camX = 0;
 let camY = 0;
 let camTransform = new Transform();
 let projMatrix;
@@ -555,6 +589,10 @@ function getTransform() {
     return transformStack[transformStack.length-1];
 }
 
+function setColor (r, g, b) {
+    shapeMesh.setColor(r, g, b);
+}
+
 function drawRect(x, y, width, height) {
     shapeMesh.setTransform(transformStack[transformStack.length-1]);
     shapeMesh.addRect(x, y, width, height);
@@ -563,6 +601,11 @@ function drawRect(x, y, width, height) {
 function drawCircle(x, y, radius) {
     shapeMesh.setTransform(transformStack[transformStack.length-1]);
     shapeMesh.addCircle(x, y, radius);
+}
+
+function drawCircleLine(x, y, radius, width=1) {
+    shapeMesh.setTransform(transformStack[transformStack.length-1]);
+    shapeMesh.addCircleLine(x, y, radius, width);
 }
 
 function drawTexture(x, y, width, height, texture) {
@@ -682,8 +725,10 @@ export {
     pushTransform,
     popTransform,
     getTransform,
+    setColor,
     drawRect,
     drawCircle,
+    drawCircleLine,
     drawTexture,
     drawModel,
     render,
