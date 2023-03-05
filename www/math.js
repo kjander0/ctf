@@ -39,6 +39,7 @@ class Vec {
         let scale = l / this.length();
         this.x *= scale;
         this.y *= scale;
+        return this;
     }
 
     length() {
@@ -101,6 +102,7 @@ class Transform {
         return new Vec(newX, newY);
     }
 
+    // result = this * other
     combine(other) {
         let c = new Transform();
         c.mat[0] = this.mat[0] * other.mat[0] + this.mat[3] * other.mat[1] + this.mat[6] * other.mat[2];
@@ -156,6 +158,14 @@ class Transform {
         t.mat[6] = x;
         t.mat[7] = y;
         return t;
+    }
+
+    static rotation(rads) {
+        const t = new Transform();
+        const C = Math.cos(rads);
+        const S = Math.sin(rads);
+        t.mat[0] = C; t.mat[3] = -S;
+        t.mat[1] = S; t.mat[4] = C;
     }
 }
 

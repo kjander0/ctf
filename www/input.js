@@ -94,7 +94,7 @@ class Input {
 
     _relPos(clientX, clientY) {
         const clientRect = gfx.canvas.getBoundingClientRect();
-        return new Vec(clientX * gfx.bufferSize.x / clientRect.width, clientY * gfx.bufferSize.y / clientRect.height);
+        return new Vec(clientX * gfx.bufferSize.x / clientRect.width, (1 - clientY / clientRect.height) * gfx.bufferSize.y);
     }
     
     _onMouseDown(event) {

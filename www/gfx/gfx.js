@@ -1,5 +1,19 @@
 import {Vec, Transform} from "../math.js"
 
+class Camera {
+    transform = new Transform();
+    invTransform = new Transform();
+
+    update(x, y, width, height) {
+        this.transform = Transform.translation(-width/2.0 + x, -height/2.0 + y);
+        this.invTransform = this.transform.affineInverse();
+    }
+
+    unproject(pos) {
+        return this.transform.mul(pos);
+    }
+}
+
 class Texture {
     glTexture;
     s0 = 0;
@@ -221,6 +235,27 @@ class Mesh {
         }
     }
 
+    addLine(start, end, width=1) {
+        const diff = end.sub(start);
+        const perp = new Vec(-diff.y, diff.x).setLength(width/2);
+        // d----------c
+        // |          |
+        // a----------b
+        const a = start.sub(perp);
+        const b = end.sub(perp);
+        const c = end.add(perp);
+        const d = start.add(perp);
+        this.add(a);this.add(b);this.add(c);
+        this.add(a);this.add(c);this.add(d);
+
+        // triangle end caps
+        if (width > 1) {
+            const capOffset = new Vec(diff).setLength(width/2);
+            this.add(a); this.add(d); this.add(start.sub(capOffset));
+            this.add(c); this.add(b); this.add(end.add(capOffset));
+        }
+    }
+
     addRect(x, y, width, height, s0=0, t0=0, s1=1, t1=1) {
         this.add(x, y, s0, t0);
         this.add(x+width, y, s1, t0);
@@ -405,9 +440,6 @@ let transformStack = [new Transform()];
 
 const bufferSize = new Vec();
 
-let camX = 0;
-let camY = 0;
-let camTransform = new Transform();
 let projMatrix;
 
 let shapeMesh;
@@ -521,29 +553,11 @@ function _onresize() {
         -1, -1, 0, 1,
       ];
     
-    _updateCamera();
-
     resizeCb(gl.drawingBufferWidth, gl.drawingBufferHeight);
 }
 
 function setResizeCb(cb) {
     resizeCb = cb;
-}
-
-// TODO: pass in transform matrix of camera, then we do affine inverse here.
-function setCamera(x, y) {
-    camX = x;
-    camY = y;
-    _updateCamera();
-}
-
-function _updateCamera() {
-    camTransform = Transform.translation(gl.drawingBufferWidth/2.0 - camX, gl.drawingBufferHeight/2.0 - camY);
-}
-
-// camera to world coords
-function unproject(pos) {
-    return camTransform.affineInverse().mul(pos);
 }
 
 function pushTransform(t) {
@@ -580,6 +594,11 @@ function drawCircleLine(x, y, radius, width=1) {
     shapeMesh.addCircleLine(x, y, radius, width);
 }
 
+function drawLine(start, end, width=1) {
+    shapeMesh.setTransform(transformStack[transformStack.length-1]);
+    shapeMesh.addLine(start, end, width);    
+}
+
 function drawTexture(x, y, width, height, texture) {
     let texMesh = texMeshMap.get(texture);
     if (texMesh === undefined) {
@@ -594,7 +613,7 @@ function drawModel(model) {
     models.push(model);
 }
 
-function render(targetTexture=null) {
+function render(camera, targetTexture=null) {
     if (targetTexture !== null) {
         gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, targetTexture.glTexture, 0);
@@ -602,9 +621,6 @@ function render(targetTexture=null) {
     } else {
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     }
-
-    gl.clear(gl.COLOR_BUFFER_BIT);
-
     const disposeModels = [];
 
     const shapeModel = new Model(shapeMesh, gl.TRIANGLES, shapeShader)
@@ -620,7 +636,7 @@ function render(targetTexture=null) {
     });
 
     for (let model of models) {
-        _renderModel(model);
+        _renderModel(camera, model);
     }
     models = [];
     
@@ -632,26 +648,7 @@ function render(targetTexture=null) {
     checkError();
 }
 
-function checkError() {
-    const err = gl.getError();
-    if (err === gl.NO_ERROR) {
-        return;
-    } else if (err === gl.INVALID_ENUM) {
-        throw "gl error: invalid enum";
-    } else if (err === gl.INVALID_VALUE) {
-        throw "gl error: invalid value";
-    } else if (err === gl.INVALID_OPERATION) {
-        throw "gl error: invalid operation";
-    } else if (err === gl.INVALID_FRAMEBUFFER_OPERATION) {
-        throw "gl error: invalid framebuffer operation";
-    } else if (err === gl.OUT_OF_MEMORY) {
-        throw "gl error: out of memory";
-    } else if (err === gl.CONTEXT_LOST_WEBGL) {
-        throw "gl error: context lost";
-    }
-}
-
-function _renderModel(model) {
+function _renderModel(camera, model) {
     if (model.numVertices === 0) {
         return;
     }
@@ -659,7 +656,7 @@ function _renderModel(model) {
     model.shader.use();
 
     model.shader.setUniform("uProjMatrix", projMatrix);
-    model.shader.setUniform("uCamMatrix", camTransform.mat);
+    model.shader.setUniform("uCamMatrix", camera.invTransform.mat);
 
     if (model.hasAttrib(ATTRIB_TEX) && model.textures.length ===0) {
         throw "missing textures for model with tex coord attribs";
@@ -684,7 +681,27 @@ function sizeOf(glType) {
     throw "length of type not specified";
 }
 
+function checkError() {
+    const err = gl.getError();
+    if (err === gl.NO_ERROR) {
+        return;
+    } else if (err === gl.INVALID_ENUM) {
+        throw "gl error: invalid enum";
+    } else if (err === gl.INVALID_VALUE) {
+        throw "gl error: invalid value";
+    } else if (err === gl.INVALID_OPERATION) {
+        throw "gl error: invalid operation";
+    } else if (err === gl.INVALID_FRAMEBUFFER_OPERATION) {
+        throw "gl error: invalid framebuffer operation";
+    } else if (err === gl.OUT_OF_MEMORY) {
+        throw "gl error: out of memory";
+    } else if (err === gl.CONTEXT_LOST_WEBGL) {
+        throw "gl error: context lost";
+    }
+}
+
 export {
+    Camera,
     Shader,
     Texture,
     Mesh,
@@ -692,12 +709,11 @@ export {
     Model,
     init,
     setResizeCb,
-    setCamera,
-    unproject,
     pushTransform,
     popTransform,
     getTransform,
     setColor,
+    drawLine,
     drawRect,
     drawCircle,
     drawCircleLine,

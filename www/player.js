@@ -57,7 +57,7 @@ function sampleInput(world) {
         if (world.player.energy >= conf.LASER_ENERGY_COST) {
             sound.laser.play();
             inputState.doShoot = true;
-            let aimPos = gfx.unproject(shootCmd.mousePos);
+            let aimPos = world.gfx.camera.unproject(shootCmd.mousePos);
             inputState.aimAngle = _calcAimAngle(world.player.pos, aimPos);
         }
     }
@@ -66,7 +66,7 @@ function sampleInput(world) {
     if (secondaryCmd.wasActivated) {
         sound.bouncy.play();
         inputState.doSecondary = true;
-        let aimPos = gfx.unproject(secondaryCmd.mousePos);
+        let aimPos = world.gfx.camera.unproject(secondaryCmd.mousePos);
         inputState.aimAngle = _calcAimAngle(world.player.pos, aimPos);
     }
 
