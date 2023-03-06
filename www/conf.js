@@ -1,4 +1,5 @@
-let shared = null;
+import * as assets from "./assets.js";
+
 let UPDATE_MS;
 let TILE_SIZE;
 let PLAYER_SPEED;
@@ -12,30 +13,18 @@ let BOUNCY_SPEED;
 
 async function retrieveConf()
 {
-    let promise = new Promise(function(resolve, reject) {
-        var xmlHttp = new XMLHttpRequest();
-        xmlHttp.onload = function() { 
-             if (xmlHttp.status == 200) {
-                shared = JSON.parse(xmlHttp.responseText);
-                UPDATE_MS = 1000 / shared.TickRate;
-                TILE_SIZE = shared.TileSize;
-                PLAYER_SPEED = shared.PlayerSpeed;
-                PLAYER_HEALTH = shared.PlayerHealth;
-                PLAYER_ENERGY = shared.PlayerEnergy;
-                PLAYER_RADIUS = shared.PlayerRadius;
-                LASER_SPEED = shared.LaserSpeed;
-                LASER_TIME_TICKS= shared.LaserTimeTicks;
-                LASER_ENERGY_COST = shared.LaserEnergyCost;
-                BOUNCY_SPEED = shared.BouncySpeed;
-                resolve();
-                return;
-            }
-            reject("failed to retrieve shared config");
-        }
-        xmlHttp.open("GET", window.location.origin + '/shared.json', true); // true for asynchronous 
-        xmlHttp.send(null);
-    });
-    return promise;
+    let text = await assets.requestText('shared.json');
+    let config = JSON.parse(text);
+    UPDATE_MS = 1000 / config.TickRate;
+    TILE_SIZE = config.TileSize;
+    PLAYER_SPEED = config.PlayerSpeed;
+    PLAYER_HEALTH = config.PlayerHealth;
+    PLAYER_ENERGY = config.PlayerEnergy;
+    PLAYER_RADIUS = config.PlayerRadius;
+    LASER_SPEED = config.LaserSpeed;
+    LASER_TIME_TICKS= config.LaserTimeTicks;
+    LASER_ENERGY_COST = config.LaserEnergyCost;
+    BOUNCY_SPEED = config.BouncySpeed;
 }
 
 export {

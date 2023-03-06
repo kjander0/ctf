@@ -12,9 +12,11 @@ import * as weapons from "./weapons.js";
 import * as net from "./net.js";
 import * as conf from "./conf.js";
 import * as gfx from "./gfx/gfx.js";
+import * as asset from "./assets.js";
 
 window.onload = async function() {
     await conf.retrieveConf(); // important to do this first
+    await asset.loadAssets();
 
     const canvas = document.getElementById("glcanvas");
     gfx.init(canvas);
