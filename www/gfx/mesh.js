@@ -188,7 +188,7 @@ class Model {
             this.vboList.push(vbo);
             gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(attrib.data), gl.STATIC_DRAW);
-            gl.vertexAttribPointer(attrib.loc, attrib.size, attrib.type, false, attrib.size * sizeOf(attrib.type), 0);
+            gl.vertexAttribPointer(attrib.loc, attrib.size, attrib.type, false, attrib.size * this.sizeOf(attrib.type), 0);
             gl.enableVertexAttribArray(attrib.loc);
             gl.vertexAttribDivisor(attrib.loc, attrib.divisor);
         }
@@ -198,7 +198,7 @@ class Model {
         gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(mesh.data), gl.STATIC_DRAW);
 
-        const floatBytes = sizeOf(gl.FLOAT);
+        const floatBytes = this.sizeOf(gl.FLOAT);
         let elementSize = 0;
         for (let attrib of attribs) {
             elementSize += attrib.size;
@@ -217,6 +217,13 @@ class Model {
 
     hasAttrib(attribBit) {
         return (this.attribBits & attribBit) === attribBit;
+    }
+
+    sizeOf(glType) {
+        if (glType === this.gl.FLOAT) {
+            return Float32Array.BYTES_PER_ELEMENT;
+        }
+        throw "length of type not specified";
     }
 
     dispose() {
