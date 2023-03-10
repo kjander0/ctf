@@ -1,5 +1,4 @@
 import { Vec } from "./math.js";
-import * as gfx from "./gfx/gfx.js";
 
 class Command {
     cmdIndex;
@@ -25,7 +24,11 @@ class Input {
     _commands = [];
     _keyMap = {};
 
-    constructor() {
+    graphics;
+
+    constructor(graphics) {
+        this.graphics = graphics;
+
         this._keyMap['a'] = Input.CMD_LEFT;
         this._keyMap['d'] = Input.CMD_RIGHT;
         this._keyMap['w'] = Input.CMD_UP;
@@ -93,8 +96,8 @@ class Input {
     }
 
     _relPos(clientX, clientY) {
-        const clientRect = gfx.canvas.getBoundingClientRect();
-        return new Vec(clientX * gfx.bufferSize.x / clientRect.width, (1 - clientY / clientRect.height) * gfx.bufferSize.y);
+        const clientRect = this.graphics.canvas.getBoundingClientRect();
+        return new Vec(clientX / clientRect.width * this.graphics.screenSize.x, (1 - clientY / clientRect.height) *  this.graphics.screenSize.y);
     }
     
     _onMouseDown(event) {
@@ -128,15 +131,15 @@ class Input {
     
     _onMouseMove(event) {
     }
-}
 
-function postUpdate(world) {
-    for (const cmd of world.input._commands) {
-        if (!cmd._pressed) {
-            cmd.active = false;
+    postUpdate() {
+        for (const cmd of this._commands) {
+            if (!cmd._pressed) {
+                cmd.active = false;
+            }
+            cmd.wasActivated = false;
         }
-        cmd.wasActivated = false;
     }
 }
 
-export { Input, postUpdate };
+export { Input};

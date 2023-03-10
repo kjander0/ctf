@@ -6,12 +6,12 @@
 // - juicify (screen shake on death)
 
 import {World} from "./world.js"
-import * as input from "./input.js";
+import {Input} from "./input.js";
 import * as player from "./player.js";
 import * as weapons from "./weapons.js";
 import * as net from "./net.js";
 import * as conf from "./conf.js";
-import * as gfx from "./gfx/gfx.js";
+import {Graphics} from "./graphics.js";
 import * as asset from "./assets.js";
 
 window.onload = async function() {
@@ -19,9 +19,10 @@ window.onload = async function() {
     await asset.loadAssets();
 
     const canvas = document.getElementById("glcanvas");
-    gfx.init(canvas);
+    const graphics = new Graphics(canvas);
+    const input = new Input(graphics);
 
-    let world = new World();
+    let world = new World(graphics, input);
     world.player = new player.Player();
 
     await net.connect(world);
@@ -61,7 +62,7 @@ window.onload = async function() {
         world.deltaMs = window.performance.now() - prevTime;
         prevTime = window.performance.now();
         update(world); // TODO: can't assume called at 60fps, e.g. my display getting 75fps (might want a custom timer?)
-        world.gfx.update(world);
+        graphics.drawWorld(world);
         window.requestAnimationFrame(onFrame);
     }
     window.requestAnimationFrame(onFrame);

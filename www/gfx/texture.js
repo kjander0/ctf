@@ -1,4 +1,5 @@
 class Texture {
+    gl;
     glTexture;
     s0 = 0;
     s1 = 1;
@@ -8,7 +9,8 @@ class Texture {
     width;
     height;
 
-    static fromSize(width, height, srgb=false) {
+    static fromSize(gl, width, height, srgb=false) {
+        this.gl = gl;
         let tex = new Texture();
         tex.width = width;
         tex.height = height;
@@ -26,7 +28,8 @@ class Texture {
         return tex;
     }
 
-    static fromImage(image, srgb=false) {
+    static fromImage(gl, image, srgb=false) {
+        this.gl = gl;
         let tex = new Texture();
         tex.width = image.naturalWidth;
         tex.height = image.naturalHeight;
@@ -61,7 +64,7 @@ class Texture {
     }
 
     dispose() {
-        gl.deleteTexture(this.glTexture);
+        this.gl.deleteTexture(this.glTexture);
     }
 }
 

@@ -1,4 +1,14 @@
-class VertexAttrib {
+import {Transform, Vec} from "../math.js";
+
+class VertAttrib {
+    static POS_BIT = 1;
+    static COLOR_BIT = 2;
+    static TEX_BIT = 4;
+
+    static POS_LOC = 0;
+    static COLOR_LOC = 1;
+    static TEX_LOC = 2;
+
     loc;
     size;
     type;
@@ -44,11 +54,11 @@ class Mesh {
     add(x, y, s, t) {
         const pos = this.transform.mul(x, y);
         this.data.push(pos.x, pos.y);
-        if ((this.attribBits & ATTRIB_COLOR) === ATTRIB_COLOR) {
+        if ((this.attribBits & VertAttrib.COLOR_BIT) === VertAttrib.COLOR_BIT) {
             this.data.push(this.color[0], this.color[1], this.color[2]);
         }
 
-        if ((this.attribBits & ATTRIB_TEX) === ATTRIB_TEX) {
+        if ((this.attribBits & VertAttrib.TEX_BIT) === VertAttrib.TEX_BIT) {
             console.assert(s !== undefined && t !== undefined);
             this.data.push(s, t);
         }
@@ -150,8 +160,10 @@ class Model {
     shader;
     textures = [];
     numInstances;
+    gl;
 
-    constructor(mesh, drawMode, shader, textures=null, extraAttribs=null, numInstances=1) {
+    constructor(gl, mesh, drawMode, shader, textures=null, extraAttribs=null, numInstances=1) {
+        this.gl = gl;
         this.drawMode = drawMode;
         this.shader = shader;
         if (textures !== null) {
@@ -161,12 +173,12 @@ class Model {
 
         this.attribBits = mesh.attribBits;
 
-        let attribs = [new VertexAttrib(ATTRIB_POS_LOC, 2, gl.FLOAT)];
-        if (this.hasAttrib(ATTRIB_COLOR)) {
-            attribs.push(new VertexAttrib(ATTRIB_COLOR_LOC, 3, gl.FLOAT));
+        let attribs = [new VertAttrib(VertAttrib.POS_LOC, 2, this.gl.FLOAT)];
+        if (this.hasAttrib(VertAttrib.COLOR_BIT)) {
+            attribs.push(new VertAttrib(VertAttrib.COLOR_LOC, 3, this.gl.FLOAT));
         }
-        if (this.hasAttrib(ATTRIB_TEX)) {
-            attribs.push(new VertexAttrib(ATTRIB_TEX_LOC, 2, gl.FLOAT));
+        if (this.hasAttrib(VertAttrib.TEX_BIT)) {
+            attribs.push(new VertAttrib(VertAttrib.TEX_LOC, 2, this.gl.FLOAT));
         }
 
         let parallelAttribs = [];
@@ -180,25 +192,25 @@ class Model {
             }
         }
 
-        this.vao = gl.createVertexArray();
-        gl.bindVertexArray(this.vao);
+        this.vao = this.gl.createVertexArray();
+        this.gl.bindVertexArray(this.vao);
 
         for (let attrib of parallelAttribs) {
-            const vbo = gl.createBuffer();
+            const vbo = this.gl.createBuffer();
             this.vboList.push(vbo);
-            gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(attrib.data), gl.STATIC_DRAW);
-            gl.vertexAttribPointer(attrib.loc, attrib.size, attrib.type, false, attrib.size * this.sizeOf(attrib.type), 0);
-            gl.enableVertexAttribArray(attrib.loc);
-            gl.vertexAttribDivisor(attrib.loc, attrib.divisor);
+            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vbo);
+            this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(attrib.data), this.gl.STATIC_DRAW);
+            this.gl.vertexAttribPointer(attrib.loc, attrib.size, attrib.type, false, attrib.size * this.sizeOf(attrib.type), 0);
+            this.gl.enableVertexAttribArray(attrib.loc);
+            this.gl.vertexAttribDivisor(attrib.loc, attrib.divisor);
         }
 
-        const vbo = gl.createBuffer();
+        const vbo = this.gl.createBuffer();
         this.vboList.push(vbo);
-        gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(mesh.data), gl.STATIC_DRAW);
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vbo);
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(mesh.data), this.gl.STATIC_DRAW);
 
-        const floatBytes = this.sizeOf(gl.FLOAT);
+        const floatBytes = this.sizeOf(this.gl.FLOAT);
         let elementSize = 0;
         for (let attrib of attribs) {
             elementSize += attrib.size;
@@ -208,9 +220,9 @@ class Model {
 
         let offset = 0;
         for (let attrib of attribs) {
-            gl.vertexAttribPointer(attrib.loc, attrib.size, attrib.type, false, stride, offset);
-            gl.enableVertexAttribArray(attrib.loc);
-            gl.vertexAttribDivisor(attrib.loc, attrib.divisor);
+            this.gl.vertexAttribPointer(attrib.loc, attrib.size, attrib.type, false, stride, offset);
+            this.gl.enableVertexAttribArray(attrib.loc);
+            this.gl.vertexAttribDivisor(attrib.loc, attrib.divisor);
             offset += attrib.size * floatBytes;
         }
     }
@@ -228,8 +240,10 @@ class Model {
 
     dispose() {
         for (let vbo of this.vboList) {
-            gl.deleteBuffer(vbo);
+            this.gl.deleteBuffer(vbo);
         }
-        gl.deleteVertexArray(this.vao);
+        this.gl.deleteVertexArray(this.vao);
     }
 }
+
+export {VertAttrib, Mesh, Model};

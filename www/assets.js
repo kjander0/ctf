@@ -3,22 +3,36 @@
 
 // TODO: reuse this function for conf.js
 
-let shipAlbedoTex;
-let shipNormalTex;
+let shipAlbedoImage;
+let shipNormalImage;
 
 let shapeVertSrc;
 let shapeFragSrc;
 let texVertSrc;
 let texFragSrc;
+let lightsVertSrc;
+let lightsFragSrc;
+let spriteVertSrc;
+let spriteFragSrc;
+let gammaFragSrc;
 
 async function loadAssets() {
-    shipAlbedoTex = await requestImage("assets/ship.png");
-    shipNormalTex = await requestImage("assets/ship_normal.png");
-
     shapeVertSrc = await requestText("assets/shaders/shape.vert");
     shapeFragSrc = await requestText("assets/shaders/shape.frag");
+
     texVertSrc = await requestText("assets/shaders/texture.vert");
     texFragSrc = await requestText("assets/shaders/texture.frag");
+
+    lightsVertSrc = await requestText("assets/shaders/lights.vert");
+    lightsFragSrc = await requestText("assets/shaders/lights.frag");
+
+    spriteVertSrc = await requestText("assets/shaders/sprite.vert");
+    spriteFragSrc = await requestText("assets/shaders/sprite.frag");
+
+    gammaFragSrc = await requestText("assets/shaders/gamma.frag");
+
+    shipAlbedoImage = await requestImage("assets/ship.png");
+    shipNormalImage = await requestImage("assets/ship_normal.png");
 }
 
 async function requestText(urlPath) {
@@ -59,6 +73,11 @@ export {
     shapeFragSrc,
     texVertSrc,
     texFragSrc,
-    //shipAlbedoTex,
-    //shipNormalTex,
+    lightsVertSrc,
+    lightsFragSrc,
+    spriteVertSrc,
+    spriteFragSrc,
+    gammaFragSrc,
+    shipAlbedoImage,
+    shipNormalImage,
 }

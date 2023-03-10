@@ -3,7 +3,6 @@ import { Input } from "./input.js"
 import {Predicted} from "./predicted.js"
 import * as conf from "./conf.js"
 import * as sound from "./sound.js"
-import * as gfx from "./gfx/gfx.js"
 
 class Player {
     static SPEED = 2.5;
@@ -57,7 +56,7 @@ function sampleInput(world) {
         if (world.player.energy >= conf.LASER_ENERGY_COST) {
             sound.laser.play();
             inputState.doShoot = true;
-            let aimPos = world.gfx.camera.unproject(shootCmd.mousePos);
+            let aimPos = world.graphics.camera.unproject(shootCmd.mousePos);
             inputState.aimAngle = _calcAimAngle(world.player.pos, aimPos);
         }
     }
@@ -66,7 +65,7 @@ function sampleInput(world) {
     if (secondaryCmd.wasActivated) {
         sound.bouncy.play();
         inputState.doSecondary = true;
-        let aimPos = world.gfx.camera.unproject(secondaryCmd.mousePos);
+        let aimPos = world.graphics.camera.unproject(secondaryCmd.mousePos);
         inputState.aimAngle = _calcAimAngle(world.player.pos, aimPos);
     }
 

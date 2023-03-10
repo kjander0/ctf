@@ -1,4 +1,3 @@
-import * as graphics from "./graphics.js";
 import * as input from "./input.js";
 import * as conf from "./conf.js";
 
@@ -11,12 +10,12 @@ class World {
     player;
     otherPlayers = [];
     laserList = [];
+    graphics;
     input;
-    gfx;
 
-    constructor() {
-        this.input = new input.Input();
-        this.gfx = new graphics.Graphics();
+    constructor(graphics, input) {
+        this.graphics = graphics;
+        this.input = input;
     }
 }
 
