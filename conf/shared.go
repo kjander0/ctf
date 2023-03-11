@@ -23,9 +23,9 @@ type SharedParams struct {
 
 var Shared = SharedParams{
 	TickRate:        30,
-	TileSize:        16,
+	TileSize:        32,
 	PlayerSpeed:     2,
-	PlayerRadius:    10,
+	PlayerRadius:    32,
 	PlayerHealth:    10,
 	PlayerEnergy:    60,
 	JailTimeTicks:   300,

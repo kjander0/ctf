@@ -39,7 +39,7 @@ class Graphics {
     albedoTex = null;
     normalTex = null;
     highlightTex = null;
-    gammaTex = null;
+    finalTex = null;
 
     shipAlbedoTex;
     shipNormalTex;
@@ -109,7 +109,7 @@ class Graphics {
             this.screenSize.x,
             this.screenSize.y,
         );
-        this.gammaTex = Texture.fromSize (
+        this.finalTex = Texture.fromSize (
             this.gl,
             this.screenSize.x,
             this.screenSize.y,
@@ -123,33 +123,31 @@ class Graphics {
                 if (rows[r][c] !== Map.WALL) {
                     continue;
                 }
-                this.renderer.drawRect(c * conf.TILE_SIZE, (r) * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE);
+                this.renderer.drawRect(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE);
             }
         }
     }
 
     drawWorld(world) {
-        if (world.map !== null) {
-            this.drawLevel(world.map.rows);
-        }
-
-        this.uiCamera.update(0, 0, this.screenSize.x, this.screenSize.y);
+        this.uiCamera.update(this.screenSize.x/2, this.screenSize.y/2, this.screenSize.x, this.screenSize.y);
 
         const lerpFraction = world.accumMs/conf.UPDATE_MS;
         const lerpPos = lerpVec(world.player.prevPos, world.player.pos, lerpFraction);
 
         this.camera.update(lerpPos.x, lerpPos.y, this.screenSize.x, this.screenSize.y);
 
+        let shipRadius = conf.PLAYER_RADIUS / assets.shipPixelRatio;
+
         // Draw normals to offscreen texture
         this.gl.clearColor(0.0, 0.0, 1.0, 0.0);
         this.renderer.setAndClearTarget(this.normalTex);
-        this.renderer.drawTexture(lerpPos.x, lerpPos.y, conf.PLAYER_RADIUS, conf.PLAYER_RADIUS, this.shipNormalTex);
+        this.renderer.drawTexture(lerpPos.x - shipRadius, lerpPos.y - shipRadius, shipRadius * 2, shipRadius * 2, this.shipNormalTex);
         this.renderer.render(this.camera);
 
         // Draw albedo to offscreen texture
         this.gl.clearColor(0, 0, 0, 1.0);
         this.renderer.setAndClearTarget(this.albedoTex);
-        this.renderer.drawTexture(lerpPos.x, lerpPos.y, conf.PLAYER_RADIUS, conf.PLAYER_RADIUS, this.shipAlbedoTex);
+        this.renderer.drawTexture(lerpPos.x - shipRadius, lerpPos.y - shipRadius, shipRadius * 2, shipRadius * 2, this.shipAlbedoTex);
         this.renderer.render(this.camera);
 
         let lightsMesh = new Mesh(VertAttrib.POS_BIT);
@@ -158,7 +156,7 @@ class Graphics {
 
         let lightPosData = [];
         for (let laser of world.laserList) {
-            lightPosData.push(laser.line.start, laser.line.end);
+            lightPosData.push(laser.line.end.x, laser.line.end.y);
         }
 
         let lightPosAttrib = new VertAttrib(ATTRIB_LIGHT_POS_LOC, 2, this.gl.FLOAT, 1);
@@ -184,32 +182,51 @@ class Graphics {
         this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
         
 
-        this.renderer.drawTexture(0, 0, this.screenSize.x, this.screenSize.y, this.shipAlbedoTex);
-        this.renderer.setAndClearTarget(null);
+        // this.renderer.drawTexture(0, 0, this.screenSize.x, this.screenSize.y, this.albedoTex);
+        // this.renderer.setAndClearTarget(null);
+        // this.renderer.render(this.uiCamera);
+
+
+
+        let screenMesh = new Mesh(VertAttrib.POS_BIT | VertAttrib.TEX_BIT);
+        screenMesh.addRect(0, 0, this.gl.drawingBufferWidth, this.gl.drawingBufferHeight);
+        let spriteModel = new Model(
+            this.gl,
+            screenMesh,
+            this.gl.TRIANGLES,
+            this.spriteShader,
+            [this.albedoTex, this.highlightTex]
+        );
+        this.renderer.drawModel(spriteModel);
+        this.renderer.setAndClearTarget(this.finalTex);
         this.renderer.render(this.uiCamera);
 
+        let screenModel = new Model(
+            this.gl,
+            screenMesh,
+            this.gl.TRIANGLES,
+            this.gammaShader,
+            [this.finalTex]
+        );
+        this.renderer.drawModel(screenModel);
+        this.renderer.setAndClearTarget(null);
 
+        this.renderer.render(this.uiCamera);
 
-        // let shipMesh = new gfx.Mesh(gfx.ATTRIB_POS | gfx.ATTRIB_TEX);
-        // shipMesh.addRect(0, 0, gfx.gl.drawingBufferWidth, gfx.gl.drawingBufferHeight);
-        // let shipModel = new gfx.Model(
-        //     shipMesh,
-        //     gfx.gl.TRIANGLES,
-        //     spriteShader,
-        //     [albedoTex, highlightTex]
-        // );
-        // gfx.drawModel(shipModel);
-        // gfx.render(finalTex);
+        if (world.map !== null) {
+            this.drawLevel(world.map.rows);
+        }
+        this.renderer.setColor(0, 1, 0);
+        this.renderer.drawCircleLine(world.player.lastAckedPos.x, world.player.lastAckedPos.y, conf.PLAYER_RADIUS);
+        this.renderer.setColor(0, 0, 1);
+        this.renderer.drawCircleLine(world.player.correctedPos.x, world.player.correctedPos.y, conf.PLAYER_RADIUS);
 
-        // let screenMesh = new gfx.Mesh(gfx.ATTRIB_POS | gfx.ATTRIB_TEX);
-        // screenMesh.addRect(0, 0, gfx.gl.drawingBufferWidth, gfx.gl.drawingBufferHeight);
-        // let screenModel = new gfx.Model(
-        //     screenMesh,
-        //     gfx.gl.TRIANGLES,
-        //     finalShader,
-        //     [finalTex]
-        // );
-        // gfx.drawModel(screenModel);
+        this.renderer.setColor(1, 0, 0);
+        for (let laser of world.laserList) {
+            this.renderer.drawLine(laser.line.start, laser.line.end, 3);
+        }
+        this.renderer.render(this.camera);
+
 
 
 

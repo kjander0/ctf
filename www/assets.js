@@ -16,6 +16,8 @@ let spriteVertSrc;
 let spriteFragSrc;
 let gammaFragSrc;
 
+const shipPixelRatio = 406/512;
+
 async function loadAssets() {
     shapeVertSrc = await requestText("assets/shaders/shape.vert");
     shapeFragSrc = await requestText("assets/shaders/shape.frag");
@@ -80,4 +82,5 @@ export {
     gammaFragSrc,
     shipAlbedoImage,
     shipNormalImage,
+    shipPixelRatio,
 }

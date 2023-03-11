@@ -10,8 +10,8 @@ class Texture {
     height;
 
     static fromSize(gl, width, height, srgb=false) {
-        this.gl = gl;
         let tex = new Texture();
+        tex.gl = gl;
         tex.width = width;
         tex.height = height;
         tex.glTexture = gl.createTexture();
@@ -29,8 +29,8 @@ class Texture {
     }
 
     static fromImage(gl, image, srgb=false) {
-        this.gl = gl;
         let tex = new Texture();
+        tex.gl = gl;
         tex.width = image.naturalWidth;
         tex.height = image.naturalHeight;
         tex.glTexture = gl.createTexture();

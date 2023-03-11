@@ -93,21 +93,20 @@ class Renderer {
 
     render(camera) {
         const disposeList = [];
-        const drawList = this.models.slice();
-    
+
         const shapeModel = new Model(this.gl, this.shapeMesh, this.gl.TRIANGLES, this.shapeShader);
-        drawList.push(shapeModel);
+        this.models.push(shapeModel);
         disposeList.push(shapeModel);
         this.shapeMesh.clear();
     
         this.texMeshMap.forEach((mesh, texture) => {
             const texModel = new Model(this.gl, mesh, this.gl.TRIANGLES, this.texShader, [texture]);
-            drawList.push(texModel);
+            this.models.push(texModel);
             disposeList.push(texModel);
             mesh.clear();
         });
 
-        for (let model of drawList) {
+        for (let model of this.models) {
             this._renderModel(model, camera);
         }
 
@@ -115,6 +114,8 @@ class Renderer {
         for (let model of disposeList) {
             model.dispose();
         }
+
+        this.models = [];
 
         checkError(this.gl);
     }
