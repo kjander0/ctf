@@ -74,10 +74,10 @@ outer:
 			if player.DoDisconnect {
 				return
 			}
-			if player.State == entity.PlayerStateWaitingForInput {
-				player.Pos = world.Map.RandomJailLocation()
-				logger.Debug("Spawn: ", player.Pos)
+			if player.NetState == entity.PlayerNetStateWaitingForInput {
 				player.State = entity.PlayerStateJailed
+				player.Pos = world.Map.RandomJailLocation()
+				player.NetState = entity.PlayerNetStateReady
 				player.JailTimeTicks = conf.Shared.JailTimeTicks
 			}
 		default:
@@ -139,15 +139,13 @@ func SendMessages(world *entity.World) error {
 	// latest snapshot and last acked snapshot. Could delta per-byte and use bitflag to tell which bytes changed
 	for i := range world.PlayerList {
 		var msgBytes []byte
-		switch world.PlayerList[i].State {
-		case entity.PlayerStateJoining:
+		switch world.PlayerList[i].NetState {
+		case entity.PlayerNetStateJoining:
 			msgBytes = prepareInitMsg(world, i)
-			world.PlayerList[i].State = entity.PlayerStateWaitingForInput
-		case entity.PlayerStateWaitingForInput:
+			world.PlayerList[i].NetState = entity.PlayerNetStateWaitingForInput
+		case entity.PlayerNetStateWaitingForInput:
 			fallthrough
-		case entity.PlayerStateAlive:
-			fallthrough
-		case entity.PlayerStateJailed:
+		case entity.PlayerNetStateReady:
 			msgBytes = prepareWorldUpdate(world, i)
 		}
 
@@ -204,6 +202,7 @@ func prepareWorldUpdate(world *entity.World, playerIndex int) []byte {
 	}
 	player.PredictedInputs.ClearAcked()
 
+	encoder.WriteUint8(uint8(player.State))
 	encoder.WriteVec(player.Pos)
 	encoder.WriteUint8(uint8(player.Energy))
 
@@ -213,6 +212,7 @@ func prepareWorldUpdate(world *entity.World, playerIndex int) []byte {
 			continue
 		}
 		encoder.WriteUint8(world.PlayerList[i].Id)
+		encoder.WriteUint8(uint8(world.PlayerList[i].State))
 		encoder.WriteVec(world.PlayerList[i].PredictedPos)
 		encoder.WriteUint8(uint8(world.PlayerList[i].LastInput.GetDirNum()))
 	}

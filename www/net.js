@@ -117,12 +117,19 @@ function _processUpdateMsg(world, decoder) {
         ackedTick = decoder.readUint8();
     }
 
-    let pos = decoder.readVec(); // NOTE: we arn't using latest value from server if it isn't acking something
+    let newState = decoder.readUint8();
+    if (world.player.state !== newState) {
+        world.player.stateChanged = true;
+    }
+    world.player.state = newState;
+
+    let pos = decoder.readVec();
     world.player.energy = decoder.readUint8();
+
     if (ackedTick != -1) {
         world.player.predictedInputs.ack(ackedTick);
-        world.player.lastAckedPos = pos;
     }
+    world.player.lastAckedPos = pos;
 
     for (let otherPlayer of world.otherPlayers) {
         otherPlayer.disconnected = true;
@@ -138,18 +145,29 @@ function _processUpdateMsg(world, decoder) {
             world.otherPlayers.push(otherPlayer);
         }
         otherPlayer.disconnected = false;
+        let newState = decoder.readUint8();
+        otherPlayer.stateChanged = otherPlayer.state !== newState;
+        otherPlayer.state = newState;
         otherPlayer.lastAckedPos = decoder.readVec();
         otherPlayer.lastAckedDirNum = decoder.readUint8();
         otherPlayer.predictedDirs.ack(world.serverTick);
     }
 
     let numNewLasers = decoder.readUint16();
+    let gotOtherLaser = false;
+    let gotOtherBouncy = false;
     for (let i = 0; i < numNewLasers; i++) {
         let type = decoder.readUint8();
         let id = decoder.readUint8();
         let player = world.otherPlayers.find(p => id === p.id);
         if (player === undefined) {
             player = world.player;
+        } else {
+            if (type === Laser.TYPE_LASER) {
+                gotOtherLaser = true;
+            } else if (type === Laser.TYPE_BOUNCY) {
+                gotOtherBouncy = true;
+            }
         }
         let laserEnd = decoder.readVec();
         let aimAngle = decoder.readFloat64();
@@ -161,11 +179,20 @@ function _processUpdateMsg(world, decoder) {
         world.laserList.push(newLaser);
     }
 
+    if (gotOtherLaser) {
+        sound.laser.play();
+    }
+    if (gotOtherBouncy) {
+        sound.bouncy.play();
+    }
+
     let numNewHits = decoder.readUint16();
     for (let i = 0; i < numNewHits; i++) {
         let hitPos = decoder.readVec();
-        sound.hit.play();
         // TODO: handle hits
+    }
+    if (numNewHits > 0) {
+        sound.hit.play();
     }
 }
 

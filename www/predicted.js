@@ -1,4 +1,5 @@
-// TODO limit number of predictions
+
+// Client predicts game state bast on predicted inputs
 class Predicted {
     unacked= []
     capacity

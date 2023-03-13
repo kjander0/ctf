@@ -22,5 +22,4 @@ void main() {
 
     vec3 color = atten * dot(normal, -lightDir) * vec3(1., .01, .01);
     fragColor = vec4(color, normalSample.a);
-    //fragColor = atten * vec4(1.f, 0.f, 0.f, 1.f);
 }

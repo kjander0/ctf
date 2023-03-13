@@ -5,11 +5,16 @@ import * as conf from "./conf.js"
 import * as sound from "./sound.js"
 
 class Player {
-    static SPEED = 2.5;
+    static STATE_SPECTATING = 0;
+    static STATE_JAILED = 1;
+    static STATE_ALIVE = 2;
+
     static MAX_INPUT_PREDICTIONS = 60;
     static MAX_DIR_PREDICTIONS = 5;
 
     id;
+    state = Player.STATE_SPECTATING;
+    stateChanged = false;
     inputState = null;
     predictedInputs = new Predicted(Player.MAX_INPUT_PREDICTIONS);
     predictedDirs = new Predicted(Player.MAX_DIR_PREDICTIONS);
@@ -22,6 +27,8 @@ class Player {
     prevPos = new Vec();
     pos = new Vec();
     correctedPos = new Vec();
+
+    predictedEnergy = conf.PLAYER_ENERGY;
     energy = conf.PLAYER_ENERGY;
 }
 
@@ -51,10 +58,12 @@ function sampleInput(world) {
     if (world.input.isActive(Input.CMD_DOWN)) {
         inputState.down = true;
     }
+
     let shootCmd = world.input.getCommand(Input.CMD_SHOOT);
     if (shootCmd.wasActivated) {
-        if (world.player.energy >= conf.LASER_ENERGY_COST) {
-            sound.laser.play();
+        // TODO: consider setting doShoot = true even if client doesn't think it has enough energy
+        // this would require special handling of shooting sounds however
+        if (world.player.predictedEnergy >= conf.LASER_ENERGY_COST) {
             inputState.doShoot = true;
             let aimPos = world.graphics.camera.unproject(shootCmd.mousePos);
             inputState.aimAngle = _calcAimAngle(world.player.pos, aimPos);
@@ -63,7 +72,6 @@ function sampleInput(world) {
 
     let secondaryCmd = world.input.getCommand(Input.CMD_SECONDARY);
     if (secondaryCmd.wasActivated) {
-        sound.bouncy.play();
         inputState.doSecondary = true;
         let aimPos = world.graphics.camera.unproject(secondaryCmd.mousePos);
         inputState.aimAngle = _calcAimAngle(world.player.pos, aimPos);
@@ -75,11 +83,25 @@ function sampleInput(world) {
 
 function update(world) {
     for (let other of world.otherPlayers) {
-        _moveOtherPlayer(other, world);
+        _updateOtherPlayer(other, world);
+    }
+
+    _updatePlayer(world);
+}
+
+function _updatePlayer(world) {
+    // Play shoot sounds based on predicted ammo so they are as accurate and immediate as possible
+    world.player.predictedEnergy = _predictEnergy(world);
+
+    if (world.player.inputState.doShoot) {
+        sound.laser.play();
+    }
+    if (world.player.inputState.doSecondary) {
+        sound.bouncy.play();
     }
 
     world.player.correctedPos = new Vec(world.player.lastAckedPos);
-    // TODO: make dirFromInput function so we don't have these 4 if confitions repeated twice
+    // TODO: make dirFromInput function so we don't have these 4 if conditions repeated twice
     for (let unacked of world.player.predictedInputs.unacked) {
         let inputState = unacked.val;
         let disp = _calcDisplacement(inputState);
@@ -92,14 +114,36 @@ function update(world) {
     world.player.pos = world.player.pos.add(disp);
     
     let correction = world.player.correctedPos.sub(world.player.pos);
-    let corrLen = correction.length();
-    if (corrLen > conf.PLAYER_SPEED) {
-        correction = correction.scale(conf.PLAYER_SPEED / corrLen);
+    if (!world.player.stateChanged) {
+        let corrLen = correction.length();
+        if (corrLen > conf.PLAYER_SPEED) {
+            correction = correction.scale(conf.PLAYER_SPEED / corrLen);
+        }
     }
+
+    world.player.stateChanged = false;
     world.player.pos = world.player.pos.add(correction);
 }
 
-function _moveOtherPlayer(player, world) {
+// Predict energy for all but latest predicted input
+function _predictEnergy(world) {
+    let predictedEnergy = Math.min(
+        world.player.energy + world.player.predictedInputs.unacked.length,
+        conf.PLAYER_ENERGY
+    );
+
+    for (let i = 0; i < world.player.predictedInputs.unacked.length; i++) {
+        const inputState = world.player.predictedInputs.unacked[i].val;
+        if (inputState.doShoot) {
+            if (predictedEnergy >= conf.LASER_ENERGY_COST) {
+                predictedEnergy -= conf.LASER_ENERGY_COST;
+            }
+        }
+    }
+    return predictedEnergy;
+}
+
+function _updateOtherPlayer(player, world) {
     player.prevPos = player.pos;
     player.pos = player.lastAckedPos;
     for (let predicted of player.predictedDirs.unacked) {

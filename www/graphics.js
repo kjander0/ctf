@@ -11,16 +11,6 @@ import * as assets from "./assets.js";
 
 const ATTRIB_LIGHT_POS_LOC = 3;
 
-class Sprite {
-    albedoTex;
-    normalTex;
-
-    constructor(albedo, normal) {
-        this.albedoTex = albedo;
-        this.normalTex = normal;
-    }
-}
-
 // tree of containers
 
 // TODO
@@ -138,16 +128,24 @@ class Graphics {
 
         let shipRadius = conf.PLAYER_RADIUS / assets.shipPixelRatio;
 
-        // Draw normals to offscreen texture
+        let shipPositions = [lerpPos]
+        for (let other of world.otherPlayers) {
+            const lerpPos = lerpVec(other.prevPos, other.pos, lerpFraction);
+            shipPositions.push(lerpPos);
+        }
+
         this.gl.clearColor(0.0, 0.0, 1.0, 0.0);
         this.renderer.setAndClearTarget(this.normalTex);
-        this.renderer.drawTexture(lerpPos.x - shipRadius, lerpPos.y - shipRadius, shipRadius * 2, shipRadius * 2, this.shipNormalTex);
+        for (let pos of shipPositions) {
+            this.renderer.drawTexture(pos.x - shipRadius, pos.y - shipRadius, shipRadius * 2, shipRadius * 2, this.shipNormalTex);
+        }
         this.renderer.render(this.camera);
 
-        // Draw albedo to offscreen texture
         this.gl.clearColor(0, 0, 0, 1.0);
         this.renderer.setAndClearTarget(this.albedoTex);
-        this.renderer.drawTexture(lerpPos.x - shipRadius, lerpPos.y - shipRadius, shipRadius * 2, shipRadius * 2, this.shipAlbedoTex);
+        for (let pos of shipPositions) {
+            this.renderer.drawTexture(pos.x - shipRadius, pos.y - shipRadius, shipRadius * 2, shipRadius * 2, this.shipAlbedoTex);
+        }
         this.renderer.render(this.camera);
 
         let lightsMesh = new Mesh(VertAttrib.POS_BIT);
@@ -176,17 +174,14 @@ class Graphics {
         );
         this.renderer.drawModel(lightsModel);
         this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.DST_ALPHA); // combine lights equally
-        this.gl.clearColor(0, 0, 0, 1.0);
+        this.gl.clearColor(0, 0, 0, 0);
         this.renderer.setAndClearTarget(this.highlightTex);
         this.renderer.render(this.camera);
         this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
         
-
-        // this.renderer.drawTexture(0, 0, this.screenSize.x, this.screenSize.y, this.albedoTex);
+        // this.renderer.drawTexture(0, 0, this.screenSize.x, this.screenSize.y, this.highlightTex);
         // this.renderer.setAndClearTarget(null);
         // this.renderer.render(this.uiCamera);
-
-
 
         let screenMesh = new Mesh(VertAttrib.POS_BIT | VertAttrib.TEX_BIT);
         screenMesh.addRect(0, 0, this.gl.drawingBufferWidth, this.gl.drawingBufferHeight);
@@ -216,10 +211,16 @@ class Graphics {
         if (world.map !== null) {
             this.drawLevel(world.map.rows);
         }
+
         this.renderer.setColor(0, 1, 0);
         this.renderer.drawCircleLine(world.player.lastAckedPos.x, world.player.lastAckedPos.y, conf.PLAYER_RADIUS);
         this.renderer.setColor(0, 0, 1);
         this.renderer.drawCircleLine(world.player.correctedPos.x, world.player.correctedPos.y, conf.PLAYER_RADIUS);
+
+        for (let other of world.otherPlayers) {
+            this.renderer.setColor(0, 1, 0);
+            this.renderer.drawCircleLine(other.lastAckedPos.x, other.lastAckedPos.y, conf.PLAYER_RADIUS);
+        }
 
         this.renderer.setColor(1, 0, 0);
         for (let laser of world.laserList) {
@@ -227,50 +228,18 @@ class Graphics {
         }
         this.renderer.render(this.camera);
 
+        // Draw UI
+        let border = 10;
+        let barWidth = 80;
+        let barHeight = 10;
+        let ratio = world.player.predictedEnergy / conf.PLAYER_ENERGY;
+        this.renderer.setColor(0.8, 0.1, 0.1);
+        this.renderer.drawRect(this.screenSize.x/2 - barWidth/2, border, barWidth, barHeight);
+        this.renderer.setColor(0.8, 0.8, 0);
+        this.renderer.drawRect(this.screenSize.x/2 -barWidth/2, border, barWidth * ratio, barHeight);
+        this.renderer.render(this.uiCamera);
 
-
-
-
-
-
-        // let lerpFraction = world.accumMs/conf.UPDATE_MS;
-        // let lerpPos = lerpVec(world.player.prevPos, world.player.pos, lerpFraction);
-        // this.renderer.setColor(0.4, 0.8, 0.4);
-        // this.renderer.drawCircle(lerpPos.x, lerpPos.y, conf.PLAYER_RADIUS);
-        // this.renderer.setColor(0, 1, 0);
-        // this.renderer.drawCircleLine(world.player.lastAckedPos.x, world.player.lastAckedPos.y, conf.PLAYER_RADIUS);
-        // this.renderer.setColor(0, 0, 1);
-        // this.renderer.drawCircleLine(world.player.correctedPos.x, world.player.correctedPos.y, conf.PLAYER_RADIUS);
-        
-        // this.camera.update(lerpPos.x, lerpPos.y, this.screenSize.x, this.screenSize.y);
-    
-        // for (let other of world.otherPlayers) {
-        //     let lerpPos = lerpVec(other.prevPos, other.pos, lerpFraction);
-        //     this.renderer.setColor(0.8, 0.4, 0.4);
-        //     this.renderer.drawCircle(lerpPos.x, lerpPos.y, conf.PLAYER_RADIUS);
-        //     this.renderer.setColor(0, 0, 1);
-        //     this.renderer.drawCircle(other.lastAckedPos.x, other.lastAckedPos.y, conf.PLAYER_RADIUS);
-        // }
-
-        // this.renderer.setColor(1, 0, 0);
-        // for (let laser of world.laserList) {
-        //     this.renderer.drawLine(laser.line.start, laser.line.end, 3);
-        // }
-
-        // this.renderer.render(this.camera);
-
-        // // Draw UI
-        // this.uiCamera.update(0, 0, this.screenSize.x, this.screenSize.y);
-        // let border = 10;
-        // let barWidth = 80;
-        // let barHeight = 10;
-        // let ratio = world.player.energy / conf.PLAYER_ENERGY;
-        // this.renderer.setColor(0.8, 0.1, 0.1);
-        // this.renderer.drawRect(-barWidth/2, -this.screenSize.y/2 + border, barWidth, barHeight);
-        // this.renderer.setColor(0.8, 0.8, 0);
-        // this.renderer.drawRect(-barWidth/2, -this.screenSize.y/2 + border, barWidth * ratio, barHeight);
-
-        // this.renderer.render(this.uiCamera);
+        // TODO: draw loading bouncies as rounded rects that load into place then shine
     }
 }
 

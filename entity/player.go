@@ -10,8 +10,13 @@ import (
 )
 
 const (
-	PlayerStateJoining = iota
-	PlayerStateWaitingForInput
+	PlayerNetStateJoining = iota
+	PlayerNetStateWaitingForInput
+	PlayerNetStateReady
+)
+
+const (
+	PlayerStateSpectating = iota
 	PlayerStateJailed
 	PlayerStateAlive
 )
@@ -24,6 +29,7 @@ const (
 
 type Player struct {
 	Id              uint8
+	NetState        int
 	State           int
 	Client          web.Client
 	Health          int
@@ -73,7 +79,8 @@ func (in PlayerInput) GetDirNum() int {
 func NewPlayer(id uint8, client web.Client) Player {
 	return Player{
 		Id:              id,
-		State:           PlayerStateJoining,
+		NetState:        PlayerNetStateJoining,
+		State:           PlayerStateSpectating,
 		Health:          conf.Shared.PlayerHealth,
 		Energy:          conf.Shared.PlayerEnergy,
 		Pos:             mymath.Vec{},
@@ -88,7 +95,7 @@ func UpdatePlayers(world *World) {
 	for i := range world.PlayerList {
 		player := &world.PlayerList[i]
 
-		if player.State <= PlayerStateWaitingForInput {
+		if player.NetState != PlayerNetStateReady {
 			continue
 		}
 
