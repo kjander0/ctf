@@ -29,7 +29,7 @@ class Player {
     correctedPos = new Vec();
 
     predictedEnergy = conf.PLAYER_ENERGY;
-    energy = conf.PLAYER_ENERGY;
+    lastAckedEnergy = conf.PLAYER_ENERGY;
 }
 
 class PlayerInputState {
@@ -92,6 +92,7 @@ function update(world) {
 function _updatePlayer(world) {
     // Play shoot sounds based on predicted ammo so they are as accurate and immediate as possible
     world.player.predictedEnergy = _predictEnergy(world);
+    console.log(world.player.lastAckedEnergy, world.player.predictedEnergy, world.player.inputState.doShoot);
 
     if (world.player.inputState.doShoot) {
         sound.laser.play();
@@ -125,21 +126,21 @@ function _updatePlayer(world) {
     world.player.pos = world.player.pos.add(correction);
 }
 
-// Predict energy for all but latest predicted input
 function _predictEnergy(world) {
-    let predictedEnergy = Math.min(
-        world.player.energy + world.player.predictedInputs.unacked.length,
-        conf.PLAYER_ENERGY
-    );
-
-    for (let i = 0; i < world.player.predictedInputs.unacked.length; i++) {
-        const inputState = world.player.predictedInputs.unacked[i].val;
-        if (inputState.doShoot) {
-            if (predictedEnergy >= conf.LASER_ENERGY_COST) {
-                predictedEnergy -= conf.LASER_ENERGY_COST;
-            }
-        }
+    let predictedEnergy = world.player.lastAckedEnergy;
+    console.log("num unacked: ", world.player.predictedInputs.unacked.length);
+    if (world.player.inputState.doShoot) {
+        console.log("DO SHOOT");
+        console.log(world.player.predictedInputs.unacked);
     }
+    for (const inputState of world.player.predictedInputs.unacked) {
+        if (inputState.doShoot) {
+            console.log("sub: ", predictedEnergy);
+            predictedEnergy -= conf.LASER_ENERGY_COST;
+        }
+        predictedEnergy = Math.min(predictedEnergy+1, conf.PLAYER_ENERGY);
+    }
+
     return predictedEnergy;
 }
 

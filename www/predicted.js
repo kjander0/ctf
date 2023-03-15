@@ -1,7 +1,7 @@
 
 // Client predicts game state bast on predicted inputs
 class Predicted {
-    unacked= []
+    unacked = []
     capacity
 
     constructor(capacity) {
@@ -27,17 +27,15 @@ class Predicted {
             throw "bad tick parameter"
         }
         let numAcked = 0;
-        let found = false;
         for (let h of this.unacked) {
             if (h.tick === tick) {
-                found = true;
                 numAcked++;
                 break;
             }
             numAcked++;
         }
         this.unacked.splice(0, numAcked);
-
+        console.log("acked size: ", this.unacked.length);
         return numAcked;
     }
 

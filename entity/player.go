@@ -99,8 +99,6 @@ func UpdatePlayers(world *World) {
 			continue
 		}
 
-		player.Energy = mymath.MinInt(conf.Shared.PlayerEnergy, player.Energy+1)
-
 		if player.State == PlayerStateJailed {
 			player.JailTimeTicks -= 1
 			if player.JailTimeTicks <= 0 {
@@ -112,6 +110,8 @@ func UpdatePlayers(world *World) {
 		processAckedInputs(world, player)
 		processPredictedInputs(world, player)
 		predictNextInput(world, player)
+
+		player.Energy = mymath.MinInt(conf.Shared.PlayerEnergy, player.Energy+1)
 	}
 }
 

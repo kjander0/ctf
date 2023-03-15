@@ -123,13 +123,13 @@ function _processUpdateMsg(world, decoder) {
     }
     world.player.state = newState;
 
-    let pos = decoder.readVec();
-    world.player.energy = decoder.readUint8();
+    world.player.lastAckedPos = decoder.readVec();
+    world.player.lastAckedEnergy = decoder.readUint8();
 
     if (ackedTick != -1) {
+        console.log("ack");
         world.player.predictedInputs.ack(ackedTick);
     }
-    world.player.lastAckedPos = pos;
 
     for (let otherPlayer of world.otherPlayers) {
         otherPlayer.disconnected = true;
