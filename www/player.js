@@ -4,6 +4,12 @@ import {Predicted} from "./predicted.js"
 import * as conf from "./conf.js"
 import * as sound from "./sound.js"
 
+class PlayerPredicted {
+    pos = new Vec();
+    dir = new Vec();
+    energy = conf.PLAYER_ENERGY;
+}
+
 class Player {
     static STATE_SPECTATING = 0;
     static STATE_JAILED = 1;
@@ -18,7 +24,6 @@ class Player {
     inputState = null;
     predictedInputs = new Predicted(Player.MAX_INPUT_PREDICTIONS);
     predictedDirs = new Predicted(Player.MAX_DIR_PREDICTIONS);
-    lastAckedPos = new Vec();
     // direction numbers
     // 4 3 2
     // 5 0 1
@@ -26,10 +31,9 @@ class Player {
     lastAckedDirNum = 0; // used for extrapolating movement of other players
     prevPos = new Vec();
     pos = new Vec();
-    correctedPos = new Vec();
 
-    predictedEnergy = conf.PLAYER_ENERGY;
-    lastAckedEnergy = conf.PLAYER_ENERGY;
+    acked = new PlayerPredicted();
+    predicted = new PlayerPredicted();
 }
 
 class PlayerInputState {
@@ -63,7 +67,7 @@ function sampleInput(world) {
     if (shootCmd.wasActivated) {
         // TODO: consider setting doShoot = true even if client doesn't think it has enough energy
         // this would require special handling of shooting sounds however
-        if (world.player.predictedEnergy >= conf.LASER_ENERGY_COST) {
+        if (world.player.predicted.energy >= conf.LASER_ENERGY_COST) {
             inputState.doShoot = true;
             let aimPos = world.graphics.camera.unproject(shootCmd.mousePos);
             inputState.aimAngle = _calcAimAngle(world.player.pos, aimPos);
@@ -90,9 +94,6 @@ function update(world) {
 }
 
 function _updatePlayer(world) {
-    // Play shoot sounds based on predicted ammo so they are as accurate and immediate as possible
-    world.player.predictedEnergy = _predictEnergy(world);
-
     let shootCount = 0;
     let numUnacked = world.player.predictedInputs.unacked.length;
     for (let unacked of world.player.predictedInputs.unacked) {
@@ -100,7 +101,7 @@ function _updatePlayer(world) {
             shootCount++;
         }
     }
-    if (world.player.lastAckedEnergy !== 60 || world.player.predictedEnergy !== 60) {
+    if (world.player.acked.energy !== 60 || world.player.predicted.energy !== 60) {
         console.log("shoot ratio: ", shootCount, " / ", numUnacked);
         console.log("acked: ", world.player.lastAckedEnergy, "predicted: ", world.player.predictedEnergy, world.player.inputState.doShoot);
     }
@@ -112,12 +113,17 @@ function _updatePlayer(world) {
         sound.bouncy.play();
     }
 
-    world.player.correctedPos = new Vec(world.player.lastAckedPos);
+    world.player.predicted = new PlayerPredicted(world.player.acked);
     // TODO: make dirFromInput function so we don't have these 4 if conditions repeated twice
     for (let unacked of world.player.predictedInputs.unacked) {
         let inputState = unacked.val;
         let disp = _calcDisplacement(inputState);
-        world.player.correctedPos = world.player.correctedPos.add(disp);
+        world.player.predicted.pos = world.player.predicted.pos.add(disp);
+
+        if (inputState.doShoot && world.player.predicted.energy >= conf.LASER_ENERGY_COST) {
+            world.player.predicted.energy -= conf.LASER_ENERGY_COST;
+        }
+        world.player.predicted.energy = Math.min(world.player.predicted.energy+1, conf.PLAYER_ENERGY);
     }
 
     // TODO: might want to delay prediction by a tick so player sees closer to server reality
@@ -125,7 +131,7 @@ function _updatePlayer(world) {
     world.player.prevPos = world.player.pos;
     world.player.pos = world.player.pos.add(disp);
     
-    let correction = world.player.correctedPos.sub(world.player.pos);
+    let correction = world.player.predicted.pos.sub(world.player.pos);
     if (!world.player.stateChanged) {
         let corrLen = correction.length();
         if (corrLen > conf.PLAYER_SPEED) {
@@ -137,22 +143,9 @@ function _updatePlayer(world) {
     world.player.pos = world.player.pos.add(correction);
 }
 
-function _predictEnergy(world) {
-    let predictedEnergy = world.player.lastAckedEnergy;
-    for (const unacked of world.player.predictedInputs.unacked) {
-        let inputState = unacked.val;
-        if (inputState.doShoot) {
-            predictedEnergy -= conf.LASER_ENERGY_COST;
-        }
-        predictedEnergy = Math.min(predictedEnergy+1, conf.PLAYER_ENERGY);
-    }
-
-    return predictedEnergy;
-}
-
 function _updateOtherPlayer(player, world) {
     player.prevPos = player.pos;
-    player.pos = player.lastAckedPos;
+    player.pos = player.acked.pos;
     for (let predicted of player.predictedDirs.unacked) {
         let disp = _dirFromNum(predicted.val).scale(conf.PLAYER_SPEED);
         player.pos = player.pos.add(disp);

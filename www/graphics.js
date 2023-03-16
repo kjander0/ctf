@@ -213,13 +213,13 @@ class Graphics {
         }
 
         this.renderer.setColor(0, 1, 0);
-        this.renderer.drawCircleLine(world.player.lastAckedPos.x, world.player.lastAckedPos.y, conf.PLAYER_RADIUS);
+        this.renderer.drawCircleLine(world.player.acked.pos.x, world.player.acked.pos.y, conf.PLAYER_RADIUS);
         this.renderer.setColor(0, 0, 1);
-        this.renderer.drawCircleLine(world.player.correctedPos.x, world.player.correctedPos.y, conf.PLAYER_RADIUS);
+        this.renderer.drawCircleLine(world.player.predicted.pos.x, world.player.predicted.pos.y, conf.PLAYER_RADIUS);
 
         for (let other of world.otherPlayers) {
             this.renderer.setColor(0, 1, 0);
-            this.renderer.drawCircleLine(other.lastAckedPos.x, other.lastAckedPos.y, conf.PLAYER_RADIUS);
+            this.renderer.drawCircleLine(other.acked.pos.x, other.acked.pos.y, conf.PLAYER_RADIUS);
         }
 
         this.renderer.setColor(1, 0, 0);
