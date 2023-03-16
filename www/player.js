@@ -8,6 +8,14 @@ class PlayerPredicted {
     pos = new Vec();
     dir = new Vec();
     energy = conf.PLAYER_ENERGY;
+
+    constructor (other) {
+        if (other !== undefined) {
+            this.pos.set(other.pos);
+            this.dir.set(other.dir);
+            this.energy = other.energy;
+        }
+    }
 }
 
 class Player {
@@ -103,7 +111,7 @@ function _updatePlayer(world) {
     }
     if (world.player.acked.energy !== 60 || world.player.predicted.energy !== 60) {
         console.log("shoot ratio: ", shootCount, " / ", numUnacked);
-        console.log("acked: ", world.player.lastAckedEnergy, "predicted: ", world.player.predictedEnergy, world.player.inputState.doShoot);
+        console.log("acked: ", world.player.acked.energy, "predicted: ", world.player.predicted.energy, world.player.inputState.doShoot);
     }
 
     if (world.player.inputState.doShoot) {

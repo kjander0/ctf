@@ -232,7 +232,7 @@ class Graphics {
         let border = 10;
         let barWidth = 80;
         let barHeight = 10;
-        let ratio = world.player.predictedEnergy / conf.PLAYER_ENERGY;
+        let ratio = world.player.predicted.energy / conf.PLAYER_ENERGY;
         this.renderer.setColor(0.8, 0.1, 0.1);
         this.renderer.drawRect(this.screenSize.x/2 - barWidth/2, border, barWidth, barHeight);
         this.renderer.setColor(0.8, 0.8, 0);
