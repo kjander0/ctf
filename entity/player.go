@@ -110,7 +110,10 @@ func UpdatePlayers(world *World) {
 		processAckedInputs(world, player)
 		processPredictedInputs(world, player)
 		predictNextInput(world, player)
-
+		PROBLEM HERE
+		//server energy is being sent to the player to ack their latest input, but their latest input is behind server energy
+		// also, if acked inputs suddenly have doShoot, then that means more energy could have been incremented since then
+		// without hitting the energy limit below.
 		player.Energy = mymath.MinInt(conf.Shared.PlayerEnergy, player.Energy+1)
 	}
 }

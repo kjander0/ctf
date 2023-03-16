@@ -123,12 +123,15 @@ function _processUpdateMsg(world, decoder) {
     }
     world.player.state = newState;
 
+    // TODO: setting lastAckedPos without ackedTick could cause stuttered movement
+    // but we want to make sure pos is available for first load into game
     world.player.lastAckedPos = decoder.readVec();
-    world.player.lastAckedEnergy = decoder.readUint8();
+    const newEnergy = decoder.readUint8();
 
     if (ackedTick != -1) {
-        console.log("ack");
         world.player.predictedInputs.ack(ackedTick);
+        world.player.lastAckedEnergy = newEnergy;
+
     }
 
     for (let otherPlayer of world.otherPlayers) {
