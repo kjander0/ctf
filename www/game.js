@@ -2,9 +2,12 @@ import * as conf from "./conf.js";
 import * as player from "./player.js";
 import * as weapons from "./weapons.js";
 import * as net from "./net.js";
-import {World} from "./world.js";
+import {WorldState, WorldHistory} from "./world.js";
 
 class Game {
+    static MAX_WORLD_HISTORY = 60;
+    static MAX_DIR_PREDICTIONS = 5;
+
     clientTick = -1; // 0-255
     serverTick = -1; // from server (0-255)
     accumMs = conf.UPDATE_MS;
@@ -12,11 +15,15 @@ class Game {
     graphics;
     input;
 
-    world = new World();
+    worldHistory = new WorldHistory(Game.MAX_WORLD_HISTORY);
+    historyChanged = false;
 
     constructor(graphics, input) {
         this.graphics = graphics;
         this.input = input;
+
+        // initial world state
+        this.worldHistory.push(new WorldState());
     }
 
     update(deltaMs) {
@@ -38,14 +45,34 @@ class Game {
     }
 
     _update() {
-        player.sampleInput(this);
-        net.sendInput(this.world);
+        const inputState = player.sampleInput(this.input);
+        net.sendInput(inputState);
+
+        // Add a new world state
+        this.worldHistory.push(this.worldHistory.get(-1));
+        const newWorldState = this.worldHistory.get(-1);
+
+        newWorldState.player.inputState = inputState;
+
+        let simulateFrom = this.worldHistory.size-2;
+        if (this.historyChanged) {
+            simulateFrom = 0;
+        }
+
+        for (let i = simulateFrom; i < this.worldHistory.size-1; i++) {
+            const from = this.worldHistory.get(i);
+            const to = this.worldHistory.get(i+1);
+            this._simulate(from, to);
+        }
+
+        this.input.reset(); // do last
+    }
+
+    _simulate(from, to) {
         // move projectiles before spawning new ones (gives an additional tick for lagg compensation)
         weapons.update(this);
         player.update(this.world);
         this.removeDisconnectedPlayers();
-
-        this.input.reset(); // do last
     }
 
     _render() {

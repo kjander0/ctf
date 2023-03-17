@@ -4,44 +4,26 @@ import {Predicted} from "./predicted.js"
 import * as conf from "./conf.js"
 import * as sound from "./sound.js"
 
-class PlayerPredicted {
-    pos = new Vec();
-    dir = new Vec();
-    energy = conf.PLAYER_ENERGY;
-
-    constructor (other) {
-        if (other !== undefined) {
-            this.pos.set(other.pos);
-            this.dir.set(other.dir);
-            this.energy = other.energy;
-        }
-    }
-}
-
 class Player {
     static STATE_SPECTATING = 0;
     static STATE_JAILED = 1;
     static STATE_ALIVE = 2;
 
-    static MAX_INPUT_PREDICTIONS = 60;
-    static MAX_DIR_PREDICTIONS = 5;
-
     id;
     state = Player.STATE_SPECTATING;
-    stateChanged = false;
-    inputState = null;
-    predictedInputs = new Predicted(Player.MAX_INPUT_PREDICTIONS);
-    predictedDirs = new Predicted(Player.MAX_DIR_PREDICTIONS);
-    // direction numbers
-    // 4 3 2
-    // 5 0 1
-    // 6 7 8
-    lastAckedDirNum = 0; // used for extrapolating movement of other players
-    prevPos = new Vec();
+    inputState = new PlayerInputState;
     pos = new Vec();
+    dir = new Vec();
+    energy = conf.PLAYER_ENERGY;
 
-    acked = new PlayerPredicted();
-    predicted = new PlayerPredicted();
+    set(other) {
+        this.id = other.id;
+        this.state = other.state;
+        this.inputState.set(other.inputState);
+        this.pos.set(other.pos);
+        this.dir.set(other.dir);
+        this.energy = other.energy;
+    }
 }
 
 class PlayerInputState {
@@ -53,43 +35,51 @@ class PlayerInputState {
     doShoot = false;
     doSecondary = false;
     aimAngle = 0;
+
+    set(other) {
+        this.clientTick = other.clientTick;
+        this.left = other.left;
+        this.right = other.right;
+        this.up = other.up;
+        this.down = other.down;
+        this.doShoot = other.doShoot;
+        this.doSecondary = other.doSecondary;
+        this.aimAngle = other.aimAngle;
+    }
 }
 
 function sampleInput(game) {
-    const world = game.world;
+    const input = game.input;
+    const graphics = game.graphics;
+
     let inputState = new PlayerInputState();
     inputState.clientTick = game.clientTick;
-    if (game.input.isActive(Input.CMD_LEFT)) {
+    if (input.isActive(Input.CMD_LEFT)) {
         inputState.left = true;
     }
-    if (game.input.isActive(Input.CMD_RIGHT)) {
+    if (input.isActive(Input.CMD_RIGHT)) {
         inputState.right = true;
     }
-    if (game.input.isActive(Input.CMD_UP)) {
+    if (input.isActive(Input.CMD_UP)) {
         inputState.up = true;
     }
-    if (game.input.isActive(Input.CMD_DOWN)) {
+    if (input.isActive(Input.CMD_DOWN)) {
         inputState.down = true;
     }
 
-    let shootCmd = game.input.getCommand(Input.CMD_SHOOT);
+    let shootCmd = input.getCommand(Input.CMD_SHOOT);
     if (shootCmd.wasActivated) {
-        if (world.player.predicted.energy >= conf.LASER_ENERGY_COST) {
-            inputState.doShoot = true;
-            let aimPos = game.graphics.camera.unproject(shootCmd.mousePos);
-            inputState.aimAngle = _calcAimAngle(world.player.pos, aimPos);
-        }
+        inputState.doShoot = true;
+        inputState.aimPos = graphics.camera.unproject(shootCmd.mousePos);
     }
 
-    let secondaryCmd = game.input.getCommand(Input.CMD_SECONDARY);
+    let secondaryCmd = input.getCommand(Input.CMD_SECONDARY);
     if (secondaryCmd.wasActivated) {
         inputState.doSecondary = true;
-        let aimPos = game.graphics.camera.unproject(secondaryCmd.mousePos);
-        inputState.aimAngle = _calcAimAngle(world.world.player.pos, aimPos);
+        inputState.aimPos = graphics.camera.unproject(secondaryCmd.mousePos);
     }
 
-    world.player.inputState = inputState;
-    world.player.predictedInputs.predict(inputState, game.clientTick);
+    return inputState;
 }
 
 function update(world) {
@@ -113,7 +103,11 @@ function _updatePlayer(world) {
         console.log("acked: ", world.player.acked.energy, "predicted: ", world.player.predicted.energy, world.player.inputState.doShoot);
     }
 
+    //do something with this
+    //inputState.aimAngle = _calcAimAngle(world.world.player.pos, aimPos);
+
     if (world.player.inputState.doShoot) {
+
         sound.laser.play();
     }
     if (world.player.inputState.doSecondary) {
