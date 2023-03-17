@@ -23,7 +23,8 @@ class Laser {
     }
 }
 
-function update(world) {
+function update(game) {
+    const world = game.world;
     for (let i = world.laserList.length-1; i >= 0; i--) {
         world.laserList[i].activeTicks += 1;
         if (world.laserList[i].activeTicks > conf.LASER_TIME_TICKS) {
@@ -54,7 +55,7 @@ function update(world) {
             let line = laser.line;
             line.start.set(line.end);
             line.end = line.end.add(laser.dir.scale(speed));
-            if (processCollisions(world, laser)) {
+            if (processCollisions(game, laser)) {
                 world.laserList[i] = world.laserList[world.laserList.length-1];
                 world.laserList.splice(world.laserList.length-1, 1);
                 break;
@@ -63,9 +64,9 @@ function update(world) {
     }
 }
 
-function processCollisions(world, laser) {
-    let [hitDist, hitPos, normal] = checkWallHit(world, laser.line);
-    let [hitPlayer, hitPlayerPos] = checkPlayerHit(world, laser, hitDist);
+function processCollisions(game, laser) {
+    let [hitDist, hitPos, normal] = checkWallHit(game, laser.line);
+    let [hitPlayer, hitPlayerPos] = checkPlayerHit(game, laser, hitDist);
     if (hitDist < 0 && hitPlayer === null) {
         return false;
     }
@@ -80,10 +81,10 @@ function processCollisions(world, laser) {
     return true;
 }
 
-function checkWallHit(world, line) {
+function checkWallHit(game, line) {
 	let tileRect = new Rect(new Vec(), new Vec(conf.TILE_SIZE, conf.TILE_SIZE));
 	let lineLen = line.length();
-	let tileSample = world.map.sampleSolidTiles(line.end, lineLen);
+	let tileSample = game.map.sampleSolidTiles(line.end, lineLen);
 	let hitPos, normal;
 	let hitDist = -1.0;
 	for (let tilePos of tileSample) {
@@ -103,7 +104,8 @@ function checkWallHit(world, line) {
 	return [hitDist, hitPos, normal];
 }
 
-function checkPlayerHit(world, laser, hitDist) {
+function checkPlayerHit(game, laser, hitDist) {
+    const world = game.world;
 	let hitPos = null;
 	let hitPlayer = null;
 

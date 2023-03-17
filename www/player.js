@@ -55,42 +55,41 @@ class PlayerInputState {
     aimAngle = 0;
 }
 
-function sampleInput(world) {
+function sampleInput(game) {
+    const world = game.world;
     let inputState = new PlayerInputState();
-    inputState.clientTick = world.clientTick;
-    if (world.input.isActive(Input.CMD_LEFT)) {
+    inputState.clientTick = game.clientTick;
+    if (game.input.isActive(Input.CMD_LEFT)) {
         inputState.left = true;
     }
-    if (world.input.isActive(Input.CMD_RIGHT)) {
+    if (game.input.isActive(Input.CMD_RIGHT)) {
         inputState.right = true;
     }
-    if (world.input.isActive(Input.CMD_UP)) {
+    if (game.input.isActive(Input.CMD_UP)) {
         inputState.up = true;
     }
-    if (world.input.isActive(Input.CMD_DOWN)) {
+    if (game.input.isActive(Input.CMD_DOWN)) {
         inputState.down = true;
     }
 
-    let shootCmd = world.input.getCommand(Input.CMD_SHOOT);
+    let shootCmd = game.input.getCommand(Input.CMD_SHOOT);
     if (shootCmd.wasActivated) {
-        // TODO: consider setting doShoot = true even if client doesn't think it has enough energy
-        // this would require special handling of shooting sounds however
         if (world.player.predicted.energy >= conf.LASER_ENERGY_COST) {
             inputState.doShoot = true;
-            let aimPos = world.graphics.camera.unproject(shootCmd.mousePos);
+            let aimPos = game.graphics.camera.unproject(shootCmd.mousePos);
             inputState.aimAngle = _calcAimAngle(world.player.pos, aimPos);
         }
     }
 
-    let secondaryCmd = world.input.getCommand(Input.CMD_SECONDARY);
+    let secondaryCmd = game.input.getCommand(Input.CMD_SECONDARY);
     if (secondaryCmd.wasActivated) {
         inputState.doSecondary = true;
-        let aimPos = world.graphics.camera.unproject(secondaryCmd.mousePos);
-        inputState.aimAngle = _calcAimAngle(world.player.pos, aimPos);
+        let aimPos = game.graphics.camera.unproject(secondaryCmd.mousePos);
+        inputState.aimAngle = _calcAimAngle(world.world.player.pos, aimPos);
     }
 
     world.player.inputState = inputState;
-    world.player.predictedInputs.predict(inputState, world.clientTick);
+    world.player.predictedInputs.predict(inputState, game.clientTick);
 }
 
 function update(world) {

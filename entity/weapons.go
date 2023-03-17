@@ -58,7 +58,7 @@ func UpdateProjectiles(world *World) {
 		if player != nil {
 			player.Health -= 1
 			if player.Health <= 0 {
-				player.Pos = world.Map.RandomJailLocation()
+				player.Acked.Pos = world.Map.RandomJailLocation()
 				player.Health = conf.Shared.PlayerHealth
 				player.JailTimeTicks = conf.Shared.JailTimeTicks
 				player.State = PlayerStateJailed
@@ -109,7 +109,8 @@ func checkPlayerHit(world *World, laser *Laser, hitDist float64) (*Player, mymat
 		if world.PlayerList[i].Id == laser.PlayerId {
 			continue
 		}
-		playerCircle := mymath.Circle{world.PlayerList[i].Pos, conf.Shared.PlayerRadius}
+		// TODO: consider testing collisions using predicted position
+		playerCircle := mymath.Circle{world.PlayerList[i].Acked.Pos, conf.Shared.PlayerRadius}
 		overlaps, overlap := mymath.LineCircleOverlap(playerCircle, laser.Line)
 		if !overlaps {
 			continue

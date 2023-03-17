@@ -27,15 +27,19 @@ const (
 	maxMotionPredictions = 5  // too much motion extrapolation causes overshoot
 )
 
+type PlayerPredicted struct {
+	Pos    mymath.Vec
+	Energy int
+}
+
 type Player struct {
 	Id              uint8
 	NetState        int
 	State           int
 	Client          web.Client
 	Health          int
-	Energy          int
-	Pos             mymath.Vec
-	PredictedPos    mymath.Vec
+	Acked           PlayerPredicted
+	Predicted       PlayerPredicted
 	PredictedInputs PredictedInputs
 	LastInput       PlayerInput
 	DoDisconnect    bool
@@ -77,13 +81,22 @@ func (in PlayerInput) GetDirNum() int {
 }
 
 func NewPlayer(id uint8, client web.Client) Player {
+	acked := PlayerPredicted{
+		mymath.Vec{},
+		conf.Shared.PlayerEnergy,
+	}
+	predicted := PlayerPredicted{
+		mymath.Vec{},
+		conf.Shared.PlayerEnergy,
+	}
+
 	return Player{
 		Id:              id,
 		NetState:        PlayerNetStateJoining,
 		State:           PlayerStateSpectating,
 		Health:          conf.Shared.PlayerHealth,
-		Energy:          conf.Shared.PlayerEnergy,
-		Pos:             mymath.Vec{},
+		Acked:           acked,
+		Predicted:       predicted,
 		Client:          client,
 		PredictedInputs: NewPredictedInputs(maxPredictedInputs),
 	}
@@ -103,58 +116,58 @@ func UpdatePlayers(world *World) {
 			player.JailTimeTicks -= 1
 			if player.JailTimeTicks <= 0 {
 				player.State = PlayerStateAlive
-				player.Pos = world.Map.RandomSpawnLocation()
+				player.Acked.Pos = world.Map.RandomSpawnLocation()
 			}
 		}
 
 		processAckedInputs(world, player)
 		processPredictedInputs(world, player)
 		predictNextInput(world, player)
-		// TODO: need to track predicted pos, same as position, so we can ack inputs that are for past game states (past tick)
-		player.Energy = mymath.MinInt(conf.Shared.PlayerEnergy, player.Energy+1)
 	}
 }
 
 func processAckedInputs(world *World, player *Player) {
 	for _, input := range player.PredictedInputs.Acked {
 		disp := calcDisplacement(input)
-		player.Pos = player.Pos.Add(disp)
-		player.Pos = constrainPlayerPos(world, player.Pos)
+		player.Acked.Pos = player.Acked.Pos.Add(disp)
+		player.Acked.Pos = constrainPlayerPos(world, player.Acked.Pos)
 
-		if !input.ShootPrimary && !input.ShootSecondary {
-			continue
+		if input.ShootPrimary || input.ShootSecondary {
+			dir := mymath.Vec{X: math.Cos(input.AimAngle), Y: math.Sin(input.AimAngle)}
+			laser := Laser{
+				Type:     ProjTypeLaser,
+				PlayerId: player.Id,
+				Line: mymath.Line{
+					Start: player.Acked.Pos,
+					End:   player.Acked.Pos,
+				},
+				Dir:   dir,
+				Angle: input.AimAngle,
+			}
+
+			if input.ShootPrimary && player.Acked.Energy >= conf.Shared.LaserEnergyCost {
+				player.Acked.Energy -= conf.Shared.LaserEnergyCost
+				world.NewLasers = append(world.NewLasers, laser)
+			}
+			if input.ShootSecondary {
+				laser.Type = ProjTypeBouncy
+				world.NewLasers = append(world.NewLasers, laser)
+			}
 		}
 
-		dir := mymath.Vec{X: math.Cos(input.AimAngle), Y: math.Sin(input.AimAngle)}
-		laser := Laser{
-			Type:     ProjTypeLaser,
-			PlayerId: player.Id,
-			Line: mymath.Line{
-				Start: player.Pos,
-				End:   player.Pos,
-			},
-			Dir:   dir,
-			Angle: input.AimAngle,
-		}
-
-		if input.ShootPrimary && player.Energy >= conf.Shared.LaserEnergyCost {
-			player.Energy -= conf.Shared.LaserEnergyCost
-			world.NewLasers = append(world.NewLasers, laser)
-		}
-		if input.ShootSecondary {
-			laser.Type = ProjTypeBouncy
-			world.NewLasers = append(world.NewLasers, laser)
-		}
+		player.Acked.Energy = mymath.MinInt(conf.Shared.PlayerEnergy, player.Acked.Energy+1)
 	}
 }
 
 func processPredictedInputs(world *World, player *Player) {
-	player.PredictedPos = player.Pos
+	player.Predicted.Pos = player.Acked.Pos
+	player.Predicted.Energy = player.Acked.Energy
 
 	for _, prediction := range player.PredictedInputs.Predicted {
 		disp := calcDisplacement(prediction.input)
-		player.PredictedPos = player.PredictedPos.Add(disp)
-		player.PredictedPos = constrainPlayerPos(world, player.PredictedPos)
+		player.Predicted.Pos = player.Predicted.Pos.Add(disp)
+		player.Predicted.Pos = constrainPlayerPos(world, player.Predicted.Pos)
+		player.Predicted.Energy = mymath.MinInt(conf.Shared.PlayerEnergy, player.Predicted.Energy+1)
 	}
 }
 

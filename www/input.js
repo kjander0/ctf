@@ -132,7 +132,7 @@ class Input {
     _onMouseMove(event) {
     }
 
-    postUpdate() {
+    reset() {
         for (const cmd of this._commands) {
             if (!cmd._pressed) {
                 cmd.active = false;
@@ -142,4 +142,4 @@ class Input {
     }
 }
 
-export { Input};
+export { Input };

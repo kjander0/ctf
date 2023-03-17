@@ -76,7 +76,7 @@ outer:
 			}
 			if player.NetState == entity.PlayerNetStateWaitingForInput {
 				player.State = entity.PlayerStateJailed
-				player.Pos = world.Map.RandomJailLocation()
+				player.Acked.Pos = world.Map.RandomJailLocation()
 				player.NetState = entity.PlayerNetStateReady
 				player.JailTimeTicks = conf.Shared.JailTimeTicks
 			}
@@ -203,8 +203,8 @@ func prepareWorldUpdate(world *entity.World, playerIndex int) []byte {
 	player.PredictedInputs.ClearAcked()
 
 	encoder.WriteUint8(uint8(player.State))
-	encoder.WriteVec(player.Pos)
-	encoder.WriteUint8(uint8(player.Energy))
+	encoder.WriteVec(player.Acked.Pos)
+	encoder.WriteUint8(uint8(player.Acked.Energy))
 
 	encoder.WriteUint8(uint8(len(world.PlayerList) - 1))
 	for i := range world.PlayerList {
@@ -213,7 +213,7 @@ func prepareWorldUpdate(world *entity.World, playerIndex int) []byte {
 		}
 		encoder.WriteUint8(world.PlayerList[i].Id)
 		encoder.WriteUint8(uint8(world.PlayerList[i].State))
-		encoder.WriteVec(world.PlayerList[i].PredictedPos)
+		encoder.WriteVec(world.PlayerList[i].Predicted.Pos)
 		encoder.WriteUint8(uint8(world.PlayerList[i].LastInput.GetDirNum()))
 	}
 

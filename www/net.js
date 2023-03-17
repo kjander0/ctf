@@ -6,7 +6,7 @@ import * as sound from "./sound.js";
 
 let socket;
 
-async function connect(world) {
+async function connect(game) {
     socket = new WebSocket('ws://' + window.location.host + '/ws');
     socket.binaryType = 'arraybuffer';
     let connectPromise = new Promise(function(resolve, reject) {
@@ -21,7 +21,7 @@ async function connect(world) {
     });
 
     socket.addEventListener('message', function (event) {
-        consumeMessage(event.data, world);
+        consumeMessage(event.data, game);
     });
 
     return connectPromise;
@@ -82,20 +82,21 @@ function sendInput(world) {
 	socket.send(encoder.getView());
 }
 
-function consumeMessage(msg, world) {
+function consumeMessage(msg, game) {
     let decoder = new Decoder(msg);
     let msgType = decoder.readUint8();
     switch (msgType) {
         case stateUpdateMsgType:
-            _processUpdateMsg(world, decoder);
+            _processUpdateMsg(game, decoder);
             break;
         case initMsgType:
-            _processInitMsg(world, decoder);
+            _processInitMsg(game, decoder);
             break
     }
 }
 
-function _processInitMsg(world, decoder) {
+function _processInitMsg(game, decoder) {
+    const world = game.world;
     world.player.id = decoder.readUint8();
     let numRows = decoder.readUint16();
     let rows = [];
@@ -104,13 +105,15 @@ function _processInitMsg(world, decoder) {
         let arr = decoder.uint8Array(numTiles);
         rows.push(Array.from(arr));
     }
-    world.map = new Map(rows);
+    game.map = new Map(rows);
 }
 
-function _processUpdateMsg(world, decoder) {
+function _processUpdateMsg(game, decoder) {
+    const world = game.world;
+
     let flags = decoder.readUint8();
 
-    world.serverTick = decoder.readUint8();
+    game.serverTick = decoder.readUint8();
 
     let ackedTick = -1;
     if ((flags & ackInputFlagBit) === ackInputFlagBit) {
@@ -153,7 +156,7 @@ function _processUpdateMsg(world, decoder) {
         otherPlayer.state = newState;
         otherPlayer.acked.pos = decoder.readVec();
         otherPlayer.lastAckedDirNum = decoder.readUint8();
-        otherPlayer.predictedDirs.ack(world.serverTick);
+        otherPlayer.predictedDirs.ack(game.serverTick);
     }
 
     let numNewLasers = decoder.readUint16();

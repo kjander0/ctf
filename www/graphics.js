@@ -118,10 +118,12 @@ class Graphics {
         }
     }
 
-    drawWorld(world) {
+    drawGame(game) {
+        const world = game.world;
+
         this.uiCamera.update(this.screenSize.x/2, this.screenSize.y/2, this.screenSize.x, this.screenSize.y);
 
-        const lerpFraction = world.accumMs/conf.UPDATE_MS;
+        const lerpFraction = game.accumMs/conf.UPDATE_MS;
         const lerpPos = lerpVec(world.player.prevPos, world.player.pos, lerpFraction);
 
         this.camera.update(lerpPos.x, lerpPos.y, this.screenSize.x, this.screenSize.y);
@@ -209,7 +211,7 @@ class Graphics {
         this.renderer.render(this.uiCamera);
 
         if (world.map !== null) {
-            this.drawLevel(world.map.rows);
+            this.drawLevel(game.map.rows);
         }
 
         this.renderer.setColor(0, 1, 0);
