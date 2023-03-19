@@ -9,9 +9,9 @@ import (
 )
 
 const (
-	delayMs  = 150
-	jitterMs = 50
-	lossRate = 0.1
+	delayMs  = 25
+	jitterMs = 3
+	lossRate = 0.0
 )
 
 // Channel for adding artificial delay/jitter to data

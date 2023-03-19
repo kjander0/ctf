@@ -100,24 +100,14 @@ function update(game) {
 }
 
 function _updatePlayer(game) {
-    let shootCount = 0;
-    let numUnacked = game.player.predictedInputs.unacked.length;
-    for (let unacked of game.player.predictedInputs.unacked) {
-        if (unacked.val.doShoot) {
-            shootCount++;
-        }
-    }
-    if (game.player.acked.energy !== 60 || game.player.predicted.energy !== 60) {
-        console.log("shoot ratio: ", shootCount, " / ", numUnacked);
-        console.log("acked: ", game.player.acked.energy, "predicted: ", game.player.predicted.energy, game.player.inputState.doShoot);
-    }
-
     if (game.player.inputState.doShoot) {
         sound.laser.play();
     }
     if (game.player.inputState.doSecondary) {
         sound.bouncy.play();
     }
+
+    if player state changed reset predicted to acked
 
     game.player.predicted = new PlayerPredicted(game.player.acked);
     // TODO: make dirFromInput function so we don't have these 4 if conditions repeated twice
@@ -138,11 +128,9 @@ function _updatePlayer(game) {
     game.player.pos = game.player.pos.add(disp);
     
     let correction = game.player.predicted.pos.sub(game.player.pos);
-    if (!game.player.stateChanged) {
-        let corrLen = correction.length();
-        if (corrLen > conf.PLAYER_SPEED) {
-            correction = correction.scale(conf.PLAYER_SPEED / corrLen);
-        }
+    let corrLen = correction.length();
+    if (corrLen > conf.PLAYER_SPEED) {
+        correction = correction.scale(conf.PLAYER_SPEED / corrLen);
     }
 
     game.player.stateChanged = false;
