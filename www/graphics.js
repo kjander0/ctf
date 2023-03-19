@@ -119,8 +119,6 @@ class Graphics {
     }
 
     drawGame(game) {
-        // TODO: test everything is being lerped by setting tick rate really low
-        
         const world = game.world;
 
         this.uiCamera.update(this.screenSize.x/2, this.screenSize.y/2, this.screenSize.x, this.screenSize.y);
@@ -226,7 +224,6 @@ class Graphics {
             this.renderer.drawCircleLine(other.acked.pos.x, other.acked.pos.y, conf.PLAYER_RADIUS);
         }
 
-        // TODO: lerp lasers
         this.renderer.setColor(1, 0, 0);
         for (let laser of world.laserList) {
             this.renderer.drawLine(laser.line.start, laser.line.end, 3);

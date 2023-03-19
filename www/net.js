@@ -45,10 +45,11 @@ const ackInputFlagBit = 1;
 
 let encoder = new Encoder();
 
-function sendInput(playerInput) {
+function sendInput(world) {
     // TODO: don't send anything if player isn't doing anything
     // TODO: send last x inputs so server can more easily correct (no need for tick to be sent with inputs)
     let cmdBits = 0;
+    let playerInput = world.player.inputState;
     if (playerInput.left) {
         cmdBits |= leftBit;
     }
@@ -108,7 +109,7 @@ function _processInitMsg(game, decoder) {
 }
 
 function _processUpdateMsg(game, decoder) {
-    const worldState = getWorldState(0);
+    const world = game.world;
 
     let flags = decoder.readUint8();
 
