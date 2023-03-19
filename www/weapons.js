@@ -24,17 +24,16 @@ class Laser {
 }
 
 function update(game) {
-    const world = game.world;
-    for (let i = world.laserList.length-1; i >= 0; i--) {
-        world.laserList[i].activeTicks += 1;
-        if (world.laserList[i].activeTicks > conf.LASER_TIME_TICKS) {
-            world.laserList[i] = world.laserList[world.laserList.length-1];
-            world.laserList.splice(world.laserList.length-1, 1);
+    for (let i = game.laserList.length-1; i >= 0; i--) {
+        game.laserList[i].activeTicks += 1;
+        if (game.laserList[i].activeTicks > conf.LASER_TIME_TICKS) {
+            game.laserList[i] = game.laserList[game.laserList.length-1];
+            game.laserList.splice(game.laserList.length-1, 1);
         }
     }
 
-    for (let i = world.laserList.length-1; i >= 0; i--) {
-        let laser = world.laserList[i];
+    for (let i = game.laserList.length-1; i >= 0; i--) {
+        let laser = game.laserList[i];
         let speed = conf.LASER_SPEED;
         if (laser.type === Laser.TYPE_BOUNCY) {
             speed = conf.BOUNCY_SPEED;
@@ -43,7 +42,7 @@ function update(game) {
         let numberSteps = 1;
         if (!laser.compensated) {
             laser.compensated = true;
-            let tickDiff = world.player.predictedInputs.unacked.length;
+            let tickDiff = game.player.predictedInputs.unacked.length;
             if (tickDiff < 0) { // client tick wrapped and server tick has not
                 tickDiff += 256;
             }
@@ -56,8 +55,8 @@ function update(game) {
             line.start.set(line.end);
             line.end = line.end.add(laser.dir.scale(speed));
             if (processCollisions(game, laser)) {
-                world.laserList[i] = world.laserList[world.laserList.length-1];
-                world.laserList.splice(world.laserList.length-1, 1);
+                game.laserList[i] = game.laserList[game.laserList.length-1];
+                game.laserList.splice(game.laserList.length-1, 1);
                 break;
             }
         }
@@ -105,22 +104,21 @@ function checkWallHit(game, line) {
 }
 
 function checkPlayerHit(game, laser, hitDist) {
-    const world = game.world;
 	let hitPos = null;
 	let hitPlayer = null;
 
     // Check local player
-    if (world.player.id !== laser.playerId) {
-        let [dist, hit] = checkSingePlayerHit(world.player, laser);
+    if (game.player.id !== laser.playerId) {
+        let [dist, hit] = checkSingePlayerHit(game.player, laser);
         if (dist !== null && (hitDist < 0 || dist < hitDist)) {
             hitPos = hit;
             hitDist = dist;
-            hitPlayer = world.player;
+            hitPlayer = game.player;
         }
     }
 
     // Check other players
-	for (let player of world.otherPlayers) {
+	for (let player of game.otherPlayers) {
 		if (player.id == laser.playerId) {
 			continue;
 		}

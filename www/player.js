@@ -56,7 +56,6 @@ class PlayerInputState {
 }
 
 function sampleInput(game) {
-    const world = game.world;
     let inputState = new PlayerInputState();
     inputState.clientTick = game.clientTick;
     if (game.input.isActive(Input.CMD_LEFT)) {
@@ -74,10 +73,10 @@ function sampleInput(game) {
 
     let shootCmd = game.input.getCommand(Input.CMD_SHOOT);
     if (shootCmd.wasActivated) {
-        if (world.player.predicted.energy >= conf.LASER_ENERGY_COST) {
+        if (game.player.predicted.energy >= conf.LASER_ENERGY_COST) {
             inputState.doShoot = true;
             let aimPos = game.graphics.camera.unproject(shootCmd.mousePos);
-            inputState.aimAngle = _calcAimAngle(world.player.pos, aimPos);
+            inputState.aimAngle = _calcAimAngle(game.player.pos, aimPos);
         }
     }
 
@@ -85,75 +84,75 @@ function sampleInput(game) {
     if (secondaryCmd.wasActivated) {
         inputState.doSecondary = true;
         let aimPos = game.graphics.camera.unproject(secondaryCmd.mousePos);
-        inputState.aimAngle = _calcAimAngle(world.world.player.pos, aimPos);
+        inputState.aimAngle = _calcAimAngle(game.player.pos, aimPos);
     }
 
-    world.player.inputState = inputState;
-    world.player.predictedInputs.predict(inputState, game.clientTick);
+    game.player.inputState = inputState;
+    game.player.predictedInputs.predict(inputState, game.clientTick);
 }
 
-function update(world) {
-    for (let other of world.otherPlayers) {
-        _updateOtherPlayer(other, world);
+function update(game) {
+    for (let other of game.otherPlayers) {
+        _updateOtherPlayer(other, game);
     }
 
-    _updatePlayer(world);
+    _updatePlayer(game);
 }
 
-function _updatePlayer(world) {
+function _updatePlayer(game) {
     let shootCount = 0;
-    let numUnacked = world.player.predictedInputs.unacked.length;
-    for (let unacked of world.player.predictedInputs.unacked) {
+    let numUnacked = game.player.predictedInputs.unacked.length;
+    for (let unacked of game.player.predictedInputs.unacked) {
         if (unacked.val.doShoot) {
             shootCount++;
         }
     }
-    if (world.player.acked.energy !== 60 || world.player.predicted.energy !== 60) {
+    if (game.player.acked.energy !== 60 || game.player.predicted.energy !== 60) {
         console.log("shoot ratio: ", shootCount, " / ", numUnacked);
-        console.log("acked: ", world.player.acked.energy, "predicted: ", world.player.predicted.energy, world.player.inputState.doShoot);
+        console.log("acked: ", game.player.acked.energy, "predicted: ", game.player.predicted.energy, game.player.inputState.doShoot);
     }
 
-    if (world.player.inputState.doShoot) {
+    if (game.player.inputState.doShoot) {
         sound.laser.play();
     }
-    if (world.player.inputState.doSecondary) {
+    if (game.player.inputState.doSecondary) {
         sound.bouncy.play();
     }
 
-    world.player.predicted = new PlayerPredicted(world.player.acked);
+    game.player.predicted = new PlayerPredicted(game.player.acked);
     // TODO: make dirFromInput function so we don't have these 4 if conditions repeated twice
-    for (let unacked of world.player.predictedInputs.unacked) {
+    for (let unacked of game.player.predictedInputs.unacked) {
         let inputState = unacked.val;
         let disp = _calcDisplacement(inputState);
-        world.player.predicted.pos = world.player.predicted.pos.add(disp);
+        game.player.predicted.pos = game.player.predicted.pos.add(disp);
 
-        if (inputState.doShoot && world.player.predicted.energy >= conf.LASER_ENERGY_COST) {
-            world.player.predicted.energy -= conf.LASER_ENERGY_COST;
+        if (inputState.doShoot && game.player.predicted.energy >= conf.LASER_ENERGY_COST) {
+            game.player.predicted.energy -= conf.LASER_ENERGY_COST;
         }
-        world.player.predicted.energy = Math.min(world.player.predicted.energy+1, conf.PLAYER_ENERGY);
+        game.player.predicted.energy = Math.min(game.player.predicted.energy+1, conf.PLAYER_ENERGY);
     }
 
     // TODO: might want to delay prediction by a tick so player sees closer to server reality
-    let disp = _calcDisplacement(world.player.inputState);
-    world.player.prevPos = world.player.pos;
-    world.player.pos = world.player.pos.add(disp);
+    let disp = _calcDisplacement(game.player.inputState);
+    game.player.prevPos = game.player.pos;
+    game.player.pos = game.player.pos.add(disp);
     
-    let correction = world.player.predicted.pos.sub(world.player.pos);
-    if (!world.player.stateChanged) {
+    let correction = game.player.predicted.pos.sub(game.player.pos);
+    if (!game.player.stateChanged) {
         let corrLen = correction.length();
         if (corrLen > conf.PLAYER_SPEED) {
             correction = correction.scale(conf.PLAYER_SPEED / corrLen);
         }
     }
 
-    world.player.stateChanged = false;
-    world.player.pos = world.player.pos.add(correction);
+    game.player.stateChanged = false;
+    game.player.pos = game.player.pos.add(correction);
 }
 
-function _updateOtherPlayer(player, world) {
-    player.prevPos = player.pos;
-    player.pos = player.acked.pos;
-    for (let predicted of player.predictedDirs.unacked) {
+function _updateOtherPlayer(player, game) {
+    player.prevPos.set(player.pos);
+    player.pos.set(player.acked.pos);
+    for (const predicted of player.predictedDirs.unacked) {
         let disp = _dirFromNum(predicted.val).scale(conf.PLAYER_SPEED);
         player.pos = player.pos.add(disp);
     }
@@ -161,7 +160,7 @@ function _updateOtherPlayer(player, world) {
     // Predict movement for next tick
     let lastTick = player.predictedDirs.lastTickOrNull();
     if (lastTick === null) {
-        lastTick = world.serverTick;
+        lastTick = game.serverTick;
     }
     player.predictedDirs.predict(player.lastAckedDirNum, lastTick+1);
 }

@@ -45,11 +45,11 @@ const ackInputFlagBit = 1;
 
 let encoder = new Encoder();
 
-function sendInput(world) {
+function sendInput(game) {
     // TODO: don't send anything if player isn't doing anything
     // TODO: send last x inputs so server can more easily correct (no need for tick to be sent with inputs)
     let cmdBits = 0;
-    let playerInput = world.player.inputState;
+    let playerInput = game.player.inputState;
     if (playerInput.left) {
         cmdBits |= leftBit;
     }
@@ -96,8 +96,7 @@ function consumeMessage(msg, game) {
 }
 
 function _processInitMsg(game, decoder) {
-    const world = game.world;
-    world.player.id = decoder.readUint8();
+    game.player.id = decoder.readUint8();
     let numRows = decoder.readUint16();
     let rows = [];
     for (let i = 0; i < numRows; i++) {
@@ -109,8 +108,6 @@ function _processInitMsg(game, decoder) {
 }
 
 function _processUpdateMsg(game, decoder) {
-    const world = game.world;
-
     let flags = decoder.readUint8();
 
     game.serverTick = decoder.readUint8();
@@ -121,10 +118,10 @@ function _processUpdateMsg(game, decoder) {
     }
 
     let newState = decoder.readUint8();
-    if (world.player.state !== newState) {
-        world.player.stateChanged = true;
+    if (game.player.state !== newState) {
+        game.player.stateChanged = true;
     }
-    world.player.state = newState;
+    game.player.state = newState;
 
     // TODO: setting lastAckedPos without ackedTick could cause stuttered movement
     // but we want to make sure pos is available for first load into game
@@ -132,23 +129,23 @@ function _processUpdateMsg(game, decoder) {
     const ackEnergy = decoder.readUint8();
 
     if (ackedTick != -1) {
-        world.player.predictedInputs.ack(ackedTick);
-        world.player.acked.pos = ackPos;
-        world.player.acked.energy = ackEnergy;
+        game.player.predictedInputs.ack(ackedTick);
+        game.player.acked.pos = ackPos;
+        game.player.acked.energy = ackEnergy;
     }
 
-    for (let otherPlayer of world.otherPlayers) {
+    for (let otherPlayer of game.otherPlayers) {
         otherPlayer.disconnected = true;
     }
 
     let numPlayers = decoder.readUint8();
     for (let i = 0; i < numPlayers; i++) {
         let id = decoder.readUint8();
-        let otherPlayer = world.otherPlayers.find(p => id === p.id);
+        let otherPlayer = game.otherPlayers.find(p => id === p.id);
         if (otherPlayer === undefined) {
             otherPlayer = new Player();
             otherPlayer.id = id;
-            world.otherPlayers.push(otherPlayer);
+            game.otherPlayers.push(otherPlayer);
         }
         otherPlayer.disconnected = false;
         let newState = decoder.readUint8();
@@ -165,9 +162,9 @@ function _processUpdateMsg(game, decoder) {
     for (let i = 0; i < numNewLasers; i++) {
         let type = decoder.readUint8();
         let id = decoder.readUint8();
-        let player = world.otherPlayers.find(p => id === p.id);
+        let player = game.otherPlayers.find(p => id === p.id);
         if (player === undefined) {
-            player = world.player;
+            player = game.player;
         } else {
             if (type === Laser.TYPE_LASER) {
                 gotOtherLaser = true;
@@ -178,11 +175,11 @@ function _processUpdateMsg(game, decoder) {
         let laserEnd = decoder.readVec();
         let aimAngle = decoder.readFloat64();
         let newLaser = new Laser(type, id, player.lastAckedPos, aimAngle);
-        if (player === world.player) {
+        if (player === game.player) {
             newLaser.compensated = true;
         }
         newLaser.line.end.set(laserEnd);
-        world.laserList.push(newLaser);
+        game.laserList.push(newLaser);
     }
 
     if (gotOtherLaser) {

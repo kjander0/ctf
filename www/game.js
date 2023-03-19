@@ -2,7 +2,6 @@ import * as conf from "./conf.js";
 import * as player from "./player.js";
 import * as weapons from "./weapons.js";
 import * as net from "./net.js";
-import {World} from "./world.js";
 
 class Game {
     clientTick = -1; // 0-255
@@ -12,7 +11,9 @@ class Game {
     graphics;
     input;
 
-    world = new World();
+    player = new player.Player();
+    otherPlayers = [];
+    laserList = [];
 
     constructor(graphics, input) {
         this.graphics = graphics;
@@ -39,10 +40,10 @@ class Game {
 
     _update() {
         player.sampleInput(this);
-        net.sendInput(this.world);
+        net.sendInput(this);
         // move projectiles before spawning new ones (gives an additional tick for lagg compensation)
         weapons.update(this);
-        player.update(this.world);
+        player.update(this);
         this.removeDisconnectedPlayers();
 
         this.input.reset(); // do last
@@ -53,12 +54,12 @@ class Game {
     }
 
     removeDisconnectedPlayers() {
-        for (let i = this.world.otherPlayers.length-1; i >= 0; i--) { // loop backwards for removing elements
-            let otherPlayer = this.world.otherPlayers[i];
+        for (let i = this.otherPlayers.length-1; i >= 0; i--) { // loop backwards for removing elements
+            let otherPlayer = this.otherPlayers[i];
             if (!otherPlayer.disconnected) {
                 continue;
             }
-            this.world.otherPlayers.splice(i, 1);
+            this.otherPlayers.splice(i, 1);
         }
     }
 }

@@ -119,19 +119,17 @@ class Graphics {
     }
 
     drawGame(game) {
-        const world = game.world;
-
         this.uiCamera.update(this.screenSize.x/2, this.screenSize.y/2, this.screenSize.x, this.screenSize.y);
 
         const lerpFraction = game.accumMs/conf.UPDATE_MS;
-        const lerpPos = lerpVec(world.player.prevPos, world.player.pos, lerpFraction);
+        const lerpPos = lerpVec(game.player.prevPos, game.player.pos, lerpFraction);
 
         this.camera.update(lerpPos.x, lerpPos.y, this.screenSize.x, this.screenSize.y);
 
         let shipRadius = conf.PLAYER_RADIUS / assets.shipPixelRatio;
 
         let shipPositions = [lerpPos]
-        for (let other of world.otherPlayers) {
+        for (let other of game.otherPlayers) {
             const lerpPos = lerpVec(other.prevPos, other.pos, lerpFraction);
             shipPositions.push(lerpPos);
         }
@@ -155,7 +153,7 @@ class Graphics {
         lightsMesh.addCircle(0, 0, lightRadius);
 
         let lightPosData = [];
-        for (let laser of world.laserList) {
+        for (let laser of game.laserList) {
             lightPosData.push(laser.line.end.x, laser.line.end.y);
         }
 
@@ -210,22 +208,22 @@ class Graphics {
 
         this.renderer.render(this.uiCamera);
 
-        if (world.map !== null) {
+        if (game.map !== null) {
             this.drawLevel(game.map.rows);
         }
 
         this.renderer.setColor(0, 1, 0);
-        this.renderer.drawCircleLine(world.player.acked.pos.x, world.player.acked.pos.y, conf.PLAYER_RADIUS);
+        this.renderer.drawCircleLine(game.player.acked.pos.x, game.player.acked.pos.y, conf.PLAYER_RADIUS);
         this.renderer.setColor(0, 0, 1);
-        this.renderer.drawCircleLine(world.player.predicted.pos.x, world.player.predicted.pos.y, conf.PLAYER_RADIUS);
+        this.renderer.drawCircleLine(game.player.predicted.pos.x, game.player.predicted.pos.y, conf.PLAYER_RADIUS);
 
-        for (let other of world.otherPlayers) {
+        for (let other of game.otherPlayers) {
             this.renderer.setColor(0, 1, 0);
             this.renderer.drawCircleLine(other.acked.pos.x, other.acked.pos.y, conf.PLAYER_RADIUS);
         }
 
         this.renderer.setColor(1, 0, 0);
-        for (let laser of world.laserList) {
+        for (let laser of game.laserList) {
             this.renderer.drawLine(laser.line.start, laser.line.end, 3);
         }
         this.renderer.render(this.camera);
@@ -234,7 +232,7 @@ class Graphics {
         let border = 10;
         let barWidth = 80;
         let barHeight = 10;
-        let ratio = world.player.predicted.energy / conf.PLAYER_ENERGY;
+        let ratio = game.player.predicted.energy / conf.PLAYER_ENERGY;
         this.renderer.setColor(0.8, 0.1, 0.1);
         this.renderer.drawRect(this.screenSize.x/2 - barWidth/2, border, barWidth, barHeight);
         this.renderer.setColor(0.8, 0.8, 0);
