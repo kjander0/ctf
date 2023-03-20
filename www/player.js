@@ -11,10 +11,14 @@ class PlayerPredicted {
 
     constructor (other) {
         if (other !== undefined) {
-            this.pos.set(other.pos);
-            this.dir.set(other.dir);
-            this.energy = other.energy;
+            this.set(other);
         }
+    }
+
+    set(other) {
+        this.pos.set(other.pos);
+        this.dir.set(other.dir);
+        this.energy = other.energy;
     }
 }
 
@@ -100,14 +104,20 @@ function update(game) {
 }
 
 function _updatePlayer(game) {
+    if (game.player.stateChanged) {
+        game.player.pos.set(game.player.acked.pos);
+        game.player.prevPos.set(game.player.acked.pos);
+        game.player.predicted.set(game.player.acked);
+        game.player.stateChanged = false;
+        return;
+    }
+
     if (game.player.inputState.doShoot) {
         sound.laser.play();
     }
     if (game.player.inputState.doSecondary) {
         sound.bouncy.play();
     }
-
-    if player state changed reset predicted to acked
 
     game.player.predicted = new PlayerPredicted(game.player.acked);
     // TODO: make dirFromInput function so we don't have these 4 if conditions repeated twice
