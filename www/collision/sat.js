@@ -3,13 +3,20 @@ import { Vec, compareFloat } from "../math.js";
 function computeUniqueAxes(points) {
     const axes = [];
     for (let i = 0; i < points.length-1; i++) {
-        const newAxis = new Vec(-points[i+1], point[i]).normalize(); // perpendicular to edge
+        const edge = points[i+1].sub(points[i]);
+        const newAxis = new Vec(-edge.y, edge.x).normalize(); // perpendicular to edge
+
+        let isDuplicate = false;
         for (let axis of axes) {
             const sameness = Math.abs(axis.dot(newAxis));
-            if (compareFloat(sameness, 1.0, 1e-3)) { // check for duplicate (parallel)
-                axes.push(newAxis);
+            if (compareFloat(sameness, 1.0, 1e-3)) {
+                isDuplicate = true;
                 break;
             }
+        }
+
+        if (!isDuplicate) {
+            axes.push(newAxis);
         }
     }
     return axes;
@@ -47,4 +54,22 @@ function overlap(points0, points1, axis) {
     }
     return 0;
 }
+
+function test() {
+    const points0  = [
+        new Vec(0, 0), new Vec(50, 0),
+        new Vec(50, 20), new Vec(0, 20),
+    ];
+    const points1  = [
+        new Vec(40, 8), new Vec(80, 8),
+        new Vec(80, 16), new Vec(40, 16),
+    ];
+
+    let axes0 = computeUniqueAxes(points0);
+    console.log(axes0);
+    let axes1 = computeUniqueAxes(points1);
+    console.log(axes1);
+}
+
+export {test};
 

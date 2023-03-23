@@ -11,8 +11,10 @@ import { Graphics } from "./gfx/graphics.js";
 import * as net from "./net.js";
 import * as conf from "./conf.js";
 import * as asset from "./assets.js";
+import {test} from "./collision/sat.js";
 
 window.onload = async function() {
+    test();
     await conf.retrieveConf(); // important to do this first
     await asset.loadAssets();
 
