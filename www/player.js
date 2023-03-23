@@ -7,7 +7,8 @@ import * as sound from "./sound.js"
 class PlayerPredicted {
     pos = new Vec();
     dir = new Vec();
-    energy = conf.PLAYER_ENERGY;
+    energy = conf.MAX_LASER_ENERGY;
+    bouncyEnergy = conf.MAX_BOUNCY_ENERGY;
 
     constructor (other) {
         if (other !== undefined) {
@@ -19,6 +20,7 @@ class PlayerPredicted {
         this.pos.set(other.pos);
         this.dir.set(other.dir);
         this.energy = other.energy;
+        this.bouncyEnergy = other.bouncyEnergy;
     }
 }
 
@@ -86,9 +88,12 @@ function sampleInput(game) {
 
     let secondaryCmd = game.input.getCommand(Input.CMD_SECONDARY);
     if (secondaryCmd.wasActivated) {
-        inputState.doSecondary = true;
-        let aimPos = game.graphics.camera.unproject(secondaryCmd.mousePos);
-        inputState.aimAngle = _calcAimAngle(game.player.pos, aimPos);
+        console.log(game.player.predicted.bouncyEnergy, conf.BOUNCY_ENERGY_COST);
+        if (game.player.predicted.bouncyEnergy >= conf.BOUNCY_ENERGY_COST) {
+            inputState.doSecondary = true;
+            let aimPos = game.graphics.camera.unproject(secondaryCmd.mousePos);
+            inputState.aimAngle = _calcAimAngle(game.player.pos, aimPos);
+        }
     }
 
     game.player.inputState = inputState;
@@ -129,7 +134,11 @@ function _updatePlayer(game) {
         if (inputState.doShoot && game.player.predicted.energy >= conf.LASER_ENERGY_COST) {
             game.player.predicted.energy -= conf.LASER_ENERGY_COST;
         }
-        game.player.predicted.energy = Math.min(game.player.predicted.energy+1, conf.PLAYER_ENERGY);
+        if (inputState.doSecondary && game.player.predicted.bouncyEnergy >= conf.BOUNCY_ENERGY_COST) {
+            game.player.predicted.bouncyEnergy -= conf.BOUNCY_ENERGY_COST;
+        }
+        game.player.predicted.energy = Math.min(game.player.predicted.energy+1, conf.MAX_LASER_ENERGY);
+        game.player.predicted.bouncyEnergy = Math.min(game.player.predicted.bouncyEnergy+1, conf.MAX_BOUNCY_ENERGY);
     }
 
     // TODO: might want to delay prediction by a tick so player sees closer to server reality

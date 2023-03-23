@@ -1,4 +1,4 @@
-import {Vec, Line} from "./math.js";
+import {Vec, Line} from "../math.js";
 
 // Overlap from rect to circle
 function circleRectOverlap(c, r) {

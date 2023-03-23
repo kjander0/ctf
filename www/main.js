@@ -5,9 +5,9 @@
 // - bundle the js
 // - juicify (screen shake on death)
 
-import { Game } from "./game.js"
+import { Game } from "./game.js";
 import { Input } from "./input.js";
-import { Graphics } from "./graphics.js";
+import { Graphics } from "./gfx/graphics.js";
 import * as net from "./net.js";
 import * as conf from "./conf.js";
 import * as asset from "./assets.js";

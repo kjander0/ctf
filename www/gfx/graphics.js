@@ -1,13 +1,13 @@
-import {lerpVec, extrapolateVec} from "./interpolate.js";
-import { Vec } from "./math.js";
-import {Map} from "./map.js";
-import * as conf from "./conf.js";
-import { Renderer } from "./gfx/renderer.js";
-import { Mesh, Model, VertAttrib} from "./gfx/mesh.js";
-import { Shader } from "./gfx/shader.js";
-import { Texture } from "./gfx/texture.js";
-import { Camera } from "./gfx/camera.js";
-import * as assets from "./assets.js";
+import {lerpVec, extrapolateVec} from "../interpolate.js";
+import { Vec } from "../math.js";
+import {Map} from "../map.js";
+import * as conf from "../conf.js";
+import { Renderer } from "./renderer.js";
+import { Mesh, Model, VertAttrib} from "./mesh.js";
+import { Shader } from "./shader.js";
+import { Texture } from "./texture.js";
+import { Camera } from "./camera.js";
+import * as assets from "../assets.js";
 
 const ATTRIB_LIGHT_POS_LOC = 3;
 
@@ -232,7 +232,7 @@ class Graphics {
         let border = 10;
         let barWidth = 80;
         let barHeight = 10;
-        let ratio = game.player.predicted.energy / conf.PLAYER_ENERGY;
+        let ratio = game.player.predicted.energy / conf.MAX_LASER_ENERGY;
         this.renderer.setColor(0.8, 0.1, 0.1);
         this.renderer.drawRect(this.screenSize.x/2 - barWidth/2, border, barWidth, barHeight);
         this.renderer.setColor(0.8, 0.8, 0);

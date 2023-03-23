@@ -1,6 +1,6 @@
 import { Vec, Line, Rect, Circle } from "./math.js";
 import * as conf from "./conf.js";
-import * as collision from "./collision.js"
+import * as collision from "./collision/collision.js"
 
 class Laser {
     static TYPE_LASER = 0;

@@ -28,8 +28,9 @@ const (
 )
 
 type PlayerPredicted struct {
-	Pos    mymath.Vec
-	Energy int
+	Pos          mymath.Vec
+	Energy       int
+	BouncyEnergy int
 }
 
 type Player struct {
@@ -83,11 +84,13 @@ func (in PlayerInput) GetDirNum() int {
 func NewPlayer(id uint8, client web.Client) Player {
 	acked := PlayerPredicted{
 		mymath.Vec{},
-		conf.Shared.PlayerEnergy,
+		conf.Shared.MaxLaserEnergy,
+		conf.Shared.MaxBouncyEnergy,
 	}
 	predicted := PlayerPredicted{
 		mymath.Vec{},
-		conf.Shared.PlayerEnergy,
+		conf.Shared.MaxLaserEnergy,
+		conf.Shared.MaxBouncyEnergy,
 	}
 
 	return Player{
@@ -149,13 +152,15 @@ func processAckedInputs(world *World, player *Player) {
 				player.Acked.Energy -= conf.Shared.LaserEnergyCost
 				world.NewLasers = append(world.NewLasers, laser)
 			}
-			if input.ShootSecondary {
+			if input.ShootSecondary && player.Acked.BouncyEnergy >= conf.Shared.BouncyEnergyCost {
+				player.Acked.BouncyEnergy -= conf.Shared.BouncyEnergyCost
 				laser.Type = ProjTypeBouncy
 				world.NewLasers = append(world.NewLasers, laser)
 			}
 		}
 
-		player.Acked.Energy = mymath.MinInt(conf.Shared.PlayerEnergy, player.Acked.Energy+1)
+		player.Acked.Energy = mymath.MinInt(conf.Shared.MaxLaserEnergy, player.Acked.Energy+1)
+		player.Acked.BouncyEnergy = mymath.MinInt(conf.Shared.MaxBouncyEnergy, player.Acked.BouncyEnergy+1)
 	}
 }
 
@@ -167,7 +172,8 @@ func processPredictedInputs(world *World, player *Player) {
 		disp := calcDisplacement(prediction.input)
 		player.Predicted.Pos = player.Predicted.Pos.Add(disp)
 		player.Predicted.Pos = constrainPlayerPos(world, player.Predicted.Pos)
-		player.Predicted.Energy = mymath.MinInt(conf.Shared.PlayerEnergy, player.Predicted.Energy+1)
+		player.Predicted.Energy = mymath.MinInt(conf.Shared.MaxLaserEnergy, player.Predicted.Energy+1)
+		player.Predicted.BouncyEnergy = mymath.MinInt(conf.Shared.MaxBouncyEnergy, player.Predicted.BouncyEnergy+1)
 	}
 }
 
