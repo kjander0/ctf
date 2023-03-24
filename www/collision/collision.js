@@ -2,10 +2,10 @@ import {Vec, Line} from "../math.js";
 
 // Overlap from rect to circle
 function circleRectOverlap(c, r) {
-	closestLine = r.closestSide(c.pos);
-	closestPoint = closestLine.closestPoint(c.pos);
+	const closestLine = r.closestSide(c.pos);
+	const closestPoint = closestLine.closestPoint(c.pos);
 
-	centreInside = r.containsPoint(c.pos);
+	const centreInside = r.containsPoint(c.pos);
 
 	let sepAxis;
 	if (centreInside) {
@@ -21,13 +21,13 @@ function circleRectOverlap(c, r) {
 
 	// Make sepAxis unit vector
 	if (sepLen < 1e-6) {
-		rectMid = r.pos.add(r.size.scale(0.5));
+		const rectMid = r.pos.add(r.size.scale(0.5));
 		sepAxis = closestPoint.sub(rectMid);
 		sepLen = sepAxis.length();
 	}
 	sepAxis = sepAxis.scale(1.0 / sepLen);
 
-	let overlap = closestPoint.sub(c.pos.add(sepAxis.scale(-c.radius)));
+	const overlap = closestPoint.sub(c.pos.add(sepAxis.scale(-c.radius)));
 	return overlap;
 }
 

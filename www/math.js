@@ -191,7 +191,7 @@ class Rect {
         return p.x > this.pos.x && p.x < this.pos.x+this.size.x && p.y > this.pos.y && p.y < this.pos.y+this.size.y;
     }
 
-    closestSide(p) {
+    closestSide(pos) {
         let closestDist = this.topLine().closestPoint(pos).distanceTo(pos);
         let closestLine = this.topLine();
     
@@ -204,10 +204,10 @@ class Rect {
         candidateDist = this.leftLine().closestPoint(pos).distanceTo(pos);
         if (candidateDist < closestDist) {
             closestDist = candidateDist;
-            closestLine = this.LeftLine();
+            closestLine = this.leftLine();
         }
     
-        candidateDist = this.RightLine().ClosestPoint(pos).DistanceTo(pos);
+        candidateDist = this.rightLine().closestPoint(pos).distanceTo(pos);
         if (candidateDist < closestDist) {
             closestDist = candidateDist;
             closestLine = this.rightLine();

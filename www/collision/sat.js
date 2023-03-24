@@ -87,6 +87,8 @@ function test() {
         const overlap = checkOverlap(points0, points1, axis);
         console.log(overlap);
     }
+
+    keep track of smallest overlap axis, ignoring those occluded by tiling
 }
 
 export {test};

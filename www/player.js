@@ -1,8 +1,9 @@
-import { Vec } from "./math.js"
+import { Vec, Rect, Circle } from "./math.js"
 import { Input } from "./input.js"
 import {Predicted} from "./predicted.js"
 import * as conf from "./conf.js"
 import * as sound from "./sound.js"
+import * as collision from "./collision/collision.js"
 
 class PlayerPredicted {
     pos = new Vec();
@@ -130,6 +131,7 @@ function _updatePlayer(game) {
         let inputState = unacked.val;
         let disp = _calcDisplacement(inputState);
         game.player.predicted.pos = game.player.predicted.pos.add(disp);
+        _constrainPlayerPos(game, game.player.predicted.pos);
 
         if (inputState.doShoot && game.player.predicted.energy >= conf.LASER_ENERGY_COST) {
             game.player.predicted.energy -= conf.LASER_ENERGY_COST;
@@ -141,10 +143,11 @@ function _updatePlayer(game) {
         game.player.predicted.bouncyEnergy = Math.min(game.player.predicted.bouncyEnergy+1, conf.MAX_BOUNCY_ENERGY);
     }
 
-    // TODO: might want to delay prediction by a tick so player sees closer to server reality
-    let disp = _calcDisplacement(game.player.inputState);
+    // Display pos is slowly corrected to predicted pos
     game.player.prevPos = game.player.pos;
+    let disp = _calcDisplacement(game.player.inputState);
     game.player.pos = game.player.pos.add(disp);
+    _constrainPlayerPos(game, game.player.pos);
     
     let correction = game.player.predicted.pos.sub(game.player.pos);
     let corrLen = correction.length();
@@ -153,7 +156,8 @@ function _updatePlayer(game) {
     }
 
     game.player.stateChanged = false;
-    game.player.pos = game.player.pos.add(correction);
+    //game.player.pos = game.player.pos.add(correction);
+
 }
 
 function _updateOtherPlayer(player, game) {
@@ -170,6 +174,23 @@ function _updateOtherPlayer(player, game) {
         lastTick = game.serverTick;
     }
     player.predictedDirs.predict(player.lastAckedDirNum, lastTick+1);
+}
+
+function _constrainPlayerPos(game, pos) {
+	// TODO can optimize by only sampling tiles in direction of movement
+	const tileSample = game.map.sampleSolidTiles(pos, conf.PLAYER_RADIUS);
+    const tileRect = new Rect(new Vec(), new Vec(conf.TILE_SIZE, conf.TILE_SIZE));
+	const playerCircle = new Circle(pos, conf.PLAYER_RADIUS);
+
+	for (let tilePos of tileSample) {
+		tileRect.pos.set(tilePos);
+		const overlap = collision.circleRectOverlap(playerCircle, tileRect)
+		if (overlap === null) {
+			continue
+		}
+		pos.set(pos.add(overlap))
+        console.log(overlap);
+	}
 }
 
 function _calcAimAngle(startPos, aimPos) {
