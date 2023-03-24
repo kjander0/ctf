@@ -1,25 +1,38 @@
 import { Vec, compareFloat } from "../math.js";
 
-function computeUniqueAxes(points) {
+function computeAxes(points) {
     const axes = [];
-    for (let i = 0; i < points.length-1; i++) {
-        const edge = points[i+1].sub(points[i]);
+    for (let i = 0; i < points.length; i++) {
+        const p0 = points[i];
+        let nextIndex = i+1;
+        if (nextIndex === points.length) {
+            nextIndex = 0;
+        }
+        const p1 = points[nextIndex];
+        const edge = p1.sub(p0);
         const newAxis = new Vec(-edge.y, edge.x).normalize(); // perpendicular to edge
+        axes.push(newAxis);
+    }
+    return axes;
+}
 
+function uniqueAxes(axes) {
+    const uniqueAxes = [];
+
+    for (let axis of axes) {
         let isDuplicate = false;
-        for (let axis of axes) {
-            const sameness = Math.abs(axis.dot(newAxis));
+        for (let otherAxis of uniqueAxes) {
+            const sameness = Math.abs(axis.dot(otherAxis));
             if (compareFloat(sameness, 1.0, 1e-3)) {
                 isDuplicate = true;
                 break;
             }
         }
-
         if (!isDuplicate) {
-            axes.push(newAxis);
+            uniqueAxes.push(axis);
         }
     }
-    return axes;
+    return uniqueAxes;
 }
 
 function projection(points, axis) {
@@ -41,19 +54,20 @@ function projection(points, axis) {
 // overlap of points0 over points1 on axis
 // 0 means no overlap
 // -ve means overlaps in opposite axis dir
-function overlap(points0, points1, axis) {
-    const {min0, max0} = projection(points0, axis);
-    const {min1, max1} = projection(points1, axis);
+function checkOverlap(points0, points1, axis) {
+    const [min0, max0] = projection(points0, axis);
+    const [min1, max1] = projection(points1, axis);
 
-    if (max1 > min0 && min1 < max0) {
-        if (min0 + max0 < min1, max1) {
-            return max0 - min1;
-        } else {
-            return max1 - min0;
-        }
+    if (max1 <= min0 || min1 >= max0) {
+        return 0;
     }
-    return 0;
-}
+
+    if (min0 + max0 < min1 + max1) {
+        return max0 - min1;
+    } else {
+        return min0 - max1;
+    }
+}      
 
 function test() {
     const points0  = [
@@ -65,10 +79,14 @@ function test() {
         new Vec(80, 16), new Vec(40, 16),
     ];
 
-    let axes0 = computeUniqueAxes(points0);
-    console.log(axes0);
-    let axes1 = computeUniqueAxes(points1);
-    console.log(axes1);
+    let axes = computeAxes(points0).concat(computeAxes(points1));
+    axes = uniqueAxes(axes);
+    console.log(axes);
+
+    for (let axis of axes) {
+        const overlap = checkOverlap(points0, points1, axis);
+        console.log(overlap);
+    }
 }
 
 export {test};
