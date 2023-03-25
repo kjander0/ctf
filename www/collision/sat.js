@@ -1,5 +1,7 @@
 import { Vec, compareFloat } from "../math.js";
 
+const rectAxes = [new Vec(1, 0), new Vec(0, 1)];
+
 function computeAxes(points) {
     const axes = [];
     for (let i = 0; i < points.length; i++) {
@@ -59,7 +61,7 @@ function checkOverlap(points0, points1, axis) {
     const [min1, max1] = projection(points1, axis);
 
     if (max1 <= min0 || min1 >= max0) {
-        return 0;
+        return null;
     }
 
     if (min0 + max0 < min1 + max1) {
@@ -67,7 +69,46 @@ function checkOverlap(points0, points1, axis) {
     } else {
         return min0 - max1;
     }
-}      
+}
+
+function findMinOverlap(points0, points1, axes) {
+    let minOverlap = 0;
+    let minOverlapAxis = null;
+
+    for (let axis of axes) {
+        const overlap = checkOverlap(points0, points1, axis);
+        if (overlap === null) {
+            return null; // seperating axis found!
+        }
+
+        if (minOverlapAxis !== null && Math.abs(overlap) >= Math.abs(minOverlap)) {
+            continue;
+        }
+
+        minOverlap = overlap;
+        minOverlapAxis = axis;
+        // keep track of smallest overlap axis, ignoring those occluded by tiling
+    }
+
+    return minOverlapAxis.scale(minOverlap);
+}
+
+function rectOverlap(r0, r1) {
+    const points0 = rectPoints(r0);
+    const points1 = rectPoints(r1);
+    const overlap = findMinOverlap(points0, points1, rectAxes);
+    return overlap;
+}
+
+function rectPoints(rect) {
+    return [
+        new Vec(rect.pos.x, rect.pos.y + rect.size.y), new Vec(rect.pos).add(rect.size),
+        new Vec(rect.pos), new Vec(rect.pos.x + rect.size.x, rect.pos.y),
+    ];
+
+
+}
+
 
 function test() {
     const points0  = [
@@ -87,8 +128,6 @@ function test() {
         const overlap = checkOverlap(points0, points1, axis);
         console.log(overlap);
     }
-
-    keep track of smallest overlap axis, ignoring those occluded by tiling
 }
 
 export {test};
