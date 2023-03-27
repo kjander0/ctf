@@ -32,61 +32,73 @@ function circleRectOverlap(c, r) {
 }
 
 // lines: ccw lines of convex polygon
-function circlePolygonOverlap(c, lines) {
-	let minOverlap = 0;
-	let minOverlapAxis = null;
+function circleTriangleOverlap(circle, t0, t1, t2) {
+	// Triangle points and normals
+	//        t2
+	//        /\
+	// n2 <- /  \ -> n1
+	//      /    \
+	//  t0 /______\ t1
+	//         |
+	//        n0
 
-	// Check 3 seperating axis for each line:
-	// TODO: can skip end point of last line since it should be the same
-	//  as the start point of the first line
-	for (let l of lines) {
-		// 1) axis for outward facing normal of line
-		const normal = l.end.sub(l.start).normalize();
-		const tmpX = normal.x;
-		normal.x = normal.y;
-		normal.y = -tmpX;
-
-		let disp = c.pos.sub(l.start);
-		let overlap = c.radius - disp.dot(normal);
-		if (overlap <= 0) {
-			return null;
-		}
-
-		if (minOverlapAxis === null || overlap < minOverlap) {
-			minOverlap = overlap;
-			minOverlapAxis = normal.scale(-1);
-		}
-
-		// 2) axis between circle and start point of line
-		overlap = c.radius - disp.length();
-		if (disp.dot(normal) >= 0) {
-			if (overlap <= 0) {
-				return null;
-			}
-	
-			if (minOverlapAxis === null || overlap < minOverlap) {
-				minOverlap = overlap;
-				minOverlapAxis = disp.normalize().scale(-1);
-			}
-		}
-
-
-		// 3) axis between circle and end point of line
-		// disp = c.pos.sub(l.end);
-		// overlap = c.radius - disp.length();
-		// if (disp.dot(normal) >= 0) {
-		// 	if (overlap <= 0) {
-		// 		return null;
-		// 	}
-	
-		// 	if (minOverlapAxis === null || overlap < minOverlap) {
-		// 		minOverlap = overlap;
-		// 		minOverlapAxis = disp.normalize().scale(-1);
-		// 	}
-		// }
+	let n0 = t1.sub(t0).normalize();
+	n0.x = n0.y;
+	n0.y = -n0.x;
+	let d0 = circle.pos.sub(t0).dot(n0);
+	if (d0 >= circle.radius) {
+		return null;
 	}
 
-	return minOverlapAxis.scale(minOverlap);
+	let n1 = t2.sub(t1).normalize();
+	n1.x = n1.y;
+	n1.y = -n1.x;
+	let d1 = circle.pos.sub(t1).dot(n1);
+	if (d1 >= circle.radius) {
+		return null;
+	}
+
+	let n2 = t0.sub(t2).normalize();
+	n2.x = n2.y;
+	n2.y = -n2.x;
+	let d2 = circle.pos.sub(t2).dot(n2);
+	if (d2 >= circle.radius) {
+		return null;
+	}
+
+	if (d0 > 0) {
+		if (d1 > 0) { // case: t1 closest point
+			return t1.sub(circle.pos).resize(circle.radius);
+		}
+		if (d2 > 0) { // case: t0 closest point
+			return t0.sub(circle.pos).resize(circle.radius);
+		}
+		// case: t0 -> t1 closest line
+		return n0.scale(-circle.radius);
+	}
+	if (d1 > 0) {
+		if (d2 > 0) { // case: t2 closest point
+			return t2.sub(circle.pos).resize(circle.radius);
+		}
+		// case: t1 -> t2 closest line
+		return n1.scale(-circle.radius);
+	}
+
+	if (d2 > 0) { // case: t2 -> t0 closest line
+		return n0.scale(-circle.radius);
+	}
+
+	// case: circle centre within triangle, overlaps is from nearest side
+	if (d0 > d1) {
+		if (d0 > d2) {
+			return n0.scale(d0 - circle.radius);
+		}
+		return n2.scale(d2 - circle.radius);
+	}
+	if (d1 > d2) {
+		return n1.scale(d1 - circle.radius);
+	}
+	return n2.scale(d2 - circle.radius);
 }
 
 // Overlap from circle to line
@@ -146,4 +158,4 @@ function lineRectOverlap(l, r) {
 	return [null, null];
 }
 
-export {circleRectOverlap, lineCircleOverlap, lineRectOverlap, circlePolygonOverlap};
+export {circleRectOverlap, lineCircleOverlap, lineRectOverlap, circleTriangleOverlap};

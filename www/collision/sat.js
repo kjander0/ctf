@@ -16,42 +16,6 @@ function rectOverlap(r0, r1) {
     return overlap;
 }
 
-function circlePolygonOverlap(circle, lines) {
-    const axes = [];
-    const polygonPoints = [];
-
-
-    const rectPoints = _rectPoints(r);
-    let axes = _rectAxes.slice();
-
-    // Add seperation axes from rect corners to circle centre
-    for (let p of rectPoints) {
-        axes.push(c.pos.sub(p).normalize());
-    }
-
-    let minOverlap = 0;
-    let minOverlapAxis = null;
-    for (let axis of axes) {
-        const circlePoints = [
-            c.pos.add(axis.scale(c.radius)),
-            c.pos.add(axis.scale(-c.radius)),
-        ];
-        const overlap = _checkOverlap(circlePoints, rectPoints, axis);
-        if (overlap === null) {
-            return null; // seperating axis found!
-        }
-
-        if (minOverlapAxis !== null && Math.abs(overlap) >= Math.abs(minOverlap)) {
-            continue;
-        }
-
-        minOverlap = overlap;
-        minOverlapAxis = axis;
-    }
-
-    return minOverlapAxis.scale(minOverlap);
-}
-
 function circleRectOverlap(c, r) {
     const rectPoints = _rectPoints(r);
     let axes = _rectAxes.slice();
