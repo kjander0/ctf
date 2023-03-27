@@ -12,27 +12,48 @@ const (
 	TileWall
 	TileJail
 	TileSpawn
+	TileWallTriangle
 )
 
+type Tile struct {
+	Type uint8
+
+	// 3 2 1
+	// 4   0
+	// 5 6 7
+	Orientation uint8
+
+	Solid bool
+}
+
 type Map struct {
-	Rows   [][]uint8
+	Rows   [][]Tile
 	Jails  []mymath.Vec
 	Spawns []mymath.Vec
 }
 
 func NewMap(rows [][]uint8) Map {
-	newMap := Map{
-		Rows: rows,
-	}
+	var newMap Map
 
-	// Find spawn/jail spots
 	for r := range rows {
+		newMap.Rows = append(newMap.Rows, []Tile{})
 		for c := range rows[r] {
-			if rows[r][c] == TileJail {
+			tile := Tile{
+				Type: rows[r][c],
+			}
+
+			switch tile.Type {
+			case TileWall:
+				tile.Solid = true
+			case TileWallTriangle:
+				tile.Solid = true
+			case TileJail:
 				newMap.Jails = append(newMap.Jails, TileCentre(r, c))
-			} else if rows[r][c] == TileSpawn {
+			case TileSpawn:
 				newMap.Spawns = append(newMap.Spawns, TileCentre(r, c))
 			}
+
+			newMap.Rows[r] = append(newMap.Rows[r], tile)
 		}
 	}
 
@@ -59,7 +80,7 @@ func (m *Map) SampleSolidTiles(pos mymath.Vec, radius float64) []mymath.Vec {
 				continue
 			}
 			tile := m.Rows[r][c]
-			if tile != TileWall {
+			if tile.Type != TileWall && tile.Type != TileWallTriangle {
 				continue
 			}
 			samples = append(samples, TileBottomLeft(r, c))

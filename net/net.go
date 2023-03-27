@@ -166,11 +166,13 @@ func prepareInitMsg(world *entity.World, playerIndex int) []byte {
 	encoder := NewEncoder(&buf)
 	encoder.WriteUint8(initMsgType)
 	encoder.WriteUint8(world.PlayerList[playerIndex].Id)
-	// TODO: encode world once, send to all joining players
+	// TODO: encode map tiles once (possibly compressed), send to all players that join
 	encoder.WriteUint16(uint16(len(world.Map.Rows)))
 	for i := range world.Map.Rows {
 		encoder.WriteUint16(uint16(len(world.Map.Rows[i])))
-		encoder.WriteBytes(world.Map.Rows[i])
+		for j := range world.Map.Rows[i] {
+			encoder.WriteUint8(world.Map.Rows[i][j].Type)
+		}
 	}
 	if encoder.Error != nil {
 		logger.Panic("prepareInitMsg: encoder error: ", encoder.Error)

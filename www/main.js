@@ -1,4 +1,5 @@
 // TODO
+// - disable client collisions to test server collisions and vice versa
 // - hard limit number unacked packets (1 second worth?) in case server running slow, etc
 // - handle switching browser tab (ignore first huge delta time, etc)
 // - serve minified versions of PIXI for release

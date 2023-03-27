@@ -1,9 +1,10 @@
-import { Vec, Rect, Circle } from "./math.js"
+import { Vec, Rect, Circle, Line } from "./math.js"
 import { Input } from "./input.js"
 import {Predicted} from "./predicted.js"
 import * as conf from "./conf.js"
 import * as sound from "./sound.js"
 import * as collision from "./collision/collision.js"
+import * as sat from "./collision/sat.js"
 
 class PlayerPredicted {
     pos = new Vec();
@@ -181,14 +182,30 @@ function _constrainPlayerPos(game, pos) {
 	const tileSample = game.map.sampleSolidTiles(pos, conf.PLAYER_RADIUS);
     const tileRect = new Rect(new Vec(), new Vec(conf.TILE_SIZE, conf.TILE_SIZE));
 	const playerCircle = new Circle(pos, conf.PLAYER_RADIUS);
+    //const playerRect = new Rect(new Vec(), new Vec(conf.PLAYER_RADIUS * 2, conf.PLAYER_RADIUS * 2));
+
+
 
 	for (let tilePos of tileSample) {
+        //playerRect.pos.set(pos.subXY(conf.PLAYER_RADIUS, conf.PLAYER_RADIUS));
+        playerCircle.pos.set(pos);
 		tileRect.pos.set(tilePos);
-		const overlap = collision.circleRectOverlap(playerCircle, tileRect)
+
+        const p0 = tileRect.pos;
+        const p1 = tileRect.pos.addXY(tileRect.size.x, 0);
+        const p2 = tileRect.pos.add(tileRect.size);
+        const p3 = tileRect.pos.addXY(0, tileRect.size.y);
+        const tileLines = [
+            new Line(p0, p1), new Line(p1, p2), new Line(p2, p3), new Line(p3, p0)
+        ];
+        const overlap = collision.circlePolygonOverlap(playerCircle, tileLines);
+		//const overlap = collision.circleRectOverlap(playerCircle, tileRect)
+        //const overlap = sat.rectOverlap(playerRect, tileRect);
+        //const overlap = sat.circleRectOverlap(playerCircle, tileRect);
 		if (overlap === null) {
 			continue
 		}
-		pos.set(pos.add(overlap))
+		pos.set(pos.sub(overlap))
         console.log(overlap);
 	}
 }

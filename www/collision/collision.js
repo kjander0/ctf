@@ -31,6 +31,64 @@ function circleRectOverlap(c, r) {
 	return overlap;
 }
 
+// lines: ccw lines of convex polygon
+function circlePolygonOverlap(c, lines) {
+	let minOverlap = 0;
+	let minOverlapAxis = null;
+
+	// Check 3 seperating axis for each line:
+	// TODO: can skip end point of last line since it should be the same
+	//  as the start point of the first line
+	for (let l of lines) {
+		// 1) axis for outward facing normal of line
+		const normal = l.end.sub(l.start).normalize();
+		const tmpX = normal.x;
+		normal.x = normal.y;
+		normal.y = -tmpX;
+
+		let disp = c.pos.sub(l.start);
+		let overlap = c.radius - disp.dot(normal);
+		if (overlap <= 0) {
+			return null;
+		}
+
+		if (minOverlapAxis === null || overlap < minOverlap) {
+			minOverlap = overlap;
+			minOverlapAxis = normal.scale(-1);
+		}
+
+		// 2) axis between circle and start point of line
+		overlap = c.radius - disp.length();
+		if (disp.dot(normal) >= 0) {
+			if (overlap <= 0) {
+				return null;
+			}
+	
+			if (minOverlapAxis === null || overlap < minOverlap) {
+				minOverlap = overlap;
+				minOverlapAxis = disp.normalize().scale(-1);
+			}
+		}
+
+
+		// 3) axis between circle and end point of line
+		// disp = c.pos.sub(l.end);
+		// overlap = c.radius - disp.length();
+		// if (disp.dot(normal) >= 0) {
+		// 	if (overlap <= 0) {
+		// 		return null;
+		// 	}
+	
+		// 	if (minOverlapAxis === null || overlap < minOverlap) {
+		// 		minOverlap = overlap;
+		// 		minOverlapAxis = disp.normalize().scale(-1);
+		// 	}
+		// }
+	}
+
+	return minOverlapAxis.scale(minOverlap);
+}
+
 // Overlap from circle to line
 function lineCircleOverlap(circle, l) {
 	let u = l.start.sub(circle.pos);
@@ -88,4 +146,4 @@ function lineRectOverlap(l, r) {
 	return [null, null];
 }
 
-export {circleRectOverlap, lineCircleOverlap, lineRectOverlap};
+export {circleRectOverlap, lineCircleOverlap, lineRectOverlap, circlePolygonOverlap};
