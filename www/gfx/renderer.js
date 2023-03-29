@@ -50,6 +50,13 @@ class Renderer {
         this.shapeMesh.setTransform(this.transformStack[this.transformStack.length-1]);
         this.shapeMesh.addRect(x, y, width, height);
     }
+
+    drawTriangle(p0, p1, p2) {
+        this.shapeMesh.setTransform(this.transformStack[this.transformStack.length-1]);
+        this.shapeMesh.add(p0.x, p0.y);
+        this.shapeMesh.add(p1.x, p1.y);
+        this.shapeMesh.add(p2.x, p2.y);
+    }
     
     drawCircle(x, y, radius) {
         this.shapeMesh.setTransform(this.transformStack[this.transformStack.length-1]);

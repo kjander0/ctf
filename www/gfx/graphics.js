@@ -110,10 +110,17 @@ class Graphics {
         this.renderer.setColor(0.3, 0.3, 0.3);
         for (let r = 0; r < rows.length; r++) {
             for (let c = 0; c < rows[r].length; c++) {
-                if (rows[r][c] !== Map.WALL) {
-                    continue;
+                switch(rows[r][c]) {
+                    case Map.WALL:
+                        this.renderer.drawRect(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE);
+                        break;
+                    case Map.WALL_TRIANGLE:
+                        let p0 = new Vec(c * conf.TILE_SIZE, r * conf.TILE_SIZE);
+                        let p1 = p0.addXY(conf.TILE_SIZE, 0);
+                        let p2 = p0.addXY(conf.TILE_SIZE/2, conf.TILE_SIZE);
+                        this.renderer.drawTriangle(p0, p1, p2);
+                        break;
                 }
-                this.renderer.drawRect(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE);
             }
         }
     }

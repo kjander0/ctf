@@ -6,6 +6,7 @@ class Map {
     static WALL = 1;
     static JAIL = 2;
     static SPAWN = 3;
+    static WALL_TRIANGLE = 4;
 
     rows;
 
@@ -24,7 +25,7 @@ class Map {
                 if (r < 0 || r >= this.rows.length || c < 0 || c >= this.rows[r].length) {
                     continue;
                 }
-                if (this.rows[r][c] != Map.WALL) {
+                if (this.rows[r][c] != Map.WALL && this.rows[r][c] != Map.WALL_TRIANGLE) {
                     continue;
                 }
                 samples.push(new Vec(c, r).scale(conf.TILE_SIZE));

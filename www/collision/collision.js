@@ -42,50 +42,84 @@ function circleTriangleOverlap(circle, t0, t1, t2) {
 	//         |
 	//        n0
 
+
+	// TODO, test just bottom side first
 	let n0 = t1.sub(t0).normalize();
+	let tmpX = n0.x;
 	n0.x = n0.y;
-	n0.y = -n0.x;
-	let d0 = circle.pos.sub(t0).dot(n0);
-	if (d0 >= circle.radius) {
-		return null;
+	n0.y = -tmpX;
+	let u0 = circle.pos.sub(t0)
+	let u0DotNormal = u0.dot(n0);
+
+
+	if (u0DotNormal > 0) {
+		if (u0DotNormal > circle.radius) {
+			return null;
+		}
+
+		let l0Dotu0 = t1.sub(t0).dot(u0);
+
 	}
 
 	let n1 = t2.sub(t1).normalize();
+	tmpX = n1.x;
 	n1.x = n1.y;
-	n1.y = -n1.x;
+	n1.y = -tmpX;
 	let d1 = circle.pos.sub(t1).dot(n1);
 	if (d1 >= circle.radius) {
 		return null;
 	}
 
 	let n2 = t0.sub(t2).normalize();
+	tmpX = n2.x;
 	n2.x = n2.y;
-	n2.y = -n2.x;
+	n2.y = -tmpX;
 	let d2 = circle.pos.sub(t2).dot(n2);
 	if (d2 >= circle.radius) {
 		return null;
 	}
 
+	function pointOverlap(point, circle) {
+		const disp = point.sub(circle.pos);
+		const dispLen = disp.length();
+		const overlap = circle.radius - dispLen;
+		if (overlap <= 0) {
+			return null;
+		}
+		return disp.scale(overlap/dispLen);
+	}
+
+	function lineOverlap(normal, dist) {
+		const overlap = circle.radius - dist;
+		if (overlap <= 0) {
+			return null;
+		}
+		return normal.scale(-overlap);
+	}
+
+	// First, we check cases where centre of circle is outside the triangle
 	if (d0 > 0) {
 		if (d1 > 0) { // case: t1 closest point
-			return t1.sub(circle.pos).resize(circle.radius);
+			return pointOverlap(t1, circle);
 		}
 		if (d2 > 0) { // case: t0 closest point
-			return t0.sub(circle.pos).resize(circle.radius);
+			return pointOverlap(t0, circle);
+
 		}
 		// case: t0 -> t1 closest line
-		return n0.scale(-circle.radius);
+		return lineOverlap(n0, d0);
 	}
 	if (d1 > 0) {
 		if (d2 > 0) { // case: t2 closest point
-			return t2.sub(circle.pos).resize(circle.radius);
+			return pointOverlap(t2, circle);
 		}
 		// case: t1 -> t2 closest line
-		return n1.scale(-circle.radius);
+		return lineOverlap(n1, d1);
 	}
 
 	if (d2 > 0) { // case: t2 -> t0 closest line
-		return n0.scale(-circle.radius);
+		return lineOverlap(n2, d2);
+
 	}
 
 	// case: circle centre within triangle, overlaps is from nearest side

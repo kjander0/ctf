@@ -191,10 +191,9 @@ function _constrainPlayerPos(game, pos) {
         playerCircle.pos.set(pos);
 		tileRect.pos.set(tilePos);
 
-        DRAW AN ACTUAL TRIANGLE
         const p0 = tileRect.pos;
         const p1 = tileRect.pos.addXY(tileRect.size.x, 0);
-        const p2 = tileRect.pos.add(tileRect.size);
+        const p2 = tileRect.pos.addXY(tileRect.size.x/2, tileRect.size.y);
         const overlap = collision.circleTriangleOverlap(playerCircle, p0, p1,p2);
 		//const overlap = collision.circleRectOverlap(playerCircle, tileRect)
         //const overlap = sat.rectOverlap(playerRect, tileRect);

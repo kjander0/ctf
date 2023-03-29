@@ -41,8 +41,8 @@ func NewWorld() World {
 		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
 	}
 	rows = [][]uint8{
-		{2, 1},
-		{3, 0},
+		{0, 2},
+		{4, 3},
 	}
 	return World{
 		Map: NewMap(rows),
