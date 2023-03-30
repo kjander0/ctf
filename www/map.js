@@ -1,17 +1,32 @@
 import * as conf from "./conf.js"
 import { Vec } from "./math.js"
 
-class Map {
+class Tile {
     static EMPTY = 0;
     static WALL = 1;
     static JAIL = 2;
     static SPAWN = 3;
     static WALL_TRIANGLE = 4;
 
-    rows;
+    type = null;
+    pos = null;
+
+    constructor(type, pos) {
+        this.type = type;
+        this.pos = pos;
+    }
+}
+
+class Map {
+    tileRows = [];
 
     constructor(rows) {
-        this.rows = rows;
+        for (let r = 0; r < rows.length; r++) {
+            this.tileRows.push([]);
+            for (let c = 0; c < rows[r].length; c++) {
+                this.tileRows[r].push(new Tile(rows[r][c], new Vec(c, r).scale(conf.TILE_SIZE)));
+            }
+        }
     }
 
     sampleSolidTiles(pos, radius) {
@@ -22,17 +37,18 @@ class Map {
         let samples = [];
         for (let r = row - steps; r <= row+steps; r++) {
             for (let c = col - steps; c <= col+steps; c++) {
-                if (r < 0 || r >= this.rows.length || c < 0 || c >= this.rows[r].length) {
+                if (r < 0 || r >= this.tileRows.length || c < 0 || c >= this.tileRows[r].length) {
                     continue;
                 }
-                if (this.rows[r][c] != Map.WALL && this.rows[r][c] != Map.WALL_TRIANGLE) {
+                const tile = this.tileRows[r][c];
+                if (tile.type != Tile.WALL && tile.type != Tile.WALL_TRIANGLE) {
                     continue;
                 }
-                samples.push(new Vec(c, r).scale(conf.TILE_SIZE));
+                samples.push(tile);
             }
         }
         return samples;
     }
 }
 
-export{Map};
+export{Tile, Map};

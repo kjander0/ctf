@@ -46,6 +46,10 @@ class Vec {
         return Math.sqrt(this.x * this.x + this.y * this.y);
     }
 
+    sqrLength() {
+        return this.x * this.x + this.y * this.y;
+    }
+
     normalize() {
         return this.scale(1/this.length());
     }

@@ -28,7 +28,8 @@ function circleRectOverlap(c, r) {
 	sepAxis = sepAxis.scale(1.0 / sepLen);
 
 	const overlap = closestPoint.sub(c.pos.add(sepAxis.scale(-c.radius)));
-	return overlap;
+	SHOULDNT NEED TO SCALE BY -1
+	return overlap.scale(-1);
 }
 
 // lines: ccw lines of convex polygon
@@ -42,97 +43,79 @@ function circleTriangleOverlap(circle, t0, t1, t2) {
 	//         |
 	//        n0
 
-
 	// TODO, test just bottom side first
-	let n0 = t1.sub(t0).normalize();
+	const n0 = t1.sub(t0).normalize();
 	let tmpX = n0.x;
 	n0.x = n0.y;
 	n0.y = -tmpX;
-	let u0 = circle.pos.sub(t0)
-	let u0DotNormal = u0.dot(n0);
+	const u0 = circle.pos.sub(t0);
+	const u1 = circle.pos.sub(t1);
+	const u2 = circle.pos.sub(t2);
 
-
-	if (u0DotNormal > 0) {
-		if (u0DotNormal > circle.radius) {
-			return null;
-		}
-
-		let l0Dotu0 = t1.sub(t0).dot(u0);
-
+	const u0DotNormal = u0.dot(n0);
+	if (u0DotNormal > 0) { // below triangle
+		return _circleTriangleSideOverlap(circle, u0, u1, t0, t1, n0, u0DotNormal);
 	}
 
-	let n1 = t2.sub(t1).normalize();
+	const n1 = t2.sub(t1).normalize();
 	tmpX = n1.x;
 	n1.x = n1.y;
 	n1.y = -tmpX;
-	let d1 = circle.pos.sub(t1).dot(n1);
-	if (d1 >= circle.radius) {
-		return null;
+	const u1DotNormal = u1.dot(n1);
+	if (u1DotNormal > 0) { // below triangle
+		return _circleTriangleSideOverlap(circle, u1, u2, t1, t2, n1, u1DotNormal);
 	}
 
-	let n2 = t0.sub(t2).normalize();
+	const n2 = t0.sub(t2).normalize();
 	tmpX = n2.x;
 	n2.x = n2.y;
 	n2.y = -tmpX;
-	let d2 = circle.pos.sub(t2).dot(n2);
-	if (d2 >= circle.radius) {
+	const u2DotNormal = u2.dot(n2);
+	if (u2DotNormal > 0) { // below triangle
+		return _circleTriangleSideOverlap(circle, u2, u0, t2, t0, n2, u2DotNormal);
+	}
+
+	// circle centre withing triangle, overlap is from nearest side
+	if (u0DotNormal > u1DotNormal) {
+		if (u0DotNormal > u2DotNormal) {
+			return n0.scale(u0DotNormal - circle.radius);
+		}
+		return n2.scale(u2DotNormal - circle.radius);
+	}
+	if (u1DotNormal > u2DotNormal) {
+		return n1.scale(u1DotNormal - circle.radius);
+	}
+	return n2.scale(u2DotNormal - circle.radius);
+}
+
+function _circleTriangleSideOverlap(circle, u0, u1, t0, t1, n0, u0DotNormal) {
+	if (u0DotNormal >= circle.radius) {
 		return null;
 	}
 
-	function pointOverlap(point, circle) {
-		const disp = point.sub(circle.pos);
-		const dispLen = disp.length();
-		const overlap = circle.radius - dispLen;
-		if (overlap <= 0) {
+	const l0 = t1.sub(t0);
+	const l0Dotu0 = l0.dot(u0);
+	if (l0Dotu0 < 0) { // closest to left point
+		const u0Len = u0.length();
+		if (u0Len >= circle.radius) {
 			return null;
 		}
-		return disp.scale(overlap/dispLen);
+		return u0.scale((u0Len - circle.radius)/u0Len);
 	}
 
-	function lineOverlap(normal, dist) {
-		const overlap = circle.radius - dist;
-		if (overlap <= 0) {
+	if (l0Dotu0 > l0.sqrLength()) { // closest to right point
+		const u1Len = u1.length();
+		if (u1Len >= circle.radius) {
 			return null;
 		}
-		return normal.scale(-overlap);
+		return u1.scale((u1Len - circle.radius)/u1Len);
 	}
 
-	// First, we check cases where centre of circle is outside the triangle
-	if (d0 > 0) {
-		if (d1 > 0) { // case: t1 closest point
-			return pointOverlap(t1, circle);
-		}
-		if (d2 > 0) { // case: t0 closest point
-			return pointOverlap(t0, circle);
-
-		}
-		// case: t0 -> t1 closest line
-		return lineOverlap(n0, d0);
+	// perpendicular to bottom line
+	if (u0DotNormal >= circle.radius) {
+		return null;
 	}
-	if (d1 > 0) {
-		if (d2 > 0) { // case: t2 closest point
-			return pointOverlap(t2, circle);
-		}
-		// case: t1 -> t2 closest line
-		return lineOverlap(n1, d1);
-	}
-
-	if (d2 > 0) { // case: t2 -> t0 closest line
-		return lineOverlap(n2, d2);
-
-	}
-
-	// case: circle centre within triangle, overlaps is from nearest side
-	if (d0 > d1) {
-		if (d0 > d2) {
-			return n0.scale(d0 - circle.radius);
-		}
-		return n2.scale(d2 - circle.radius);
-	}
-	if (d1 > d2) {
-		return n1.scale(d1 - circle.radius);
-	}
-	return n2.scale(d2 - circle.radius);
+	return n0.scale(u0DotNormal - circle.radius);
 }
 
 // Overlap from circle to line

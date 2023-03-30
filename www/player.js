@@ -5,6 +5,7 @@ import * as conf from "./conf.js"
 import * as sound from "./sound.js"
 import * as collision from "./collision/collision.js"
 import * as sat from "./collision/sat.js"
+import {Tile} from "./map.js";
 
 class PlayerPredicted {
     pos = new Vec();
@@ -186,18 +187,21 @@ function _constrainPlayerPos(game, pos) {
 
 
 
-	for (let tilePos of tileSample) {
+	for (let tile of tileSample) {
         //playerRect.pos.set(pos.subXY(conf.PLAYER_RADIUS, conf.PLAYER_RADIUS));
         playerCircle.pos.set(pos);
-		tileRect.pos.set(tilePos);
 
-        const p0 = tileRect.pos;
-        const p1 = tileRect.pos.addXY(tileRect.size.x, 0);
-        const p2 = tileRect.pos.addXY(tileRect.size.x/2, tileRect.size.y);
-        const overlap = collision.circleTriangleOverlap(playerCircle, p0, p1,p2);
-		//const overlap = collision.circleRectOverlap(playerCircle, tileRect)
-        //const overlap = sat.rectOverlap(playerRect, tileRect);
-        //const overlap = sat.circleRectOverlap(playerCircle, tileRect);
+        let overlap = null;
+        if (tile.type === Tile.WALL) {
+            tileRect.pos.set(tile.pos);
+            overlap = collision.circleRectOverlap(playerCircle, tileRect);
+        } else if (tile.type === Tile.WALL_TRIANGLE) {
+            const p0 = tile.pos;
+            const p1 = p0.addXY(conf.TILE_SIZE, 0);
+            const p2 = p0.addXY(conf.TILE_SIZE/2, conf.TILE_SIZE * 0.75);
+            overlap = collision.circleTriangleOverlap(playerCircle, p0, p1,p2);
+        }
+
 		if (overlap === null) {
 			continue
 		}

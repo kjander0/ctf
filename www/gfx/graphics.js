@@ -1,6 +1,6 @@
 import {lerpVec, extrapolateVec} from "../interpolate.js";
 import { Vec } from "../math.js";
-import {Map} from "../map.js";
+import {Tile} from "../map.js";
 import * as conf from "../conf.js";
 import { Renderer } from "./renderer.js";
 import { Mesh, Model, VertAttrib} from "./mesh.js";
@@ -110,14 +110,14 @@ class Graphics {
         this.renderer.setColor(0.3, 0.3, 0.3);
         for (let r = 0; r < rows.length; r++) {
             for (let c = 0; c < rows[r].length; c++) {
-                switch(rows[r][c]) {
-                    case Map.WALL:
+                switch(rows[r][c].type) {
+                    case Tile.WALL:
                         this.renderer.drawRect(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE);
                         break;
-                    case Map.WALL_TRIANGLE:
+                    case Tile.WALL_TRIANGLE:
                         let p0 = new Vec(c * conf.TILE_SIZE, r * conf.TILE_SIZE);
                         let p1 = p0.addXY(conf.TILE_SIZE, 0);
-                        let p2 = p0.addXY(conf.TILE_SIZE/2, conf.TILE_SIZE);
+                        let p2 = p0.addXY(conf.TILE_SIZE/2, conf.TILE_SIZE * 0.75);
                         this.renderer.drawTriangle(p0, p1, p2);
                         break;
                 }
@@ -216,7 +216,7 @@ class Graphics {
         this.renderer.render(this.uiCamera);
 
         if (game.map !== null) {
-            this.drawLevel(game.map.rows);
+            this.drawLevel(game.map.tileRows);
         }
 
         this.renderer.setColor(0, 1, 0);

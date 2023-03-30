@@ -86,8 +86,8 @@ function checkWallHit(game, line) {
 	let tileSample = game.map.sampleSolidTiles(line.end, lineLen);
 	let hitPos, normal;
 	let hitDist = -1.0;
-	for (let tilePos of tileSample) {
-		tileRect.pos.set(tilePos);
+	for (let tile of tileSample) {
+		tileRect.pos.set(tile.pos);
 		let [overlap, rectNormal] = collision.lineRectOverlap(line, tileRect);
 		if (overlap === null) {
 			continue;
