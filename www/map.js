@@ -15,11 +15,43 @@ class Tile {
 
     type = null;
     pos = null;
-    orientation = 0; // 4 orientations of triangle tiles
+    orientation = 0; // 4 CCW rotations of triangle tiles
 
     constructor(type, pos) {
         this.type = type;
         this.pos = pos;
+    }
+
+    setTrianglePoints(p0, p1, p2) {
+        if (this.type === Tile.WALL_TRIANGLE) {
+            const height = Math.sqrt(0.75) * conf.TILE_SIZE;
+            switch (this.orientation) {
+                case 0:
+                    p0.set(this.pos);
+                    p1.set(this.pos.addXY(conf.TILE_SIZE, 0));
+                    p2.set(this.pos.addXY(conf.TILE_SIZE/2, height));
+                    break;
+                case 1:
+                    p0.set(this.pos.addXY(conf.TILE_SIZE, 0));
+                    p1.set(this.pos.addXY(conf.TILE_SIZE, conf.TILE_SIZE));
+                    p2.set(this.pos.addXY(conf.TILE_SIZE-height, conf.TILE_SIZE/2));
+                    break;
+                case 2:
+                    p0.set(this.pos.addXY(conf.TILE_SIZE, conf.TILE_SIZE));
+                    p1.set(this.pos.addXY(0, conf.TILE_SIZE));
+                    p2.set(this.pos.addXY(conf.TILE_SIZE/2, conf.TILE_SIZE-height));
+                    break;
+                case 4:
+                    p0.set(this.pos.addXY(0, conf.TILE_SIZE));
+                    p1.set(this.pos);
+                    p2.set(this.pos.addXY(height, conf.TILE_SIZE/2));
+                    break;
+            }
+        } else if (this.type === Tile.WALL_TRIANGLE_CORNER) {
+
+        } else {
+            throw "not a triangle tile";
+        }
     }
 }
 
@@ -32,7 +64,7 @@ class Map {
             for (let c = 0; c < rows[r].length; c++) {
                 const tile = new Tile(rows[r][c], new Vec(c, r).scale(conf.TILE_SIZE));
                 if (tile.type === Tile.WALL_TRIANGLE) {
-                    tile.orientation = _findTriangleOrientation(rows, r, c);
+                    tile.orientation = this._findTriangleOrientation(rows, r, c);
                 }
                 this.tileRows[r].push(tile);
             }

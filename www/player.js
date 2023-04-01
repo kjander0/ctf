@@ -191,14 +191,16 @@ function _constrainPlayerPos(game, pos) {
         //playerRect.pos.set(pos.subXY(conf.PLAYER_RADIUS, conf.PLAYER_RADIUS));
         playerCircle.pos.set(pos);
 
+        const p0 = new Vec();
+        const p1 = new Vec();
+        const p2 = new Vec();
+
         let overlap = null;
         if (tile.type === Tile.WALL) {
             tileRect.pos.set(tile.pos);
             overlap = collision.circleRectOverlap(playerCircle, tileRect);
         } else if (tile.type === Tile.WALL_TRIANGLE) {
-            const p0 = tile.pos;
-            const p1 = p0.addXY(conf.TILE_SIZE, 0);
-            const p2 = p0.addXY(conf.TILE_SIZE/2, conf.TILE_SIZE * 0.75);
+            tile.setTrianglePoints(p0, p1, p2);
             overlap = collision.circleTriangleOverlap(playerCircle, p0, p1,p2);
         }
 

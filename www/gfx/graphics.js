@@ -107,6 +107,10 @@ class Graphics {
     }
 
     drawLevel(rows) {
+        const p0 = new Vec();
+        const p1 = new Vec();
+        const p2 = new Vec();
+
         this.renderer.setColor(0.3, 0.3, 0.3);
         for (let r = 0; r < rows.length; r++) {
             for (let c = 0; c < rows[r].length; c++) {
@@ -115,9 +119,7 @@ class Graphics {
                         this.renderer.drawRect(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE);
                         break;
                     case Tile.WALL_TRIANGLE:
-                        let p0 = new Vec(c * conf.TILE_SIZE, r * conf.TILE_SIZE);
-                        let p1 = p0.addXY(conf.TILE_SIZE, 0);
-                        let p2 = p0.addXY(conf.TILE_SIZE/2, conf.TILE_SIZE * 0.75);
+                        rows[r][c].setTrianglePoints(p0, p1, p2);
                         this.renderer.drawTriangle(p0, p1, p2);
                         break;
                 }
