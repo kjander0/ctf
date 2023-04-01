@@ -6,10 +6,16 @@ class Tile {
     static WALL = 1;
     static JAIL = 2;
     static SPAWN = 3;
+    //  /\
+    // /__\
     static WALL_TRIANGLE = 4;
+    // |\
+    // |_\
+    static WALL_TRIANGLE_CORNER = 5;
 
     type = null;
     pos = null;
+    orientation = 0; // 4 orientations of triangle tiles
 
     constructor(type, pos) {
         this.type = type;
@@ -24,7 +30,11 @@ class Map {
         for (let r = 0; r < rows.length; r++) {
             this.tileRows.push([]);
             for (let c = 0; c < rows[r].length; c++) {
-                this.tileRows[r].push(new Tile(rows[r][c], new Vec(c, r).scale(conf.TILE_SIZE)));
+                const tile = new Tile(rows[r][c], new Vec(c, r).scale(conf.TILE_SIZE));
+                if (tile.type === Tile.WALL_TRIANGLE) {
+                    tile.orientation = _findTriangleOrientation(rows, r, c);
+                }
+                this.tileRows[r].push(tile);
             }
         }
     }
@@ -48,6 +58,47 @@ class Map {
             }
         }
         return samples;
+    }
+
+    _findTriangleOrientation(rows, r, c) {
+        function isWall(ri, ci) {
+            if (ri < 0 || ri >= rows.length) {
+                return false;
+            }
+            if (ci < 0 || ci >= rows[ri].length) {
+                return false;
+            }
+            return rows[ri][ci] === Tile.WALL;
+        }
+
+        const left = isWall(r, c-1);
+        const right = isWall(r, c+1);
+        const above = isWall(r+1, c);
+        const below = isWall(r-1, c);
+
+        if (below) {
+            if (right) {
+                return 1;
+            }
+            return 0;
+        }
+
+        if (above) {
+            if (right) {
+                return 2
+            }
+            return 3;
+        }
+
+        if (right) {
+            return 1;
+        }
+
+        if (left) {
+            return 3;
+        }
+
+        return 0;
     }
 }
 

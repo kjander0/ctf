@@ -7,29 +7,27 @@ function circleRectOverlap(c, r) {
 
 	const centreInside = r.containsPoint(c.pos);
 
-	let sepAxis;
+	let overlapAxis;
 	if (centreInside) {
-		sepAxis = closestPoint.sub(c.pos);
+		overlapAxis = c.pos.sub(closestPoint);
 	} else {
-		sepAxis = c.pos.sub(closestPoint);
+		overlapAxis = closestPoint.sub(c.pos);
 	}
 
-	let sepLen = sepAxis.length();
-	if (sepLen >= c.radius && !centreInside) {
+	let dist = overlapAxis.length();
+	if (dist >= c.radius && !centreInside) {
 		return null
 	}
 
-	// Make sepAxis unit vector
-	if (sepLen < 1e-6) {
+	// If centre of circle on side of rect, need to make sure axis is non-zero
+	if (dist < 1e-6) {
 		const rectMid = r.pos.add(r.size.scale(0.5));
-		sepAxis = closestPoint.sub(rectMid);
-		sepLen = sepAxis.length();
+		overlapAxis = rectMid.sub(closestPoint).normalize();
+	} else {
+		overlapAxis = overlapAxis.scale(1/dist);
 	}
-	sepAxis = sepAxis.scale(1.0 / sepLen);
 
-	const overlap = closestPoint.sub(c.pos.add(sepAxis.scale(-c.radius)));
-	SHOULDNT NEED TO SCALE BY -1
-	return overlap.scale(-1);
+	return overlapAxis.scale(c.radius - dist);
 }
 
 // lines: ccw lines of convex polygon
