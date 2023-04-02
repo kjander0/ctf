@@ -199,7 +199,7 @@ function _constrainPlayerPos(game, pos) {
         if (tile.type === Tile.WALL) {
             tileRect.pos.set(tile.pos);
             overlap = collision.circleRectOverlap(playerCircle, tileRect);
-        } else if (tile.type === Tile.WALL_TRIANGLE) {
+        } else if (tile.type === Tile.WALL_TRIANGLE || tile.type === Tile.WALL_TRIANGLE_CORNER) {
             tile.setTrianglePoints(p0, p1, p2);
             overlap = collision.circleTriangleOverlap(playerCircle, p0, p1,p2);
         }

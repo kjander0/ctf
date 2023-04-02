@@ -41,18 +41,43 @@ class Tile {
                     p1.set(this.pos.addXY(0, conf.TILE_SIZE));
                     p2.set(this.pos.addXY(conf.TILE_SIZE/2, conf.TILE_SIZE-height));
                     break;
-                case 4:
+                case 3:
                     p0.set(this.pos.addXY(0, conf.TILE_SIZE));
                     p1.set(this.pos);
                     p2.set(this.pos.addXY(height, conf.TILE_SIZE/2));
                     break;
             }
         } else if (this.type === Tile.WALL_TRIANGLE_CORNER) {
-
+            switch (this.orientation) {
+                case 0:
+                    p0.set(this.pos);
+                    p1.set(this.pos.addXY(conf.TILE_SIZE, 0));
+                    p2.set(this.pos.addXY(0, conf.TILE_SIZE));
+                    break;
+                case 1:
+                    p0.set(this.pos.addXY(conf.TILE_SIZE, 0));
+                    p1.set(this.pos.addXY(conf.TILE_SIZE, conf.TILE_SIZE));
+                    p2.set(this.pos);
+                    break;
+                case 2:
+                    p0.set(this.pos.addXY(conf.TILE_SIZE, conf.TILE_SIZE));
+                    p1.set(this.pos.addXY(0, conf.TILE_SIZE));
+                    p2.set(this.pos.addXY(conf.TILE_SIZE, 0));
+                    break;
+                case 3:
+                    p0.set(this.pos.addXY(0, conf.TILE_SIZE));
+                    p1.set(this.pos);
+                    p2.set(this.pos.addXY(conf.TILE_SIZE, conf.TILE_SIZE));
+                    break;
+            }
         } else {
             throw "not a triangle tile";
         }
     }
+}
+
+function isSolidType(type) {
+    return type === Tile.WALL || type === Tile.WALL_TRIANGLE || type === Tile.WALL_TRIANGLE_CORNER;
 }
 
 class Map {
@@ -63,7 +88,7 @@ class Map {
             this.tileRows.push([]);
             for (let c = 0; c < rows[r].length; c++) {
                 const tile = new Tile(rows[r][c], new Vec(c, r).scale(conf.TILE_SIZE));
-                if (tile.type === Tile.WALL_TRIANGLE) {
+                if (tile.type === Tile.WALL_TRIANGLE || tile.type === Tile.WALL_TRIANGLE_CORNER) {
                     tile.orientation = this._findTriangleOrientation(rows, r, c);
                 }
                 this.tileRows[r].push(tile);
@@ -83,7 +108,7 @@ class Map {
                     continue;
                 }
                 const tile = this.tileRows[r][c];
-                if (tile.type != Tile.WALL && tile.type != Tile.WALL_TRIANGLE) {
+                if (!isSolidType(tile.type)) {
                     continue;
                 }
                 samples.push(tile);
@@ -100,7 +125,7 @@ class Map {
             if (ci < 0 || ci >= rows[ri].length) {
                 return false;
             }
-            return rows[ri][ci] === Tile.WALL;
+            return isSolidType(rows[ri][ci]);
         }
 
         const left = isWall(r, c-1);

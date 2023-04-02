@@ -119,6 +119,7 @@ class Graphics {
                         this.renderer.drawRect(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE);
                         break;
                     case Tile.WALL_TRIANGLE:
+                    case Tile.WALL_TRIANGLE_CORNER:
                         rows[r][c].setTrianglePoints(p0, p1, p2);
                         this.renderer.drawTriangle(p0, p1, p2);
                         break;

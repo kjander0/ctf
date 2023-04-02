@@ -13,14 +13,16 @@ const (
 	TileJail
 	TileSpawn
 	TileWallTriangle
+	TileWallTriangleCorner
 )
 
 type Tile struct {
 	Type uint8
 
-	// 3 2 1
-	// 4   0
-	// 5 6 7
+	// Orientation of base of triangle tiles
+	//   2
+	// 3 /\ 1
+	//   0
 	Orientation uint8
 
 	Solid bool

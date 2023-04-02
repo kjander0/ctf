@@ -41,7 +41,7 @@ function circleTriangleOverlap(circle, t0, t1, t2) {
 	//         |
 	//        n0
 
-	// TODO, test just bottom side first
+	TODO: handle all possible divisions by zero!
 	const n0 = t1.sub(t0).normalize();
 	let tmpX = n0.x;
 	n0.x = n0.y;
@@ -98,7 +98,11 @@ function _circleTriangleSideOverlap(circle, u0, u1, t0, t1, n0, u0DotNormal) {
 		if (u0Len >= circle.radius) {
 			return null;
 		}
-		return u0.scale((u0Len - circle.radius)/u0Len);
+		const result = u0.scale((u0Len - circle.radius)/u0Len);
+		if (isNaN(result.x) || isNaN(result.y)) {
+			console.log("oops");
+		}
+		return result;
 	}
 
 	if (l0Dotu0 > l0.sqrLength()) { // closest to right point
@@ -106,14 +110,22 @@ function _circleTriangleSideOverlap(circle, u0, u1, t0, t1, n0, u0DotNormal) {
 		if (u1Len >= circle.radius) {
 			return null;
 		}
-		return u1.scale((u1Len - circle.radius)/u1Len);
+		const result =  u1.scale((u1Len - circle.radius)/u1Len);
+		if (isNaN(result.x) || isNaN(result.y)) {
+			console.log("oops");
+		}
+		return result;
 	}
 
 	// perpendicular to bottom line
 	if (u0DotNormal >= circle.radius) {
 		return null;
 	}
-	return n0.scale(u0DotNormal - circle.radius);
+	const result = n0.scale(u0DotNormal - circle.radius);
+	if (isNaN(result.x) || isNaN(result.y)) {
+		console.log("oops");
+	}
+	return result;
 }
 
 // Overlap from circle to line
