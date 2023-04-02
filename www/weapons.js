@@ -1,6 +1,7 @@
 import { Vec, Line, Rect, Circle } from "./math.js";
 import * as conf from "./conf.js";
 import * as collision from "./collision/collision.js"
+import { Tile } from "./map.js";
 
 class Laser {
     static TYPE_LASER = 0;
@@ -84,23 +85,34 @@ function checkWallHit(game, line) {
 	let tileRect = new Rect(new Vec(), new Vec(conf.TILE_SIZE, conf.TILE_SIZE));
 	let lineLen = line.length();
 	let tileSample = game.map.sampleSolidTiles(line.end, lineLen);
-	let hitPos, normal;
+	let hitPos, hitNormal;
 	let hitDist = -1.0;
+    const t0 = new Vec(); const t1 = new Vec(); const t2 = new Vec();
 	for (let tile of tileSample) {
 		tileRect.pos.set(tile.pos);
-		let [overlap, rectNormal] = collision.lineRectOverlap(line, tileRect);
-		if (overlap === null) {
-			continue;
-		}
+        let overlap, normal;
+        if (tile.type === Tile.WALL) {
+            [overlap, normal] = collision.lineRectOverlap(line, tileRect);
+            if (overlap === null) {
+                continue;
+            }
+        } else if (tile.type === Tile.WALL_TRIANGLE || tile.type === Tile.WALL_TRIANGLE_CORNER) {
+            tile.setTrianglePoints(t0, t1, t2);
+            [overlap, normal] = collision.lineTriangleOverlap(line, t0, t1, t2);
+            if (overlap === null) {
+                continue;
+            }
+        }
+
 		let hit = line.end.add(overlap);
 		let dist = line.start.distanceTo(hit);
 		if (hitDist < 0 || dist < hitDist) {
 			hitPos = hit;
 			hitDist = dist;
-            normal = rectNormal;
+            hitNormal = normal;
 		}
 	}
-	return [hitDist, hitPos, normal];
+	return [hitDist, hitPos, hitNormal];
 }
 
 function checkPlayerHit(game, laser, hitDist) {

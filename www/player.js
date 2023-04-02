@@ -91,7 +91,6 @@ function sampleInput(game) {
 
     let secondaryCmd = game.input.getCommand(Input.CMD_SECONDARY);
     if (secondaryCmd.wasActivated) {
-        console.log(game.player.predicted.bouncyEnergy, conf.BOUNCY_ENERGY_COST);
         if (game.player.predicted.bouncyEnergy >= conf.BOUNCY_ENERGY_COST) {
             inputState.doSecondary = true;
             let aimPos = game.graphics.camera.unproject(secondaryCmd.mousePos);
@@ -183,12 +182,8 @@ function _constrainPlayerPos(game, pos) {
 	const tileSample = game.map.sampleSolidTiles(pos, conf.PLAYER_RADIUS);
     const tileRect = new Rect(new Vec(), new Vec(conf.TILE_SIZE, conf.TILE_SIZE));
 	const playerCircle = new Circle(pos, conf.PLAYER_RADIUS);
-    //const playerRect = new Rect(new Vec(), new Vec(conf.PLAYER_RADIUS * 2, conf.PLAYER_RADIUS * 2));
-
-
 
 	for (let tile of tileSample) {
-        //playerRect.pos.set(pos.subXY(conf.PLAYER_RADIUS, conf.PLAYER_RADIUS));
         playerCircle.pos.set(pos);
 
         const p0 = new Vec();
@@ -208,7 +203,6 @@ function _constrainPlayerPos(game, pos) {
 			continue
 		}
 		pos.set(pos.sub(overlap))
-        console.log(overlap);
 	}
 }
 

@@ -29,22 +29,22 @@ class Tile {
                 case 0:
                     p0.set(this.pos);
                     p1.set(this.pos.addXY(conf.TILE_SIZE, 0));
-                    p2.set(this.pos.addXY(conf.TILE_SIZE/2, height));
+                    p2.set(this.pos.addXY(conf.TILE_SIZE/2, conf.TILE_SIZE/2));
                     break;
                 case 1:
                     p0.set(this.pos.addXY(conf.TILE_SIZE, 0));
                     p1.set(this.pos.addXY(conf.TILE_SIZE, conf.TILE_SIZE));
-                    p2.set(this.pos.addXY(conf.TILE_SIZE-height, conf.TILE_SIZE/2));
+                    p2.set(this.pos.addXY(conf.TILE_SIZE/2, conf.TILE_SIZE/2));
                     break;
                 case 2:
                     p0.set(this.pos.addXY(conf.TILE_SIZE, conf.TILE_SIZE));
                     p1.set(this.pos.addXY(0, conf.TILE_SIZE));
-                    p2.set(this.pos.addXY(conf.TILE_SIZE/2, conf.TILE_SIZE-height));
+                    p2.set(this.pos.addXY(conf.TILE_SIZE/2, conf.TILE_SIZE/2));
                     break;
                 case 3:
                     p0.set(this.pos.addXY(0, conf.TILE_SIZE));
                     p1.set(this.pos);
-                    p2.set(this.pos.addXY(height, conf.TILE_SIZE/2));
+                    p2.set(this.pos.addXY(conf.TILE_SIZE/2, conf.TILE_SIZE/2));
                     break;
             }
         } else if (this.type === Tile.WALL_TRIANGLE_CORNER) {
@@ -141,10 +141,10 @@ class Map {
         }
 
         if (above) {
-            if (right) {
-                return 2
+            if (left) {
+                return 3
             }
-            return 3;
+            return 2;
         }
 
         if (right) {

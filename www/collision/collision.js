@@ -41,7 +41,6 @@ function circleTriangleOverlap(circle, t0, t1, t2) {
 	//         |
 	//        n0
 
-	TODO: handle all possible divisions by zero!
 	const n0 = t1.sub(t0).normalize();
 	let tmpX = n0.x;
 	n0.x = n0.y;
@@ -98,11 +97,7 @@ function _circleTriangleSideOverlap(circle, u0, u1, t0, t1, n0, u0DotNormal) {
 		if (u0Len >= circle.radius) {
 			return null;
 		}
-		const result = u0.scale((u0Len - circle.radius)/u0Len);
-		if (isNaN(result.x) || isNaN(result.y)) {
-			console.log("oops");
-		}
-		return result;
+		return u0.scale((u0Len - circle.radius)/u0Len);
 	}
 
 	if (l0Dotu0 > l0.sqrLength()) { // closest to right point
@@ -110,22 +105,14 @@ function _circleTriangleSideOverlap(circle, u0, u1, t0, t1, n0, u0DotNormal) {
 		if (u1Len >= circle.radius) {
 			return null;
 		}
-		const result =  u1.scale((u1Len - circle.radius)/u1Len);
-		if (isNaN(result.x) || isNaN(result.y)) {
-			console.log("oops");
-		}
-		return result;
+		return u1.scale((u1Len - circle.radius)/u1Len);
 	}
 
 	// perpendicular to bottom line
 	if (u0DotNormal >= circle.radius) {
 		return null;
 	}
-	const result = n0.scale(u0DotNormal - circle.radius);
-	if (isNaN(result.x) || isNaN(result.y)) {
-		console.log("oops");
-	}
-	return result;
+	return n0.scale(u0DotNormal - circle.radius);
 }
 
 // Overlap from circle to line
@@ -185,4 +172,46 @@ function lineRectOverlap(l, r) {
 	return [null, null];
 }
 
-export {circleRectOverlap, lineCircleOverlap, lineRectOverlap, circleTriangleOverlap};
+function lineTriangleOverlap(line, t0, t1, t2) {
+	const dir = line.end.sub(line.start);
+
+	let side = new Line(t0, t1);
+	let normal = t1.sub(t0).normalize();
+	let tmpX = normal.x;
+	normal.x = normal.y;
+	normal.y = -tmpX;
+	if (dir.dot(normal) < 0) {
+		const intersect = line.intersection(side);
+		if (intersect !== null) {
+			return [intersect.sub(line.end), normal];
+		}
+	}
+
+	side = new Line(t1, t2);
+	normal = t2.sub(t1).normalize();
+	tmpX = normal.x;
+	normal.x = normal.y;
+	normal.y = -tmpX;
+	if (dir.dot(normal) < 0) {
+		const intersect = line.intersection(side);
+		if (intersect !== null) {
+			return [intersect.sub(line.end), normal];
+		}
+	}
+
+	side = new Line(t2, t0);
+	normal = t0.sub(t2).normalize();
+	tmpX = normal.x;
+	normal.x = normal.y;
+	normal.y = -tmpX;
+	if (dir.dot(normal) < 0) {
+		const intersect = line.intersection(side);
+		if (intersect !== null) {
+			return [intersect.sub(line.end), normal];
+		}
+	}
+
+	return [null, null];
+}
+
+export {circleRectOverlap, circleTriangleOverlap, lineCircleOverlap, lineRectOverlap, lineTriangleOverlap};
