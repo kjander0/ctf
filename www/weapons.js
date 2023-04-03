@@ -8,9 +8,13 @@ class Laser {
     static TYPE_BOUNCY = 1;
     static TYPE_MISSILE = 2;
 
+    static LASER_DRAW_LENGTH = 15;
+    static BOUNCY_DRAW_LENGTH = 600;
+
     type;
     playerId;
     line = new Line();
+    drawPoints;
     dir = new Vec();
     compensated = false;
     activeTicks = 0;
@@ -20,6 +24,7 @@ class Laser {
         this.playerId = playerId;
         this.line.start.set(pos);
         this.line.end.set(pos);
+        this.drawPoints = [new Vec(this.line.start), new Vec(this.line.end)];
         this.dir = new Vec(Math.cos(angle), Math.sin(angle));
     }
 }
@@ -53,14 +58,45 @@ function update(game) {
 
         for (let j = 0; j < numberSteps; j++) {
             let line = laser.line;
+            THIS IS incorrect, since line.start may have been changed for bounce in previous tick (we would be overriding this Headers, skipping ahead)
             line.start.set(line.end);
             line.end = line.end.add(laser.dir.scale(speed));
+            laser.drawPoints[laser.drawPoints.length-1].set(line.end);
             if (processCollisions(game, laser)) {
                 game.laserList[i] = game.laserList[game.laserList.length-1];
                 game.laserList.splice(game.laserList.length-1, 1);
                 break;
             }
+            limitLaserDrawLength(laser);
         }
+    }
+}
+
+function limitLaserDrawLength(laser) {
+    let size = 0;
+    for (let i = 0; i < laser.drawPoints.length-1; i++) {
+        let p0 = laser.drawPoints[i];
+        let p1 = laser.drawPoints[i+1];
+        size += p0.distanceTo(p1);
+    }
+
+    let maxDrawLength = Laser.LASER_DRAW_LENGTH;
+    if (laser.type === Laser.TYPE_BOUNCY) {
+        maxDrawLength = Laser.BOUNCY_DRAW_LENGTH;
+    }
+
+    while (size > maxDrawLength) {
+        const diff = size - maxDrawLength;
+        const disp = laser.drawPoints[1].sub(laser.drawPoints[0]);
+        const dispLen = disp.length();
+        if (dispLen <= diff) {
+            size -= dispLen;
+            laser.drawPoints.splice(0, 1);
+            continue;
+        }
+
+        laser.drawPoints[0] = laser.drawPoints[0].add(disp.scale(diff/dispLen));
+        break;
     }
 }
 
@@ -102,6 +138,7 @@ function checkWallHit(game, line) {
             if (overlap === null) {
                 continue;
             }
+            console.log("tri: ", overlap, normal)
         }
 
 		let hit = line.end.add(overlap);
@@ -169,6 +206,8 @@ function bounce(laser, hitPos, normal) {
 	laser.dir = incident.reflect(normal).normalize();
 	laser.line.start = hitPos;
 	laser.line.end = hitPos.add(laser.dir.scale(newLen));
+    laser.drawPoints[laser.drawPoints.length-1].set(hitPos);
+    laser.drawPoints.push(new Vec(laser.line.end));
 }
 
 export {Laser, update};

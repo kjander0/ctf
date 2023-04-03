@@ -174,7 +174,7 @@ function _processUpdateMsg(game, decoder) {
         }
         let laserEnd = decoder.readVec();
         let aimAngle = decoder.readFloat64();
-        let newLaser = new Laser(type, id, player.lastAckedPos, aimAngle);
+        let newLaser = new Laser(type, id, player.acked.pos, aimAngle);
         if (player === game.player) {
             newLaser.compensated = true;
         }

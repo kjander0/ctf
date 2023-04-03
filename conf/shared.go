@@ -31,12 +31,12 @@ var Shared = SharedParams{
 	PlayerHealth:     10,
 	MaxLaserEnergy:   70,
 	MaxBouncyEnergy:  120,
-	JailTimeTicks:    300,
-	LaserSpeed:       6,
+	JailTimeTicks:    75,
+	LaserSpeed:       8,
 	LaserTimeTicks:   60,
 	LaserEnergyCost:  10,
 	BouncyEnergyCost: 30,
-	BouncySpeed:      9,
+	BouncySpeed:      80,
 }
 
 func WriteSharedParams(filePath string) {

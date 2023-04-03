@@ -183,14 +183,22 @@ func constrainPlayerPos(world *World, pos mymath.Vec) mymath.Vec {
 	tileSize := float64(conf.Shared.TileSize)
 	tileRect := mymath.Rect{Size: mymath.Vec{tileSize, tileSize}}
 	playerCircle := mymath.Circle{Radius: conf.Shared.PlayerRadius}
-	for _, tilePos := range tileSample {
+	for _, tile := range tileSample {
 		playerCircle.Pos = pos
-		tileRect.Pos = tilePos
-		overlaps, overlap := mymath.CircleRectOverlap(playerCircle, tileRect)
+		var overlaps bool
+		var overlap mymath.Vec
+		if tile.Type == TileWall {
+			tileRect.Pos = tile.Pos
+			overlaps, overlap = mymath.CircleRectOverlap(playerCircle, tileRect)
+		} else if tile.Type == TileWallTriangle || tile.Type == TileWallTriangleCorner {
+			t0, t1, t2 := tile.CalcTrianglePoints()
+			overlaps, overlap = mymath.CircleTriangleOverlap(playerCircle, t0, t1, t2)
+		}
+
 		if !overlaps {
 			continue
 		}
-		pos = pos.Add(overlap)
+		pos = pos.Sub(overlap)
 	}
 	return pos
 }

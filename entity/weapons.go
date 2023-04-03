@@ -2,6 +2,7 @@ package entity
 
 import (
 	"github.com/kjander0/ctf/conf"
+	"github.com/kjander0/ctf/logger"
 	"github.com/kjander0/ctf/mymath"
 )
 
@@ -83,23 +84,37 @@ func checkWallHit(world *World, line mymath.Line) (float64, mymath.Vec, mymath.V
 	tileRect := mymath.Rect{Size: mymath.Vec{tileSize, tileSize}}
 	lineLen := line.Length()
 	tileSample := world.Map.SampleSolidTiles(line.End, lineLen)
-	var hitPos, normal mymath.Vec
+	var hitPos, hitNormal mymath.Vec
 	hitDist := -1.0
-	for _, tilePos := range tileSample {
-		tileRect.Pos = tilePos
-		overlaps, overlap, rectNormal := mymath.LineRectOverlap(line, tileRect)
-		if !overlaps {
-			continue
+	for _, tile := range tileSample {
+		tileRect.Pos = tile.Pos
+
+		var overlaps bool
+		var overlap, normal mymath.Vec
+
+		if tile.Type == TileWall {
+			overlaps, overlap, normal = mymath.LineRectOverlap(line, tileRect)
+			if !overlaps {
+				continue
+			}
+		} else if tile.Type == TileWallTriangle || tile.Type == TileWallTriangleCorner {
+			t0, t1, t2 := tile.CalcTrianglePoints()
+			overlaps, overlap, normal = mymath.LineTriangleOverlap(line, t0, t1, t2)
+			if !overlaps {
+				continue
+			}
+			logger.Debug("tri: ", overlap, normal)
 		}
+
 		hit := line.End.Add(overlap)
 		dist := line.Start.DistanceTo(hit)
 		if hitDist < 0 || dist < hitDist {
 			hitPos = hit
 			hitDist = dist
-			normal = rectNormal
+			hitNormal = normal
 		}
 	}
-	return hitDist, hitPos, normal
+	return hitDist, hitPos, hitNormal
 }
 
 func checkPlayerHit(world *World, laser *Laser, hitDist float64) (*Player, mymath.Vec) {

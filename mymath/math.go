@@ -214,6 +214,10 @@ func (v Vec) Length() float64 {
 	return math.Sqrt(v.X*v.X + v.Y*v.Y)
 }
 
+func (v Vec) SqrLength() float64 {
+	return v.X*v.X + v.Y*v.Y
+}
+
 func (v Vec) Resize(l float64) Vec {
 	return v.Normalize().Scale(l)
 }

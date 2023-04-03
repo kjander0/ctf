@@ -15,7 +15,12 @@ class Tile {
 
     type = null;
     pos = null;
-    orientation = 0; // 4 CCW rotations of triangle tiles
+
+    // CCW orientation of base of triangle tiles
+	//   2
+	// 3 /\ 1
+	//   0
+    orientation = 0;
 
     constructor(type, pos) {
         this.type = type;
@@ -24,7 +29,6 @@ class Tile {
 
     setTrianglePoints(p0, p1, p2) {
         if (this.type === Tile.WALL_TRIANGLE) {
-            const height = Math.sqrt(0.75) * conf.TILE_SIZE;
             switch (this.orientation) {
                 case 0:
                     p0.set(this.pos);
