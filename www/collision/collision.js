@@ -172,39 +172,43 @@ function lineRectOverlap(l, r) {
 	return [null, null];
 }
 
+This collision test is very laser specific, consider moving into weapons module
 function lineTriangleOverlap(line, t0, t1, t2) {
 	const dir = line.end.sub(line.start);
 
-	let side = new Line(t0, t1);
-	let normal = t1.sub(t0).normalize();
-	let tmpX = normal.x;
-	normal.x = normal.y;
-	normal.y = -tmpX;
-	if (dir.dot(normal) < 0) {
+	if line.start inside all sides
+		push it backwards enough so it is outside
+	
+	if line.start outside side 0
+		check intersection with side 0
+
+	likewise for other 2 sides
+	
+
+	let normal = _clockWiseNormal(t1.sub(t0));
+	const dot0 = dir.dot(normal);
+	if (dot0 < 0) {
+		const side = new Line(t0, t1);
 		const intersect = line.intersection(side);
 		if (intersect !== null) {
 			return [intersect.sub(line.end), normal];
 		}
 	}
 
-	side = new Line(t1, t2);
-	normal = t2.sub(t1).normalize();
-	tmpX = normal.x;
-	normal.x = normal.y;
-	normal.y = -tmpX;
-	if (dir.dot(normal) < 0) {
+	normal = _clockWiseNormal(t2.sub(t1));
+	const dot1 = dir.dot(normal);
+	if (dot1 < 0) {
+		const side = new Line(t1, t2);
 		const intersect = line.intersection(side);
 		if (intersect !== null) {
 			return [intersect.sub(line.end), normal];
 		}
 	}
 
-	side = new Line(t2, t0);
-	normal = t0.sub(t2).normalize();
-	tmpX = normal.x;
-	normal.x = normal.y;
-	normal.y = -tmpX;
-	if (dir.dot(normal) < 0) {
+	normal = _clockWiseNormal(t0.sub(t2));
+	const dot2 = dir.dot(normal)
+	if (dot2 < 0) {
+		const side = new Line(t2, t0);
 		const intersect = line.intersection(side);
 		if (intersect !== null) {
 			return [intersect.sub(line.end), normal];
@@ -212,6 +216,14 @@ function lineTriangleOverlap(line, t0, t1, t2) {
 	}
 
 	return [null, null];
+}
+
+function _clockWiseNormal(dir) {
+	const normal = dir.normalize();
+	const tmpX = normal.x;
+	normal.x = normal.y;
+	normal.y = -tmpX;
+	return normal;
 }
 
 export {circleRectOverlap, circleTriangleOverlap, lineCircleOverlap, lineRectOverlap, lineTriangleOverlap};
