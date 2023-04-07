@@ -58,14 +58,17 @@ function update(game) {
 
         for (let j = 0; j < numberSteps; j++) {
             let line = laser.line;
-            THIS IS incorrect, since line.start may have been changed for bounce in previous tick (we would be overriding this Headers, skipping ahead)
-            line.start.set(line.end);
             line.end = line.end.add(laser.dir.scale(speed));
             laser.drawPoints[laser.drawPoints.length-1].set(line.end);
-            if (processCollisions(game, laser)) {
+
+            const [bounced, destroyed] = processCollisions(game, laser);
+            if (destroyed) {
                 game.laserList[i] = game.laserList[game.laserList.length-1];
                 game.laserList.splice(game.laserList.length-1, 1);
                 break;
+            }
+            if (!bounced) {
+                line.start.set(line.end);
             }
             limitLaserDrawLength(laser);
         }
@@ -100,21 +103,22 @@ function limitLaserDrawLength(laser) {
     }
 }
 
+// Returns [bounced, destroyed] status after collision checks
 function processCollisions(game, laser) {
     let [hitDist, hitPos, normal] = checkWallHit(game, laser.line);
     let [hitPlayer, hitPlayerPos] = checkPlayerHit(game, laser, hitDist);
     if (hitDist < 0 && hitPlayer === null) {
-        return false;
+        return [false, false];
     }
 
     if (hitPlayer !== null) {
         console.log("hit player");
     } else if (laser.type == Laser.TYPE_BOUNCY) {
         bounce(laser, hitPos, normal);
-        return false;
+        return [true, false];
     }
 
-    return true;
+    return [false, true];
 }
 
 function checkWallHit(game, line) {

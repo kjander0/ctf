@@ -172,46 +172,49 @@ function lineRectOverlap(l, r) {
 	return [null, null];
 }
 
-This collision test is very laser specific, consider moving into weapons module
 function lineTriangleOverlap(line, t0, t1, t2) {
-	const dir = line.end.sub(line.start);
+	const l0 = t1.sub(t0);
+	const n0 = _clockWiseNormal(l0);
+	let d0 = line.start.sub(t0).dot(n0);
 
-	if line.start inside all sides
-		push it backwards enough so it is outside
-	
-	if line.start outside side 0
-		check intersection with side 0
+	const l1 = t2.sub(t1);
+	const n1 = _clockWiseNormal(l1);
+	let d1 = line.start.sub(t1).dot(n1);
 
-	likewise for other 2 sides
-	
+	const l2 = t0.sub(t2);
+	const n2 = _clockWiseNormal(l2);
+	let d2 = line.start.sub(t2).dot(n2);
 
-	let normal = _clockWiseNormal(t1.sub(t0));
-	const dot0 = dir.dot(normal);
-	if (dot0 < 0) {
+	// if start of line within triangle, move it backwards so we
+	// find intersection with the nearest side.
+	if (d0 < 0 && d1 < 0 && d2 < 0) {
+		line.start = line.start.sub(line.end.sub(line.start).resize(Math.abs(d0) + Math.abs(d1) + Math.abs(d2)));
+		d0 = line.start.sub(t0).dot(n0);
+		d1 = line.start.sub(t1).dot(n1);
+		d2 = line.start.sub(t2).dot(n2);
+	}
+
+	if (d0 > 0) {
 		const side = new Line(t0, t1);
 		const intersect = line.intersection(side);
 		if (intersect !== null) {
-			return [intersect.sub(line.end), normal];
+			return [intersect.sub(line.end), n0];
 		}
 	}
 
-	normal = _clockWiseNormal(t2.sub(t1));
-	const dot1 = dir.dot(normal);
-	if (dot1 < 0) {
+	if (d1 > 0) {
 		const side = new Line(t1, t2);
 		const intersect = line.intersection(side);
 		if (intersect !== null) {
-			return [intersect.sub(line.end), normal];
+			return [intersect.sub(line.end), n1];
 		}
 	}
 
-	normal = _clockWiseNormal(t0.sub(t2));
-	const dot2 = dir.dot(normal)
-	if (dot2 < 0) {
+	if (d2 > 0) {
 		const side = new Line(t2, t0);
 		const intersect = line.intersection(side);
 		if (intersect !== null) {
-			return [intersect.sub(line.end), normal];
+			return [intersect.sub(line.end), n2];
 		}
 	}
 
