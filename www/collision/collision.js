@@ -115,8 +115,8 @@ function _circleTriangleSideOverlap(circle, u0, u1, t0, t1, n0, u0DotNormal) {
 	return n0.scale(u0DotNormal - circle.radius);
 }
 
-// Overlap from circle to line
-function lineCircleOverlap(circle, l) {
+// Returns intersection closest to start of line. If the start of the line is within the circle, returns this point.
+function laserCircleIntersect(l, circle) {
 	let u = l.start.sub(circle.pos);
 	let v = l.end.sub(l.start);
 	let a = v.dot(v);
@@ -133,88 +133,69 @@ function lineCircleOverlap(circle, l) {
 	if (t2 <= 0 || t1 >= 1) {
 		return null;
 	}
-	let pos = l.start.add(v.scale(t1));
-	return pos.sub(l.end);
+	return l.start.add(v.scale(t1));
 }
 
-function lineRectOverlap(l, r) {
-    l = new Line(l.start, l.end); // copy since we might make changes
-	let u = l.end.sub(l.start);
-
-	if (r.containsPoint(l.start)) {
-		// Send start backward so we obtain intersection
-		l.start = l.start.sub(u.resize(r.size.x + r.size.y));
+// Return intersection closest to start of line.
+function laserRectIntersect(line, rect) {
+	// Avoid case of laser beggining slightly inside shape (e.g. after a bounce)
+	if (rect.containsPoint(line.start)) {
+		return [null, null];
 	}
 
+	const lineDir = line.end.sub(line.start);
 	let intersection;
 	let normal;
-	if (u.x > 0) {
-		intersection = l.intersection(r.leftLine());
+	if (lineDir.x > 0) {
+		intersection = line.intersection(rect.leftLine());
 		normal = new Vec(-1, 0);
 	} else {
-		intersection = l.intersection(r.rightLine());
+		intersection = line.intersection(rect.rightLine());
 		normal = new Vec(1, 0);
 	}
 
 	if (!intersection) {
-		if (u.y > 0) {
-			intersection = l.intersection(r.bottomLine());
+		if (lineDir.y > 0) {
+			intersection = line.intersection(rect.bottomLine());
 			normal = new Vec(0, -1);
 		} else {
-			intersection = l.intersection(r.topLine());
+			intersection = line.intersection(rect.topLine());
 			normal = new Vec(0, 1);
 		}
 	}
 
 	if (intersection) {
-		return [intersection.sub(l.end), normal];
+		return [intersection, normal];
 	}
 	return [null, null];
 }
 
-function lineTriangleOverlap(line, t0, t1, t2) {
-	const l0 = t1.sub(t0);
-	const n0 = _clockWiseNormal(l0);
-	let d0 = line.start.sub(t0).dot(n0);
-
-	const l1 = t2.sub(t1);
-	const n1 = _clockWiseNormal(l1);
-	let d1 = line.start.sub(t1).dot(n1);
-
-	const l2 = t0.sub(t2);
-	const n2 = _clockWiseNormal(l2);
-	let d2 = line.start.sub(t2).dot(n2);
-
-	// if start of line within triangle, move it backwards so we
-	// find intersection with the nearest side.
-	if (d0 < 0 && d1 < 0 && d2 < 0) {
-		line.start = line.start.sub(line.end.sub(line.start).resize(Math.abs(d0) + Math.abs(d1) + Math.abs(d2)));
-		d0 = line.start.sub(t0).dot(n0);
-		d1 = line.start.sub(t1).dot(n1);
-		d2 = line.start.sub(t2).dot(n2);
-	}
-
-	if (d0 > 0) {
+// Return intersection closest to start of line.
+function laserTriangleIntersect(line, t0, t1, t2) {
+	let normal = _clockWiseNormal(t1.sub(t0));
+	if (line.start.sub(t0).dot(normal) > 0) {
 		const side = new Line(t0, t1);
 		const intersect = line.intersection(side);
 		if (intersect !== null) {
-			return [intersect.sub(line.end), n0];
+			return [intersect, normal];
 		}
 	}
 
-	if (d1 > 0) {
+    normal = _clockWiseNormal(t2.sub(t1));
+	if (line.start.sub(t1).dot(normal) > 0) {
 		const side = new Line(t1, t2);
 		const intersect = line.intersection(side);
 		if (intersect !== null) {
-			return [intersect.sub(line.end), n1];
+			return [intersect, normal];
 		}
 	}
 
-	if (d2 > 0) {
+    normal = _clockWiseNormal(t0.sub(t2));
+	if (line.start.sub(t2).dot(normal) > 0) {
 		const side = new Line(t2, t0);
 		const intersect = line.intersection(side);
 		if (intersect !== null) {
-			return [intersect.sub(line.end), n2];
+			return [intersect, normal];
 		}
 	}
 
@@ -229,4 +210,4 @@ function _clockWiseNormal(dir) {
 	return normal;
 }
 
-export {circleRectOverlap, circleTriangleOverlap, lineCircleOverlap, lineRectOverlap, lineTriangleOverlap};
+export {circleRectOverlap, circleTriangleOverlap, laserCircleIntersect, laserRectIntersect, laserTriangleIntersect};

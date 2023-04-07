@@ -234,6 +234,7 @@ class Graphics {
 
         this.renderer.setColor(1, 0, 0);
         for (let laser of game.laserList) {
+            //this.renderer.drawLine(laser.debugLine.start, laser.debugLine.end, 3);
             for (let i = 0; i < laser.drawPoints.length-1; i++) {
                 const start = laser.drawPoints[i];
                 const end = laser.drawPoints[i+1];

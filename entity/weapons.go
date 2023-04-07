@@ -48,12 +48,26 @@ func UpdateProjectiles(world *World) {
 
 	// Check collisions
 	for i := len(world.LaserList) - 1; i >= 0; i-- { // reverse iterate for removing elements
-		line := world.LaserList[i].Line
+		if processCollisions(world, i) {
+			world.LaserList[i] = world.LaserList[len(world.LaserList)-1]
+			world.LaserList = world.LaserList[:len(world.LaserList)-1]
+		}
+	}
+
+	// Stage new lasers to be moved forward on the next tick in sync with clients
+	world.LaserList = append(world.LaserList, world.NewLasers...)
+}
+
+// Returns true if laser has hit a wall and should be destroyed
+func processCollisions(world *World, laserIndex int) bool {
+	// Keep resolving collisions until laser has stopped bouncing
+	for {
+		line := world.LaserList[laserIndex].Line
 		hitDist, hitPos, normal := checkWallHit(world, line)
-		player, playerHitPos := checkPlayerHit(world, &world.LaserList[i], hitDist)
+		player, playerHitPos := checkPlayerHit(world, &world.LaserList[laserIndex], hitDist)
 
 		if hitDist < 0 && player == nil { // no hit occured
-			continue
+			return false
 		}
 
 		if player != nil {
@@ -65,18 +79,17 @@ func UpdateProjectiles(world *World) {
 				player.State = PlayerStateJailed
 			}
 			hitPos = playerHitPos
-		} else if world.LaserList[i].Type == ProjTypeBouncy {
-			bounce(&world.LaserList[i], hitPos, normal)
-			continue
+			world.NewHits = append(world.NewHits, hitPos)
+			return true
 		}
 
-		world.NewHits = append(world.NewHits, hitPos)
-		world.LaserList[i] = world.LaserList[len(world.LaserList)-1]
-		world.LaserList = world.LaserList[:len(world.LaserList)-1]
-	}
+		if world.LaserList[laserIndex].Type != ProjTypeBouncy {
+			world.NewHits = append(world.NewHits, hitPos)
+			return true
+		}
 
-	// Stage new lasers to be moved forward on the next tick in sync with clients
-	world.LaserList = append(world.LaserList, world.NewLasers...)
+		bounce(&world.LaserList[laserIndex], hitPos, normal)
+	}
 }
 
 func checkWallHit(world *World, line mymath.Line) (float64, mymath.Vec, mymath.Vec) {
@@ -89,26 +102,24 @@ func checkWallHit(world *World, line mymath.Line) (float64, mymath.Vec, mymath.V
 	for _, tile := range tileSample {
 		tileRect.Pos = tile.Pos
 
-		var overlaps bool
-		var overlap, normal mymath.Vec
+		var intersected bool
+		var hit, normal mymath.Vec
 
 		if tile.Type == TileWall {
-			overlaps, overlap, normal = mymath.LineRectOverlap(line, tileRect)
-			if !overlaps {
+			intersected, hit, normal = mymath.LaserRectIntersect(line, tileRect)
+			if !intersected {
 				continue
 			}
 		} else if tile.Type == TileWallTriangle || tile.Type == TileWallTriangleCorner {
 			t0, t1, t2 := tile.CalcTrianglePoints()
-			overlaps, overlap, normal = mymath.LineTriangleOverlap(line, t0, t1, t2)
-			if !overlaps {
+			intersected, hit, normal = mymath.LaserTriangleIntersect(line, t0, t1, t2)
+			if !intersected {
 				continue
 			}
-			logger.Debug("tri: ", overlap, normal)
 		}
 
-		hit := line.End.Add(overlap)
 		dist := line.Start.DistanceTo(hit)
-		if hitDist < 0 || dist < hitDist {
+		if hitDist == -1 || dist < hitDist {
 			hitPos = hit
 			hitDist = dist
 			hitNormal = normal
@@ -126,13 +137,12 @@ func checkPlayerHit(world *World, laser *Laser, hitDist float64) (*Player, mymat
 		}
 		// TODO: consider testing collisions using predicted position
 		playerCircle := mymath.Circle{world.PlayerList[i].Acked.Pos, conf.Shared.PlayerRadius}
-		overlaps, overlap := mymath.LineCircleOverlap(playerCircle, laser.Line)
-		if !overlaps {
+		intersected, hit := mymath.LaserCircleIntersect(laser.Line, playerCircle)
+		if !intersected {
 			continue
 		}
-		hit := laser.Line.End.Add(overlap)
 		dist := laser.Line.Start.DistanceTo(hit)
-		if hitDist < 0 || dist < hitDist {
+		if hitDist == -1 || dist < hitDist {
 			hitPos = hit
 			hitDist = dist
 			player = &world.PlayerList[i]
@@ -142,6 +152,7 @@ func checkPlayerHit(world *World, laser *Laser, hitDist float64) (*Player, mymat
 }
 
 func bounce(laser *Laser, hitPos mymath.Vec, normal mymath.Vec) {
+	logger.Debug("bounce: ", hitPos)
 	incident := laser.Line.End.Sub(laser.Line.Start)
 	len := incident.Length()
 	newLen := len - hitPos.Sub(laser.Line.Start).Length()

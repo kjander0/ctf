@@ -32,11 +32,11 @@ var Shared = SharedParams{
 	MaxLaserEnergy:   70,
 	MaxBouncyEnergy:  120,
 	JailTimeTicks:    75,
-	LaserSpeed:       8,
-	LaserTimeTicks:   60,
+	LaserSpeed:       10,
+	LaserTimeTicks:   180,
 	LaserEnergyCost:  10,
-	BouncyEnergyCost: 30,
-	BouncySpeed:      80,
+	BouncyEnergyCost: 1,
+	BouncySpeed:      15,
 }
 
 func WriteSharedParams(filePath string) {

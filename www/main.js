@@ -1,4 +1,6 @@
 // TODO
+// - inputs tend to clump up with bad netowrk conditions. If server is consuming multiple inputs at the same time, it could fast
+//      forward lasers by some limited amount so they get the true spread.
 // - disable client collisions to test server collisions and vice versa
 // - hard limit number unacked packets (1 second worth?) in case server running slow, etc
 // - handle switching browser tab (ignore first huge delta time, etc)

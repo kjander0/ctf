@@ -8,12 +8,13 @@ class Laser {
     static TYPE_BOUNCY = 1;
     static TYPE_MISSILE = 2;
 
-    static LASER_DRAW_LENGTH = 15;
-    static BOUNCY_DRAW_LENGTH = 600;
+    static LASER_DRAW_LENGTH = 30;
+    static BOUNCY_DRAW_LENGTH = 90;
 
     type;
     playerId;
     line = new Line();
+    debugLine = new Line();
     drawPoints;
     dir = new Vec();
     compensated = false;
@@ -55,20 +56,17 @@ function update(game) {
             numberSteps += tickDiff;
             laser.activeTicks += tickDiff;
         }
-
         for (let j = 0; j < numberSteps; j++) {
             let line = laser.line;
+            line.start.set(line.end);
             line.end = line.end.add(laser.dir.scale(speed));
+            laser.debugLine.start.set(line.start);
+            laser.debugLine.end.set(line.end);
             laser.drawPoints[laser.drawPoints.length-1].set(line.end);
-
-            const [bounced, destroyed] = processCollisions(game, laser);
-            if (destroyed) {
+            if (processCollisions(game, laser)) {
                 game.laserList[i] = game.laserList[game.laserList.length-1];
                 game.laserList.splice(game.laserList.length-1, 1);
                 break;
-            }
-            if (!bounced) {
-                line.start.set(line.end);
             }
             limitLaserDrawLength(laser);
         }
@@ -103,22 +101,27 @@ function limitLaserDrawLength(laser) {
     }
 }
 
-// Returns [bounced, destroyed] status after collision checks
+// Returns true if laser has hit a wall and should be destroyed
 function processCollisions(game, laser) {
-    let [hitDist, hitPos, normal] = checkWallHit(game, laser.line);
-    let [hitPlayer, hitPlayerPos] = checkPlayerHit(game, laser, hitDist);
-    if (hitDist < 0 && hitPlayer === null) {
-        return [false, false];
-    }
+    // Keep resolving collisions until laser has stopped bouncing
+    while (true) {
+        let [hitDist, hitPos, normal] = checkWallHit(game, laser.line);
+        let [hitPlayer, hitPlayerPos] = checkPlayerHit(game, laser, hitDist);
+        if (hitDist === -1 && hitPlayer === null) {
+            return false
+        }
+    
+        if (hitPlayer !== null) {
+            console.log("hit player");
+            return true;
+        }
 
-    if (hitPlayer !== null) {
-        console.log("hit player");
-    } else if (laser.type == Laser.TYPE_BOUNCY) {
+        if (laser.type !== Laser.TYPE_BOUNCY) {
+            return true;
+        }
+
         bounce(laser, hitPos, normal);
-        return [true, false];
     }
-
-    return [false, true];
 }
 
 function checkWallHit(game, line) {
@@ -126,28 +129,26 @@ function checkWallHit(game, line) {
 	let lineLen = line.length();
 	let tileSample = game.map.sampleSolidTiles(line.end, lineLen);
 	let hitPos, hitNormal;
-	let hitDist = -1.0;
+	let hitDist = -1;
     const t0 = new Vec(); const t1 = new Vec(); const t2 = new Vec();
 	for (let tile of tileSample) {
 		tileRect.pos.set(tile.pos);
-        let overlap, normal;
+        let hit, normal;
         if (tile.type === Tile.WALL) {
-            [overlap, normal] = collision.lineRectOverlap(line, tileRect);
-            if (overlap === null) {
+            [hit, normal] = collision.laserRectIntersect(line, tileRect);
+            if (hit === null) {
                 continue;
             }
         } else if (tile.type === Tile.WALL_TRIANGLE || tile.type === Tile.WALL_TRIANGLE_CORNER) {
             tile.setTrianglePoints(t0, t1, t2);
-            [overlap, normal] = collision.lineTriangleOverlap(line, t0, t1, t2);
-            if (overlap === null) {
+            [hit, normal] = collision.laserTriangleIntersect(line, t0, t1, t2);
+            if (hit === null) {
                 continue;
             }
-            console.log("tri: ", overlap, normal)
         }
 
-		let hit = line.end.add(overlap);
 		let dist = line.start.distanceTo(hit);
-		if (hitDist < 0 || dist < hitDist) {
+		if (hitDist === -1 || dist < hitDist) {
 			hitPos = hit;
 			hitDist = dist;
             hitNormal = normal;
@@ -162,8 +163,8 @@ function checkPlayerHit(game, laser, hitDist) {
 
     // Check local player
     if (game.player.id !== laser.playerId) {
-        let [dist, hit] = checkSingePlayerHit(game.player, laser);
-        if (dist !== null && (hitDist < 0 || dist < hitDist)) {
+        let [dist, hit] = _checkSinglePlayerHit(game.player, laser);
+        if (dist !== null && (hitDist === -1 || dist < hitDist)) {
             hitPos = hit;
             hitDist = dist;
             hitPlayer = game.player;
@@ -175,12 +176,12 @@ function checkPlayerHit(game, laser, hitDist) {
 		if (player.id == laser.playerId) {
 			continue;
 		}
-        let [dist, hit] = checkSingePlayerHit(player, laser);
+        let [dist, hit] = _checkSinglePlayerHit(player, laser);
         if (dist === null) {
             continue;
         }
 
-        if (hitDist < 0 || dist < hitDist) {
+        if (hitDist === -1 || dist < hitDist) {
             hitPos = hit;
             hitDist = dist;
             hitPlayer = player;
@@ -190,25 +191,24 @@ function checkPlayerHit(game, laser, hitDist) {
 	return [hitPlayer, hitPos];
 }
 
-function checkSingePlayerHit(player, laser) {
+function _checkSinglePlayerHit(player, laser) {
     // TODO: for other players predictedPos might be more accurate in general
     let playerCircle = new Circle(player.pos, conf.PLAYER_RADIUS);
-    let overlap = collision.lineCircleOverlap(playerCircle, laser.line);
-    if (overlap === null) {
+    let hitPos = collision.laserCircleIntersect(laser.line, playerCircle);
+    if (hitPos === null) {
         return [null, null];
     }
-    let hit = laser.line.end.add(overlap);
-    let dist = laser.line.start.distanceTo(hit);
+    let dist = laser.line.start.distanceTo(hitPos);
     
-    return [dist, hit];
+    return [dist, hitPos];
 }
 
 function bounce(laser, hitPos, normal) {
-	let incident = laser.line.end.sub(laser.line.start);
-	let len = incident.length();
-	let newLen = len - hitPos.sub(laser.line.start).length();
+    console.log("bounce: ", new Vec(hitPos));
+	const incident = laser.line.end.sub(laser.line.start);
 	laser.dir = incident.reflect(normal).normalize();
 	laser.line.start = hitPos;
+    let newLen = laser.line.end.sub(hitPos).length();
 	laser.line.end = hitPos.add(laser.dir.scale(newLen));
     laser.drawPoints[laser.drawPoints.length-1].set(hitPos);
     laser.drawPoints.push(new Vec(laser.line.end));

@@ -4,14 +4,12 @@ import (
 	"math/rand"
 	"sync"
 	"time"
-
-	"github.com/kjander0/ctf/logger"
 )
 
 const (
-	delayMs  = 0
-	jitterMs = 0
-	lossRate = 0
+	delayMs  = 50
+	jitterMs = 10
+	lossRate = 0.5
 )
 
 // Channel for adding artificial delay/jitter to data
@@ -54,7 +52,6 @@ func (dc *DelayChannel) Start() {
 
 			if lossRate > 0 {
 				if rand.Float64() <= lossRate {
-					logger.Debug("SIMULATING LOSS")
 					durationMs += 2 * delayMs
 				}
 			}

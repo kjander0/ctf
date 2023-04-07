@@ -114,8 +114,8 @@ func circleTriangleSideOverlap(circle Circle, u0 Vec, u1 Vec, t0 Vec, t1 Vec, n0
 	return true, n0.Scale(u0DotNormal - circle.Radius)
 }
 
-// Overlap from circle to line
-func LineCircleOverlap(circle Circle, l Line) (bool, Vec) {
+// Returns intersection closest to start of line. If the start of the line is within the circle, returns this point.
+func LaserCircleIntersect(l Line, circle Circle) (bool, Vec) {
 	u := l.Start.Sub(circle.Pos)
 	v := l.End.Sub(l.Start)
 	a := v.Dot(v)
@@ -131,22 +131,20 @@ func LineCircleOverlap(circle Circle, l Line) (bool, Vec) {
 	if t2 <= 0 || t1 >= 1 {
 		return false, u
 	}
-	pos := l.Start.Add(v.Scale(t1))
-	return true, pos.Sub(l.End)
+	return true, l.Start.Add(v.Scale(t1))
 }
 
-func LineRectOverlap(l Line, r Rect) (bool, Vec, Vec) {
-	u := l.End.Sub(l.Start)
-
+func LaserRectIntersect(l Line, r Rect) (bool, Vec, Vec) {
+	// Avoid case of laser beggining slightly inside shape (e.g. after a bounce)
 	if r.ContainsPoint(l.Start) {
-		// Send start backward so we obtain intersection
-		l.Start = l.Start.Sub(u.Resize(r.Size.X + r.Size.Y))
+		return false, Vec{}, Vec{}
 	}
 
+	lineDir := l.End.Sub(l.Start)
 	var intersects bool
 	var intersection Vec
 	var normal Vec
-	if u.X > 0 {
+	if lineDir.X > 0 {
 		intersects, intersection = l.Intersection(r.LeftLine())
 		normal = Vec{-1, 0}
 	} else {
@@ -155,7 +153,7 @@ func LineRectOverlap(l Line, r Rect) (bool, Vec, Vec) {
 	}
 
 	if !intersects {
-		if u.Y > 0 {
+		if lineDir.Y > 0 {
 			intersects, intersection = l.Intersection(r.BottomLine())
 			normal = Vec{0, -1}
 		} else {
@@ -165,46 +163,44 @@ func LineRectOverlap(l Line, r Rect) (bool, Vec, Vec) {
 	}
 
 	if intersects {
-		return true, intersection.Sub(l.End), normal
+		return true, intersection, normal
 	}
 	return false, intersection, normal
 }
 
-func LineTriangleOverlap(line Line, t0 Vec, t1 Vec, t2 Vec) (bool, Vec, Vec) {
-	dir := line.End.Sub(line.Start)
-
-	side := Line{t0, t1}
-	normal := t1.Sub(t0).Normalize()
-	normal.X, normal.Y = normal.Y, -normal.X
-
-	if dir.Dot(normal) < 0 {
-		intersects, intersect := line.Intersection(side)
-		if intersects {
-			return true, intersect.Sub(line.End), normal
+func LaserTriangleIntersect(line Line, t0 Vec, t1 Vec, t2 Vec) (bool, Vec, Vec) {
+	normal := clockWiseNormal(t1.Sub(t0))
+	if line.Start.Sub(t0).Dot(normal) > 0 {
+		side := Line{t0, t1}
+		intersected, intersect := line.Intersection(side)
+		if intersected {
+			return intersected, intersect, normal
 		}
 	}
 
-	side = Line{t1, t2}
-	normal = t2.Sub(t1).Normalize()
-	normal.X, normal.Y = normal.Y, -normal.X
-
-	if dir.Dot(normal) < 0 {
-		intersects, intersect := line.Intersection(side)
-		if intersects {
-			return true, intersect.Sub(line.End), normal
+	normal = clockWiseNormal(t2.Sub(t1))
+	if line.Start.Sub(t1).Dot(normal) > 0 {
+		side := Line{t1, t2}
+		intersected, intersect := line.Intersection(side)
+		if intersected {
+			return intersected, intersect, normal
 		}
 	}
 
-	side = Line{t2, t0}
-	normal = t0.Sub(t2).Normalize()
-	normal.X, normal.Y = normal.Y, -normal.X
-
-	if dir.Dot(normal) < 0 {
-		intersects, intersect := line.Intersection(side)
-		if intersects {
-			return true, intersect.Sub(line.End), normal
+	normal = clockWiseNormal(t0.Sub(t2))
+	if line.Start.Sub(t2).Dot(normal) > 0 {
+		side := Line{t2, t0}
+		intersected, intersect := line.Intersection(side)
+		if intersected {
+			return intersected, intersect, normal
 		}
 	}
 
 	return false, Vec{}, Vec{}
+}
+
+func clockWiseNormal(dir Vec) Vec {
+	normal := dir.Normalize()
+	normal.X, normal.Y = normal.Y, -normal.X
+	return normal
 }
