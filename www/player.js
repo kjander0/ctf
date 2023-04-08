@@ -112,6 +112,7 @@ function update(game) {
 
 function _updatePlayer(game) {
     if (game.player.stateChanged) {
+        console.log("state changed");
         game.player.pos.set(game.player.acked.pos);
         game.player.prevPos.set(game.player.acked.pos);
         game.player.predicted.set(game.player.acked);
@@ -156,7 +157,6 @@ function _updatePlayer(game) {
         correction = correction.scale(conf.PLAYER_SPEED / corrLen);
     }
 
-    game.player.stateChanged = false;
     //game.player.pos = game.player.pos.add(correction);
 
 }

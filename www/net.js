@@ -127,8 +127,7 @@ function _processUpdateMsg(game, decoder) {
     // but we want to make sure pos is available for first load into game
     const ackPos = decoder.readVec();
     const ackEnergy = decoder.readUint8();
-
-    if (ackedTick != -1) {
+    if (ackedTick != -1 || game.player.stateChanged) {
         game.player.predictedInputs.ack(ackedTick);
         game.player.acked.pos = ackPos;
         game.player.acked.energy = ackEnergy;
@@ -149,7 +148,9 @@ function _processUpdateMsg(game, decoder) {
         }
         otherPlayer.disconnected = false;
         let newState = decoder.readUint8();
-        otherPlayer.stateChanged = otherPlayer.state !== newState;
+        if (otherPlayer.state.state !== newState) {
+            otherPlayer.stateChanged = true;
+        }
         otherPlayer.state = newState;
         otherPlayer.acked.pos = decoder.readVec();
         otherPlayer.lastAckedDirNum = decoder.readUint8();
