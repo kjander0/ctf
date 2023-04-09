@@ -206,7 +206,8 @@ func prepareWorldUpdate(world *entity.World, playerIndex int) []byte {
 
 	encoder.WriteUint8(uint8(player.State))
 	encoder.WriteVec(player.Acked.Pos)
-	encoder.WriteUint8(uint8(player.Acked.Energy))
+	encoder.WriteUint16(uint16(player.Acked.Energy))
+	encoder.WriteUint16(uint16(player.Acked.BouncyEnergy))
 
 	encoder.WriteUint8(uint8(len(world.PlayerList) - 1))
 	for i := range world.PlayerList {

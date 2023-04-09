@@ -103,14 +103,14 @@ function processCollisions(game, laser) {
     // Keep resolving collisions until laser has stopped bouncing
     while (true) {
         let [hitDist, hitPos, normal] = checkWallHit(game, laser.line);
-        let [hitPlayer, hitPlayerPos] = checkPlayerHit(game, laser, hitDist);
-        if (hitDist === -1 && hitPlayer === null) {
-            return false
+        let [hitPlayerDist, hitPlayerPos, hitPlayer] = checkPlayerHit(game, laser);
+        if (hitPlayerDist !== null && (hitDist === null || hitPlayerDist < hitDist)) {
+            hitDist = hitPlayerDist;
+            hitPos = hitPlayerPos;
         }
-    
-        if (hitPlayer !== null) {
-            console.log("hit player");
-            return true;
+
+        if (hitDist === null) {
+            return false
         }
 
         if (laser.type !== Laser.TYPE_BOUNCY) {
@@ -122,11 +122,11 @@ function processCollisions(game, laser) {
 }
 
 function checkWallHit(game, line) {
-	let tileRect = new Rect(new Vec(), new Vec(conf.TILE_SIZE, conf.TILE_SIZE));
 	let lineLen = line.length();
 	let tileSample = game.map.sampleSolidTiles(line.end, lineLen);
 	let hitPos, hitNormal;
-	let hitDist = -1;
+	let hitDist = null;
+    let tileRect = new Rect(new Vec(), new Vec(conf.TILE_SIZE, conf.TILE_SIZE));
     const t0 = new Vec(); const t1 = new Vec(); const t2 = new Vec();
 	for (let tile of tileSample) {
 		tileRect.pos.set(tile.pos);
@@ -145,7 +145,7 @@ function checkWallHit(game, line) {
         }
 
 		let dist = line.start.distanceTo(hit);
-		if (hitDist === -1 || dist < hitDist) {
+		if (hitDist === null || dist < hitDist) {
 			hitPos = hit;
 			hitDist = dist;
             hitNormal = normal;
@@ -154,14 +154,15 @@ function checkWallHit(game, line) {
 	return [hitDist, hitPos, hitNormal];
 }
 
-function checkPlayerHit(game, laser, hitDist) {
+function checkPlayerHit(game, laser) {
 	let hitPos = null;
+    let hitDist = null;
 	let hitPlayer = null;
 
     // Check local player
     if (game.player.id !== laser.playerId) {
         let [dist, hit] = _checkSinglePlayerHit(game.player, laser);
-        if (dist !== null && (hitDist === -1 || dist < hitDist)) {
+        if (dist !== null && (hitDist === null || dist < hitDist)) {
             hitPos = hit;
             hitDist = dist;
             hitPlayer = game.player;
@@ -177,15 +178,14 @@ function checkPlayerHit(game, laser, hitDist) {
         if (dist === null) {
             continue;
         }
-
-        if (hitDist === -1 || dist < hitDist) {
+        if (hitDist === null || dist < hitDist) {
             hitPos = hit;
             hitDist = dist;
             hitPlayer = player;
         }
 	}
 
-	return [hitPlayer, hitPos];
+	return [hitDist, hitPos, hitPlayer];
 }
 
 function _checkSinglePlayerHit(player, laser) {
@@ -201,7 +201,6 @@ function _checkSinglePlayerHit(player, laser) {
 }
 
 function bounce(laser, hitPos, normal) {
-    console.log("bounce: ", new Vec(hitPos));
 	const incident = laser.line.end.sub(laser.line.start);
 	laser.dir = incident.reflect(normal).normalize();
 	laser.line.start = hitPos;

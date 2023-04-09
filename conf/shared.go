@@ -30,12 +30,12 @@ var Shared = SharedParams{
 	PlayerRadius:     32,
 	PlayerHealth:     10,
 	MaxLaserEnergy:   70,
-	MaxBouncyEnergy:  120,
+	MaxBouncyEnergy:  180,
 	JailTimeTicks:    75,
 	LaserSpeed:       10,
 	LaserTimeTicks:   180,
 	LaserEnergyCost:  10,
-	BouncyEnergyCost: 1,
+	BouncyEnergyCost: 60,
 	BouncySpeed:      15,
 }
 

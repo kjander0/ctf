@@ -243,16 +243,44 @@ class Graphics {
         }
         this.renderer.render(this.camera);
 
-        // Draw UI
+        // ========== BEGIN DRAW UI ==========
         let border = 10;
-        let barWidth = 80;
-        let barHeight = 10;
-        let ratio = game.player.predicted.energy / conf.MAX_LASER_ENERGY;
-        this.renderer.setColor(0.8, 0.1, 0.1);
-        this.renderer.drawRect(this.screenSize.x/2 - barWidth/2, border, barWidth, barHeight);
-        this.renderer.setColor(0.8, 0.8, 0);
-        this.renderer.drawRect(this.screenSize.x/2 -barWidth/2, border, barWidth * ratio, barHeight);
+
+
+        // Draw laser energy bar
+        {
+            const barWidth = 80;
+            const barHeight = 10;
+            const ratio = game.player.predicted.energy / conf.MAX_LASER_ENERGY;
+            this.renderer.setColor(0.8, 0.1, 0.1);
+            this.renderer.drawRect(this.screenSize.x/2 - barWidth/2, border, barWidth, barHeight);
+            this.renderer.setColor(0.8, 0.8, 0);
+            this.renderer.drawRect(this.screenSize.x/2 -barWidth/2, border, barWidth * ratio, barHeight);
+        }
+
+
+        // Draw bouncy energy stocks
+        {
+            const radius = 14;
+            let remainingEnergy = game.player.predicted.bouncyEnergy;
+            let bouncyNum = 0;
+            while (remainingEnergy > 0) {
+                const ratio = Math.min(1, remainingEnergy / conf.BOUNCY_ENERGY_COST);
+                if (ratio < 1) {
+                    this.renderer.setColor(1, 0.8 * ratio, 0);
+                    this.renderer.drawCircle(border + radius + bouncyNum * (border + 2 * radius), border + radius, radius * ratio * 0.8);
+                } else {
+                    this.renderer.setColor(1, 1, 0);
+                    this.renderer.drawCircle(border + radius + bouncyNum * (border + 2 * radius), border + radius, radius);
+                }
+                bouncyNum++;
+                remainingEnergy -= conf.BOUNCY_ENERGY_COST;
+            }
+        }
+
         this.renderer.render(this.uiCamera);
+        // ========== END DRAW UI ==========
+
 
         // TODO: draw loading bouncies as rounded rects that load into place then shine
     }

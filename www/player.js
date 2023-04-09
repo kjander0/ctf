@@ -7,7 +7,7 @@ import * as collision from "./collision/collision.js"
 import * as sat from "./collision/sat.js"
 import {Tile} from "./map.js";
 
-class PlayerPredicted {
+class PlayerNetData {
     pos = new Vec();
     dir = new Vec();
     energy = conf.MAX_LASER_ENERGY;
@@ -49,16 +49,8 @@ class Player {
     prevPos = new Vec();
     pos = new Vec();
 
-    how does this work for upd?
-    and what about delta encoding? (keep bytes from last message acked, instead of world state)
-
-    replaying 60 ticks is expensive
-    can we eliminate some of the date so not everything needs full replay
-        like data that isnt related to new ack?
-    
-    What about when player dies, they might oscillate between dead and alive
-    acked = new PlayerPredicted();
-    predicted = new PlayerPredicted();
+    acked = new PlayerNetData();
+    predicted = new PlayerNetData();
 }
 
 class PlayerInputState {
@@ -119,11 +111,12 @@ function update(game) {
 }
 
 function _updatePlayer(game) {
+    game.player.predicted.set(game.player.acked);
+
     if (game.player.stateChanged) {
         console.log("state changed");
         game.player.pos.set(game.player.acked.pos);
         game.player.prevPos.set(game.player.acked.pos);
-        game.player.predicted.set(game.player.acked);
         game.player.stateChanged = false;
         return;
     }
@@ -135,8 +128,8 @@ function _updatePlayer(game) {
         sound.bouncy.play();
     }
 
-    game.player.predicted = new PlayerPredicted(game.player.acked);
-    // TODO: make dirFromInput function so we don't have these 4 if conditions repeated twice
+    const bouncyEnergyBefore = game.player.predicted.bouncyEnergy;
+
     for (let unacked of game.player.predictedInputs.unacked) {
         let inputState = unacked.val;
         let disp = _calcDisplacement(inputState);
@@ -153,6 +146,9 @@ function _updatePlayer(game) {
         game.player.predicted.bouncyEnergy = Math.min(game.player.predicted.bouncyEnergy+1, conf.MAX_BOUNCY_ENERGY);
     }
 
+    console.log("bouncy energy: ", bouncyEnergyBefore, " -> ", game.player.predicted.bouncyEnergy);
+
+
     // Display pos is slowly corrected to predicted pos
     game.player.prevPos = game.player.pos;
     let disp = _calcDisplacement(game.player.inputState);
@@ -165,8 +161,7 @@ function _updatePlayer(game) {
         correction = correction.scale(conf.PLAYER_SPEED / corrLen);
     }
 
-    //game.player.pos = game.player.pos.add(correction);
-
+    game.player.pos = game.player.pos.add(correction);
 }
 
 function _updateOtherPlayer(player, game) {

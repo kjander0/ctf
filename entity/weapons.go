@@ -2,7 +2,6 @@ package entity
 
 import (
 	"github.com/kjander0/ctf/conf"
-	"github.com/kjander0/ctf/logger"
 	"github.com/kjander0/ctf/mymath"
 )
 
@@ -152,7 +151,6 @@ func checkPlayerHit(world *World, laser *Laser, hitDist float64) (*Player, mymat
 }
 
 func bounce(laser *Laser, hitPos mymath.Vec, normal mymath.Vec) {
-	logger.Debug("bounce: ", hitPos)
 	incident := laser.Line.End.Sub(laser.Line.Start)
 	len := incident.Length()
 	newLen := len - hitPos.Sub(laser.Line.Start).Length()

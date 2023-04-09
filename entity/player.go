@@ -126,6 +126,7 @@ func UpdatePlayers(world *World) {
 		processAckedInputs(world, player)
 		processPredictedInputs(world, player)
 		predictNextInput(world, player)
+		logger.Debug("bouncy energy: ", player.Acked.BouncyEnergy)
 	}
 }
 
@@ -147,7 +148,6 @@ func processAckedInputs(world *World, player *Player) {
 				Dir:   dir,
 				Angle: input.AimAngle,
 			}
-
 			if input.ShootPrimary && player.Acked.Energy >= conf.Shared.LaserEnergyCost {
 				player.Acked.Energy -= conf.Shared.LaserEnergyCost
 				world.NewLasers = append(world.NewLasers, laser)
@@ -165,8 +165,7 @@ func processAckedInputs(world *World, player *Player) {
 }
 
 func processPredictedInputs(world *World, player *Player) {
-	player.Predicted.Pos = player.Acked.Pos
-	player.Predicted.Energy = player.Acked.Energy
+	player.Predicted = player.Acked
 
 	for _, prediction := range player.PredictedInputs.Predicted {
 		disp := calcDisplacement(prediction.input)
