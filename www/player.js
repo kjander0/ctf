@@ -49,6 +49,14 @@ class Player {
     prevPos = new Vec();
     pos = new Vec();
 
+    how does this work for upd?
+    and what about delta encoding? (keep bytes from last message acked, instead of world state)
+
+    replaying 60 ticks is expensive
+    can we eliminate some of the date so not everything needs full replay
+        like data that isnt related to new ack?
+    
+    What about when player dies, they might oscillate between dead and alive
     acked = new PlayerPredicted();
     predicted = new PlayerPredicted();
 }

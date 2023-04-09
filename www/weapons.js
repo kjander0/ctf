@@ -45,15 +45,12 @@ function update(game) {
         if (laser.type === Laser.TYPE_BOUNCY) {
             speed = conf.BOUNCY_SPEED;
         }
-        // TODO: are client and server moving laser at same time on same tick?
         let numberSteps = 1;
         if (!laser.compensated) {
+            // Projectiles are first moved on the tick following their creation
             laser.compensated = true;
-            let tickDiff = game.player.predictedInputs.unacked.length;
-            if (tickDiff < 0) { // client tick wrapped and server tick has not
-                tickDiff += 256;
-            }
-            numberSteps += tickDiff;
+            const tickDiff = game.player.predictedInputs.unacked.length;
+            numberSteps = tickDiff;
             laser.activeTicks += tickDiff;
         }
         for (let j = 0; j < numberSteps; j++) {

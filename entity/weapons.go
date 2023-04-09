@@ -54,7 +54,7 @@ func UpdateProjectiles(world *World) {
 		}
 	}
 
-	// Stage new lasers to be moved forward on the next tick in sync with clients
+	// Stage new lasers to be moved forward on the next tick in sync with the clients
 	world.LaserList = append(world.LaserList, world.NewLasers...)
 }
 
