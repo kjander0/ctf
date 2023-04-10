@@ -19,7 +19,8 @@ class Input {
     static CMD_DOWN = 3;
     static CMD_SHOOT = 4;
     static CMD_SECONDARY = 5;
-    static CMD_LAST = 6; // MUST BE LAST
+    static CMD_TOGGLE_DEBUG = 6;
+    static CMD_LAST = 7; // MUST BE LAST
 
     _commands = [];
     _keyMap = {};
@@ -33,6 +34,7 @@ class Input {
         this._keyMap['d'] = Input.CMD_RIGHT;
         this._keyMap['w'] = Input.CMD_UP;
         this._keyMap['s'] = Input.CMD_DOWN;
+        this._keyMap['p'] = Input.CMD_TOGGLE_DEBUG;
 
         for (let i = 0; i < Input.CMD_LAST; i++) {
             this._commands.push(new Command(i));

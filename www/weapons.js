@@ -117,6 +117,10 @@ function processCollisions(game, laser) {
             return true;
         }
 
+        if (hitPlayer !== null) {
+            return true;
+        }
+
         bounce(laser, hitPos, normal);
     }
 }

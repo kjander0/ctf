@@ -26,16 +26,16 @@ type SharedParams struct {
 var Shared = SharedParams{
 	TickRate:         30,
 	TileSize:         32,
-	PlayerSpeed:      2,
+	PlayerSpeed:      2.25,
 	PlayerRadius:     32,
 	PlayerHealth:     10,
-	MaxLaserEnergy:   70,
-	MaxBouncyEnergy:  180,
+	MaxLaserEnergy:   95,
+	MaxBouncyEnergy:  270,
 	JailTimeTicks:    75,
 	LaserSpeed:       10,
 	LaserTimeTicks:   180,
-	LaserEnergyCost:  10,
-	BouncyEnergyCost: 60,
+	LaserEnergyCost:  18,
+	BouncyEnergyCost: 90,
 	BouncySpeed:      15,
 }
 

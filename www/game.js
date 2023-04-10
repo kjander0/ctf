@@ -2,8 +2,10 @@ import * as conf from "./conf.js";
 import * as player from "./player.js";
 import * as weapons from "./weapons.js";
 import * as net from "./net.js";
+import {Input} from "./input.js";
 
 class Game {
+    doDebug = true;
     clientTick = -1; // 0-255
     serverTick = -1; // from server (0-255)
     accumMs = conf.UPDATE_MS;
@@ -39,6 +41,10 @@ class Game {
     }
 
     _update() {
+        if (this.input.wasActivated(Input.CMD_TOGGLE_DEBUG)) {
+            this.doDebug = !this.doDebug;
+        }
+
         player.sampleInput(this);
         net.sendInput(this);
         // move projectiles before spawning new ones (gives an additional tick for lagg compensation)

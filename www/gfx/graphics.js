@@ -1,6 +1,7 @@
 import {lerpVec, extrapolateVec} from "../interpolate.js";
 import { Vec } from "../math.js";
 import {Tile} from "../map.js";
+import {Laser} from "../weapons.js";
 import * as conf from "../conf.js";
 import { Renderer } from "./renderer.js";
 import { Mesh, Model, VertAttrib} from "./mesh.js";
@@ -221,15 +222,17 @@ class Graphics {
         if (game.map !== null) {
             this.drawLevel(game.map.tileRows);
         }
-
-        this.renderer.setColor(0, 1, 0);
-        this.renderer.drawCircleLine(game.player.acked.pos.x, game.player.acked.pos.y, conf.PLAYER_RADIUS);
-        this.renderer.setColor(0, 0, 1);
-        this.renderer.drawCircleLine(game.player.predicted.pos.x, game.player.predicted.pos.y, conf.PLAYER_RADIUS);
-
-        for (let other of game.otherPlayers) {
+        
+        if (game.doDebug) {
             this.renderer.setColor(0, 1, 0);
-            this.renderer.drawCircleLine(other.acked.pos.x, other.acked.pos.y, conf.PLAYER_RADIUS);
+            this.renderer.drawCircleLine(game.player.acked.pos.x, game.player.acked.pos.y, conf.PLAYER_RADIUS);
+            this.renderer.setColor(0, 0, 1);
+            this.renderer.drawCircleLine(game.player.predicted.pos.x, game.player.predicted.pos.y, conf.PLAYER_RADIUS);
+
+            for (let other of game.otherPlayers) {
+                this.renderer.setColor(0, 1, 0);
+                this.renderer.drawCircleLine(other.acked.pos.x, other.acked.pos.y, conf.PLAYER_RADIUS);
+            }
         }
 
         this.renderer.setColor(1, 0, 0);
@@ -238,7 +241,11 @@ class Graphics {
             for (let i = 0; i < laser.drawPoints.length-1; i++) {
                 const start = laser.drawPoints[i];
                 const end = laser.drawPoints[i+1];
-                this.renderer.drawLine(start, end, 3);
+                let lineWidth = 2;
+                if (laser.type === Laser.TYPE_BOUNCY) {
+                    lineWidth = 3;
+                }
+                this.renderer.drawLine(start, end, lineWidth);
             }
         }
         this.renderer.render(this.camera);

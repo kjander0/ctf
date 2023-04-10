@@ -114,7 +114,6 @@ function _updatePlayer(game) {
     game.player.predicted.set(game.player.acked);
 
     if (game.player.stateChanged) {
-        console.log("state changed");
         game.player.pos.set(game.player.acked.pos);
         game.player.prevPos.set(game.player.acked.pos);
         game.player.stateChanged = false;
@@ -145,9 +144,6 @@ function _updatePlayer(game) {
         game.player.predicted.energy = Math.min(game.player.predicted.energy+1, conf.MAX_LASER_ENERGY);
         game.player.predicted.bouncyEnergy = Math.min(game.player.predicted.bouncyEnergy+1, conf.MAX_BOUNCY_ENERGY);
     }
-
-    console.log("bouncy energy: ", bouncyEnergyBefore, " -> ", game.player.predicted.bouncyEnergy);
-
 
     // Display pos is slowly corrected to predicted pos
     game.player.prevPos = game.player.pos;
