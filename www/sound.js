@@ -1,20 +1,22 @@
-const laser = PIXI.sound.Sound.from({
-    url: 'assets/laser.wav',
-    preload: true,
-});
+const laser = new Audio('assets/laser.wav');
+const bouncy = new Audio('assets/bouncy.wav');
+const hit = new Audio('assets/hit.wav');
 
-const bouncy = PIXI.sound.Sound.from({
-    url: 'assets/bouncy.wav',
-    preload: true,
-});
+function playLaser() {
+    laser.cloneNode(true).play();
+}
 
-const hit = PIXI.sound.Sound.from({
-    url: 'assets/hit.wav',
-    preload: true,
-});
+function playBouncy() {
+    bouncy.cloneNode(true).play();
+}
 
+function playHit() {
+    hit.cloneNode(true).play();
+}
+
+// TODO: cloneNode(true) and play new instance of sound
 export {
-    laser,
-    bouncy,
-    hit,
+    playLaser,
+    playBouncy,
+    playHit,
 };

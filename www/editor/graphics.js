@@ -1,22 +1,14 @@
-import {lerpVec, extrapolateVec} from "../interpolate.js";
 import { Vec } from "../math.js";
 import {Tile} from "../map.js";
-import {Laser} from "../weapons.js";
 import * as conf from "../conf.js";
-import { Renderer } from "./renderer.js";
-import { Mesh, Model, VertAttrib} from "./mesh.js";
-import { Shader } from "./shader.js";
-import { Texture } from "./texture.js";
-import { Camera } from "./camera.js";
+import { Renderer } from "../gfx/renderer.js";
+import { Mesh, Model, VertAttrib} from "../gfx/mesh.js";
+import { Shader } from "../gfx/shader.js";
+import { Texture } from "../gfx/texture.js";
+import { Camera } from "../gfx/camera.js";
 import * as assets from "../assets.js";
 
-const ATTRIB_LIGHT_POS_LOC = 3;
-
-// tree of containers
-
-// TODO
-// - pre-allocate STREAM vbo's for buffer streaming
-class Graphics {
+class EditorGraphics {
     camera = new Camera();
     uiCamera = new Camera();
 
@@ -26,41 +18,7 @@ class Graphics {
 
     screenSize = new Vec();
 
-    // offscreen render textures
-    albedoTex = null;
-    normalTex = null;
-    highlightTex = null;
-    finalTex = null;
-
-    shipAlbedoTex;
-    shipNormalTex;
-
-    // shaders
-    lightsShader;
-    spriteShader;
-    finalShader;
-
     constructor (canvas) {
-        this.canvas = canvas;
-        this.gl = canvas.getContext("webgl2", {
-            alpha: false,
-            depth: false,
-            stencil: false,
-            // TODO: try enable antialias
-        });
-    
-        if (this.gl === null) {
-            throw "could not get webgl2 context";
-        }
-
-        this.gl.disable(this.gl.DEPTH_TEST);
-        this.gl.enable(this.gl.BLEND);
-        this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
-        this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
-        this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
-
-        this.renderer = new Renderer(this.gl);
-
         this.lightsShader = new Shader(this.gl, assets.lightsVertSrc, assets.lightsFragSrc);
         this.spriteShader = new Shader(this.gl, assets.spriteVertSrc, assets.spriteFragSrc);
         this.gammaShader = new Shader(this.gl, assets.texVertSrc, assets.gammaFragSrc);
@@ -198,7 +156,7 @@ class Graphics {
         this.renderer.render(this.uiCamera);
 
         if (game.map !== null) {
-            this._drawLevel(game.map.tileRows);
+            this.drawLevel(game.map.tileRows);
         }
         
         if (game.doDebug) {
@@ -215,34 +173,9 @@ class Graphics {
 
         this.renderer.setColor(1, 0, 0);
         for (let laser of game.laserList) {
-            const startDist = lerpFraction * laser.getSpeed();
-            const endDist = laser.getDrawLength() - (1-lerpFraction) * laser.getSpeed();
-            let totalDist = 0;
             for (let i = 0; i < laser.drawPoints.length-1; i++) {
-                let start = laser.drawPoints[i];
-                let end = laser.drawPoints[i+1];
-                const dir = end.sub(start);
-                const dist = dir.length();
-                Can we simplify this code?
-                const distToStart = startDist - totalDist;
-                if (distToStart > 0) {
-                    if (dist <= distToStart) {
-                        totalDist += dist;
-                        continue;
-                    }
-                    start = start.add(dir.scale(distToStart/dist));
-                }
-
-                const distToEnd = endDist - totalDist;
-                if (distToEnd < 0) {
-                    continue;
-                }
-                if (dist > distToEnd) {
-                    end = end.sub(dir.scale((dist - distToEnd)/dist));
-                }
-                totalDist += dist;
-
-                // TODO: replace below with switch, throwing error if unkown laser type
+                const start = laser.drawPoints[i];
+                const end = laser.drawPoints[i+1];
                 let lineWidth = 2;
                 if (laser.type === Laser.TYPE_BOUNCY) {
                     lineWidth = 3;
@@ -292,51 +225,6 @@ class Graphics {
 
         // TODO: draw loading bouncies as rounded rects that load into place then shine
     }
-
-    _drawLevel(rows) {
-        const p0 = new Vec();
-        const p1 = new Vec();
-        const p2 = new Vec();
-
-        this.renderer.setColor(0.3, 0.3, 0.3);
-        for (let r = 0; r < rows.length; r++) {
-            for (let c = 0; c < rows[r].length; c++) {
-                switch(rows[r][c].type) {
-                    case Tile.WALL:
-                        this.renderer.drawRect(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE);
-                        break;
-                    case Tile.WALL_TRIANGLE:
-                    case Tile.WALL_TRIANGLE_CORNER:
-                        rows[r][c].setTrianglePoints(p0, p1, p2);
-                        this.renderer.drawTriangle(p0, p1, p2);
-                        break;
-                }
-            }
-        }
-    }
-    
-    _reduceLaserDrawLength(laser, targetLength) {
-        let size = 0;
-        for (let i = 0; i < laser.drawPoints.length-1; i++) {
-            let p0 = laser.drawPoints[i];
-            let p1 = laser.drawPoints[i+1];
-            size += p0.distanceTo(p1);
-        }
-    
-        while (size > targetLength) {
-            const diff = size - targetLength;
-            const disp = laser.drawPoints[1].sub(laser.drawPoints[0]);
-            const dispLen = disp.length();
-            if (dispLen <= diff) {
-                size -= dispLen;
-                laser.drawPoints.splice(0, 1);
-                continue;
-            }
-    
-            laser.drawPoints[0] = laser.drawPoints[0].add(disp.scale(diff/dispLen));
-            break;
-        }
-    }
 }
 
-export {Graphics};
+export {EditorGraphics};

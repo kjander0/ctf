@@ -121,10 +121,10 @@ function _updatePlayer(game) {
     }
 
     if (game.player.inputState.doShoot) {
-        sound.laser.play();
+        sound.playLaser();
     }
     if (game.player.inputState.doSecondary) {
-        sound.bouncy.play();
+        sound.playBouncy();
     }
 
     const bouncyEnergyBefore = game.player.predicted.bouncyEnergy;

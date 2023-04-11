@@ -14,7 +14,6 @@ class Laser {
     type;
     playerId;
     line = new Line();
-    debugLine = new Line();
     drawPoints;
     dir = new Vec();
     compensated = false;
@@ -27,6 +26,27 @@ class Laser {
         this.line.end.set(pos);
         this.drawPoints = [new Vec(this.line.start), new Vec(this.line.end)];
         this.dir = new Vec(Math.cos(angle), Math.sin(angle));
+    }
+
+    getSpeed() {
+        switch (this.type) {
+            case Laser.TYPE_LASER:
+                return conf.LASER_SPEED;
+            case Laser.TYPE_BOUNCY:
+                return conf.BOUNCY_SPEED;
+            default:
+                throw "unsupported laser type";
+        }
+    }
+
+    getDrawLength() {
+        let size = 0;
+        for (let i = 0; i < this.drawPoints.length-1; i++) {
+            let p0 = this.drawPoints[i];
+            let p1 = this.drawPoints[i+1];
+            size += p0.distanceTo(p1);
+        }
+        return size;
     }
 }
 
@@ -41,10 +61,6 @@ function update(game) {
 
     for (let i = game.laserList.length-1; i >= 0; i--) {
         let laser = game.laserList[i];
-        let speed = conf.LASER_SPEED;
-        if (laser.type === Laser.TYPE_BOUNCY) {
-            speed = conf.BOUNCY_SPEED;
-        }
         let numberSteps = 1;
         if (!laser.compensated) {
             // Projectiles are first moved on the tick following their creation
@@ -56,35 +72,30 @@ function update(game) {
         for (let j = 0; j < numberSteps; j++) {
             let line = laser.line;
             line.start.set(line.end);
-            line.end = line.end.add(laser.dir.scale(speed));
-            laser.debugLine.start.set(line.start);
-            laser.debugLine.end.set(line.end);
+            line.end = line.end.add(laser.dir.scale(laser.getSpeed()));
             laser.drawPoints[laser.drawPoints.length-1].set(line.end);
             if (processCollisions(game, laser)) {
                 game.laserList[i] = game.laserList[game.laserList.length-1];
                 game.laserList.splice(game.laserList.length-1, 1);
                 break;
             }
-            limitLaserDrawLength(laser);
+            _reduceLaserDrawLength(laser);
         }
     }
 }
 
-function limitLaserDrawLength(laser) {
-    let size = 0;
-    for (let i = 0; i < laser.drawPoints.length-1; i++) {
-        let p0 = laser.drawPoints[i];
-        let p1 = laser.drawPoints[i+1];
-        size += p0.distanceTo(p1);
-    }
+function _reduceLaserDrawLength(laser) {
+    let size = laser.getDrawLength();
 
-    let maxDrawLength = Laser.LASER_DRAW_LENGTH;
+    let targetDrawLength = Laser.LASER_DRAW_LENGTH;
     if (laser.type === Laser.TYPE_BOUNCY) {
-        maxDrawLength = Laser.BOUNCY_DRAW_LENGTH;
+        targetDrawLength = Laser.BOUNCY_DRAW_LENGTH;
     }
+    // Keep an extra segment worth of length for lerping
+    targetDrawLength += laser.getSpeed();
 
-    while (size > maxDrawLength) {
-        const diff = size - maxDrawLength;
+    while (size > targetDrawLength) {
+        const diff = size - targetDrawLength;
         const disp = laser.drawPoints[1].sub(laser.drawPoints[0]);
         const dispLen = disp.length();
         if (dispLen <= diff) {

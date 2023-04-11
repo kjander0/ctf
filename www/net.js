@@ -186,10 +186,10 @@ function _processUpdateMsg(game, decoder) {
     }
 
     if (gotOtherLaser) {
-        sound.laser.play();
+        sound.playLaser();
     }
     if (gotOtherBouncy) {
-        sound.bouncy.play();
+        sound.playBouncy();
     }
 
     let numNewHits = decoder.readUint16();
@@ -198,7 +198,7 @@ function _processUpdateMsg(game, decoder) {
         // TODO: handle hits
     }
     if (numNewHits > 0) {
-        sound.hit.play();
+        sound.playHit();
     }
 }
 
