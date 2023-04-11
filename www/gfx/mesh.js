@@ -45,10 +45,11 @@ class Mesh {
         this.transform = t;
     }
 
-    setColor(r, g, b) {
+    setColor(r, g, b, a=1) {
         this.color[0] = r;
         this.color[1] = g;
         this.color[2] = b;
+        this.color[3] = a;
     }
 
     add(x, y, s, t) {

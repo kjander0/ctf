@@ -18,9 +18,14 @@ import (
 // - remove debug delay/jitter
 
 // WEAPON IDEAS
+// - shift to temporarily boost, draining laser energy
 // - lock on homing missile
+// - orbs with linking laser chain (maybe they wrap walls or orbs explode if laser touches something)
+// - shotgun 4 lasers
+// - flak, slow shell which explodes into multuple lasers
 
 // GRAPHICS IDEAS
+// - particles falling away from lasers (or maybe just special lasers to set them apart, i.e flak)
 // - 3d models rendered 2d, normal maps too
 // - models should have an inner skeleton with different coloured/styled armour (like mobile suits)
 // - global illumination based on surrounding ships/walls

@@ -42,8 +42,8 @@ class Renderer {
         return this.transformStack[this.transformStack.length-1];
     }
     
-    setColor (r, g, b) {
-        this.shapeMesh.setColor(r, g, b);
+    setColor (r, g, b, a=1) {
+        this.shapeMesh.setColor(r, g, b, a);
     }
     
     drawRect(x, y, width, height) {

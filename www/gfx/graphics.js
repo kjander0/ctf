@@ -213,49 +213,56 @@ class Graphics {
             }
         }
 
+        // ========== BEGIN DRAW LASERS ==========
         this.renderer.setColor(1, 0, 0);
         for (let laser of game.laserList) {
-            const startDist = lerpFraction * laser.getSpeed();
-            const endDist = laser.getDrawLength() - (1-lerpFraction) * laser.getSpeed();
-            let totalDist = 0;
+            const drawStartDist = lerpFraction * laser.getSpeed();
+            const drawEndDist = laser.getDrawLength() - (1-lerpFraction) * laser.getSpeed();
+            let dist = 0;
             for (let i = 0; i < laser.drawPoints.length-1; i++) {
                 let start = laser.drawPoints[i];
                 let end = laser.drawPoints[i+1];
-                const dir = end.sub(start);
-                const dist = dir.length();
-                Can we simplify this code?
-                const distToStart = startDist - totalDist;
-                if (distToStart > 0) {
-                    if (dist <= distToStart) {
-                        totalDist += dist;
-                        continue;
-                    }
-                    start = start.add(dir.scale(distToStart/dist));
-                }
+                const segmentDir = end.sub(start);
+                const segmentLen = segmentDir.length();
 
-                const distToEnd = endDist - totalDist;
-                if (distToEnd < 0) {
+                const segmentStartDist = dist;
+                const segmentEndDist = dist + segmentLen;
+
+                if (segmentEndDist <= drawStartDist || segmentStartDist >= drawEndDist) {
+                    dist += segmentLen;
                     continue;
                 }
-                if (dist > distToEnd) {
-                    end = end.sub(dir.scale((dist - distToEnd)/dist));
-                }
-                totalDist += dist;
 
-                // TODO: replace below with switch, throwing error if unkown laser type
-                let lineWidth = 2;
-                if (laser.type === Laser.TYPE_BOUNCY) {
-                    lineWidth = 3;
+                if (segmentStartDist < drawStartDist) {
+                    start = start.add(segmentDir.scale((drawStartDist - segmentStartDist)/segmentLen));
                 }
+
+                if (segmentEndDist > drawEndDist) {
+                    end = end.sub(segmentDir.scale((segmentEndDist - drawEndDist)/segmentLen));
+                }
+                dist += segmentLen;
+
+                let lineWidth;
+                switch (laser.type) {
+                    case Laser.TYPE_LASER:
+                        lineWidth = 2;
+                        break;
+                    case Laser.TYPE_BOUNCY:
+                        lineWidth = 3;
+                        break;
+                    default:
+                        throw "unsupported laser type";
+                }
+                // TODO: decrease laser opacity with distance from end
+                create a version of drawLine (drawLaserLine) which allows sending start/end color.
                 this.renderer.drawLine(start, end, lineWidth);
             }
         }
         this.renderer.render(this.camera);
+        // ========== END DRAW LASERS ==========
 
         // ========== BEGIN DRAW UI ==========
         let border = 10;
-
-
         // Draw laser energy bar
         {
             const barWidth = 80;
