@@ -8,8 +8,8 @@ class Laser {
     static TYPE_BOUNCY = 1;
     static TYPE_MISSILE = 2;
 
-    static LASER_DRAW_LENGTH = 30;
-    static BOUNCY_DRAW_LENGTH = 90;
+    static LASER_DRAW_LENGTH = 45;
+    static BOUNCY_DRAW_LENGTH = 110;
 
     type;
     playerId;

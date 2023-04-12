@@ -219,6 +219,10 @@ class Graphics {
         for (let laser of game.laserList) {
             const drawStartDist = lerpFraction * laser.getSpeed();
             const drawEndDist = laser.getDrawLength() - (1-lerpFraction) * laser.getSpeed();
+            if (drawEndDist < drawStartDist) {
+                console.log(drawStartDist, drawEndDist, laser.getDrawLength(), laser.getSpeed());
+                throw "oops";
+            }
             let dist = 0;
             for (let i = 0; i < laser.drawPoints.length-1; i++) {
                 let start = laser.drawPoints[i];
@@ -254,8 +258,14 @@ class Graphics {
                     default:
                         throw "unsupported laser type";
                 }
-                // TODO: decrease laser opacity with distance from end
-                this._drawLaserLine(this.renderer.shapeMesh, start, end, lineWidth, new Color(0, 0, 0), new Color(1, 0, 0));
+                const startColor = new Color(0, 1, 0, 0);
+                const endColor = new Color(0, 1, 0, 1);
+                const segmentStartFraction = Math.max(0, segmentStartDist / (drawEndDist - drawStartDist));
+                const segmentEndFraction = Math.min(1, segmentEndDist / (drawEndDist - drawStartDist));
+                console.log(segmentStartFraction, segmentEndFraction);
+                const segmentStartColor = startColor.lerp(endColor, segmentStartFraction);
+                const segmentEndColor = startColor.lerp(endColor, segmentEndFraction);
+                this._drawLaserLine(this.renderer.shapeMesh, start, end, lineWidth, segmentStartColor, segmentEndColor);
             }
         }
         this.renderer.render(this.camera);
