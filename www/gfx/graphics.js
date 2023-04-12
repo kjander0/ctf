@@ -6,6 +6,7 @@ import * as conf from "../conf.js";
 import { Renderer } from "./renderer.js";
 import { Color } from "./color.js";
 import { Mesh, Model, VertAttrib} from "./mesh.js";
+import {Emitter, EmitterParams} from "./particle.js";
 import { Shader } from "./shader.js";
 import { Texture } from "./texture.js";
 import { Camera } from "./camera.js";
@@ -40,19 +41,14 @@ class Graphics {
     lightsShader;
     spriteShader;
     finalShader;
+    shapeShader;
+    texShader;
 
-    constructor (canvas) {
+    testEmitter;
+
+    constructor (canvas, gl) {
         this.canvas = canvas;
-        this.gl = canvas.getContext("webgl2", {
-            alpha: false,
-            depth: false,
-            stencil: false,
-            // TODO: try enable antialias
-        });
-    
-        if (this.gl === null) {
-            throw "could not get webgl2 context";
-        }
+        this.gl = gl;
 
         this.gl.disable(this.gl.DEPTH_TEST);
         this.gl.enable(this.gl.BLEND);
@@ -75,6 +71,10 @@ class Graphics {
         resizeObserver.observe(this.canvas);
     
         this._onresize(); // initial resize
+
+        const testParams = new EmitterParams();
+        testParams.startPos = new Vec(100, 100);
+        this.testEmitter = new Emitter(testParams);
     }
 
     _onresize() {
@@ -219,9 +219,8 @@ class Graphics {
         for (let laser of game.laserList) {
             const drawStartDist = lerpFraction * laser.getSpeed();
             const drawEndDist = laser.getDrawLength() - (1-lerpFraction) * laser.getSpeed();
-            if (drawEndDist < drawStartDist) {
-                console.log(drawStartDist, drawEndDist, laser.getDrawLength(), laser.getSpeed());
-                throw "oops";
+            if (drawStartDist >= drawEndDist) {
+                continue;
             }
             let dist = 0;
             for (let i = 0; i < laser.drawPoints.length-1; i++) {
@@ -230,8 +229,8 @@ class Graphics {
                 const segmentDir = end.sub(start);
                 const segmentLen = segmentDir.length();
 
-                const segmentStartDist = dist;
-                const segmentEndDist = dist + segmentLen;
+                let segmentStartDist = dist;
+                let segmentEndDist = dist + segmentLen;
 
                 if (segmentEndDist <= drawStartDist || segmentStartDist >= drawEndDist) {
                     dist += segmentLen;
@@ -240,10 +239,12 @@ class Graphics {
 
                 if (segmentStartDist < drawStartDist) {
                     start = start.add(segmentDir.scale((drawStartDist - segmentStartDist)/segmentLen));
+                    segmentStartDist = drawStartDist;
                 }
 
                 if (segmentEndDist > drawEndDist) {
                     end = end.sub(segmentDir.scale((segmentEndDist - drawEndDist)/segmentLen));
+                    segmentEndDist = drawEndDist;
                 }
                 dist += segmentLen;
 
@@ -260,14 +261,17 @@ class Graphics {
                 }
                 const startColor = new Color(0, 1, 0, 0);
                 const endColor = new Color(0, 1, 0, 1);
-                const segmentStartFraction = Math.max(0, segmentStartDist / (drawEndDist - drawStartDist));
-                const segmentEndFraction = Math.min(1, segmentEndDist / (drawEndDist - drawStartDist));
+                const segmentStartFraction = (segmentStartDist - drawStartDist) / (drawEndDist - drawStartDist);
+                const segmentEndFraction = (segmentEndDist - drawStartDist) / (drawEndDist - drawStartDist);
                 console.log(segmentStartFraction, segmentEndFraction);
                 const segmentStartColor = startColor.lerp(endColor, segmentStartFraction);
                 const segmentEndColor = startColor.lerp(endColor, segmentEndFraction);
                 this._drawLaserLine(this.renderer.shapeMesh, start, end, lineWidth, segmentStartColor, segmentEndColor);
             }
         }
+
+        this.testEmitter.update();
+        this.renderer.drawModel(this.testEmitter.makeModel(this.gl));
         this.renderer.render(this.camera);
         // ========== END DRAW LASERS ==========
 

@@ -1,6 +1,5 @@
 import { checkError } from "./error.js";
 import { VertAttrib, Mesh, Model } from "./mesh.js";
-import { Shader } from "./shader.js";
 import { Transform, Vec } from "../math.js";
 import * as assets from "../assets.js";
 
@@ -13,16 +12,11 @@ class Renderer {
     shapeMesh;
     texMeshMap = new Map();
     models = [];
-    shapeShader;
-    texShader;
 
     constructor(gl) {
         this.gl = gl;
 
         this.fbo = this.gl.createFramebuffer();
-
-        this.shapeShader = new Shader(this.gl, assets.shapeVertSrc, assets.shapeFragSrc);
-        this.texShader = new Shader(this.gl, assets.texVertSrc, assets.texFragSrc);
     
         this.shapeMesh = new Mesh(VertAttrib.POS_BIT | VertAttrib.COLOR_BIT);
     }
@@ -101,13 +95,13 @@ class Renderer {
     render(camera) {
         const disposeList = [];
 
-        const shapeModel = new Model(this.gl, this.shapeMesh, this.gl.TRIANGLES, this.shapeShader);
+        const shapeModel = new Model(this.gl, this.shapeMesh, this.gl.TRIANGLES, assets.shapeShader);
         this.models.push(shapeModel);
         disposeList.push(shapeModel);
         this.shapeMesh.clear();
     
         this.texMeshMap.forEach((mesh, texture) => {
-            const texModel = new Model(this.gl, mesh, this.gl.TRIANGLES, this.texShader, [texture]);
+            const texModel = new Model(this.gl, mesh, this.gl.TRIANGLES, assets.texShader, [texture]);
             this.models.push(texModel);
             disposeList.push(texModel);
             mesh.clear();

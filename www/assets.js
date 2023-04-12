@@ -1,7 +1,4 @@
-//let shipAlbedoTex = gfx.Texture.fromUrl("assets/ship.png", true);
-//let shipNormalTex = gfx.Texture.fromUrl("assets/ship_normal.png", false);
-
-// TODO: reuse this function for conf.js
+import { Shader } from "./gfx/shader.js";
 
 let shipAlbedoImage;
 let shipNormalImage;
@@ -16,9 +13,13 @@ let spriteVertSrc;
 let spriteFragSrc;
 let gammaFragSrc;
 
+let shapeShader;
+let texShader;
+
 const shipPixelRatio = 406/512;
 
-async function loadAssets() {
+async function loadAssets(gl) {
+    // TODO: load assets in parallel
     shapeVertSrc = await requestText("assets/shaders/shape.vert");
     shapeFragSrc = await requestText("assets/shaders/shape.frag");
 
@@ -33,10 +34,14 @@ async function loadAssets() {
 
     gammaFragSrc = await requestText("assets/shaders/gamma.frag");
 
+    shapeShader = new Shader(gl, shapeVertSrc, shapeFragSrc);
+    texShader = new Shader(gl, texVertSrc, texFragSrc);
+
     shipAlbedoImage = await requestImage("assets/ship.png");
     shipNormalImage = await requestImage("assets/ship_normal.png");
 }
 
+// TODO: reuse this function for conf.js
 async function requestText(urlPath) {
     let url = window.location.origin + '/' + urlPath
     return new Promise(function(resolve, reject) {
@@ -71,6 +76,7 @@ export {
     loadAssets,
     requestText,
     requestImage,
+
     shapeVertSrc,
     shapeFragSrc,
     texVertSrc,
@@ -80,6 +86,10 @@ export {
     spriteVertSrc,
     spriteFragSrc,
     gammaFragSrc,
+
+    shapeShader,
+    texShader,
+
     shipAlbedoImage,
     shipNormalImage,
     shipPixelRatio,

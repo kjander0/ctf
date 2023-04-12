@@ -7,6 +7,8 @@ import (
 )
 
 // TODO
+// - load assets in parallel with loading bar
+// - consider using z-depth for layering sprites (maybe X number layers?)
 // - draw lasers underneath tank
 // - 9 sprites for tank movement
 // - Predicted buffer will fill up if client running faster than server. Reconsider adding some throttling.

@@ -17,13 +17,24 @@ import * as asset from "./assets.js";
 
 window.onload = async function() {
     await conf.retrieveConf(); // important to do this first
-    await asset.loadAssets();
 
     const canvas = document.getElementById("glcanvas");
-    const graphics = new Graphics(canvas);
+    const gl = canvas.getContext("webgl2", {
+        alpha: false,
+        depth: false,
+        stencil: false,
+        // TODO: try enable antialias
+    });
+    if (gl === null) {
+        throw "could not get webgl2 context";
+    }
+
+    await asset.loadAssets(gl);
+
+    const graphics = new Graphics(canvas, gl);
     const input = new Input(graphics);
 
-    let game = new Game(graphics, input);
+    const game = new Game(graphics, input);
 
     await net.connect(game);
 

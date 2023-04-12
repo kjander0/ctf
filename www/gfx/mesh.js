@@ -60,6 +60,10 @@ class Mesh {
         this.color[3] = a;
     }
 
+    setData(data) {
+        this.data = data;
+    }
+
     add(x, y, s, t) {
         const pos = this.transform.mul(x, y);
         this.data.push(pos.x, pos.y);
