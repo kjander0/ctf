@@ -1,4 +1,5 @@
 import {Transform, Vec} from "../math.js";
+import {Color} from "./color.js"
 
 class VertAttrib {
     static POS_BIT = 1;
@@ -36,7 +37,7 @@ class Mesh {
     }
 
     clear() {
-        this.color = [1.0, 0.8, 0.5];
+        this.color = [1.0, 0.8, 0.5, 1.0];
         this.transform = new Transform();
         this.data = [];
     }
@@ -46,6 +47,13 @@ class Mesh {
     }
 
     setColor(r, g, b, a=1) {
+        if (r instanceof Color) {
+            this.color[0] = r.r;
+            this.color[1] = r.g;
+            this.color[2] = r.b;
+            this.color[3] = r.a;
+            return;
+        }
         this.color[0] = r;
         this.color[1] = g;
         this.color[2] = b;
@@ -56,7 +64,7 @@ class Mesh {
         const pos = this.transform.mul(x, y);
         this.data.push(pos.x, pos.y);
         if ((this.attribBits & VertAttrib.COLOR_BIT) === VertAttrib.COLOR_BIT) {
-            this.data.push(this.color[0], this.color[1], this.color[2]);
+            this.data.push(this.color[0], this.color[1], this.color[2], this.color[3]);
         }
 
         if ((this.attribBits & VertAttrib.TEX_BIT) === VertAttrib.TEX_BIT) {
@@ -176,7 +184,7 @@ class Model {
 
         let attribs = [new VertAttrib(VertAttrib.POS_LOC, 2, this.gl.FLOAT)];
         if (this.hasAttrib(VertAttrib.COLOR_BIT)) {
-            attribs.push(new VertAttrib(VertAttrib.COLOR_LOC, 3, this.gl.FLOAT));
+            attribs.push(new VertAttrib(VertAttrib.COLOR_LOC, 4, this.gl.FLOAT));
         }
         if (this.hasAttrib(VertAttrib.TEX_BIT)) {
             attribs.push(new VertAttrib(VertAttrib.TEX_LOC, 2, this.gl.FLOAT));

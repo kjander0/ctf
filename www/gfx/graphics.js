@@ -4,6 +4,7 @@ import {Tile} from "../map.js";
 import {Laser} from "../weapons.js";
 import * as conf from "../conf.js";
 import { Renderer } from "./renderer.js";
+import { Color } from "./color.js";
 import { Mesh, Model, VertAttrib} from "./mesh.js";
 import { Shader } from "./shader.js";
 import { Texture } from "./texture.js";
@@ -254,8 +255,7 @@ class Graphics {
                         throw "unsupported laser type";
                 }
                 // TODO: decrease laser opacity with distance from end
-                create a version of drawLine (drawLaserLine) which allows sending start/end color.
-                this.renderer.drawLine(start, end, lineWidth);
+                this._drawLaserLine(this.renderer.shapeMesh, start, end, lineWidth, new Color(0, 0, 0), new Color(1, 0, 0));
             }
         }
         this.renderer.render(this.camera);
@@ -298,6 +298,35 @@ class Graphics {
 
 
         // TODO: draw loading bouncies as rounded rects that load into place then shine
+    }
+
+    _drawLaserLine(mesh, start, end, width, startColor, endColor) {
+        const diff = end.sub(start);
+        const perp = new Vec(-diff.y, diff.x).setLength(width/2);
+        // d----------c
+        // |          |
+        // a----------b
+        const a = start.sub(perp);
+        const b = end.sub(perp);
+        const c = end.add(perp);
+        const d = start.add(perp);
+        mesh.setColor(startColor);
+        mesh.add(a);
+        mesh.setColor(endColor);
+        mesh.add(b);mesh.add(c);
+        mesh.add(c);
+        mesh.setColor(startColor);
+        mesh.add(d);
+        mesh.add(a);
+
+        // triangle end caps
+        if (width > 1) {
+            const capOffset = new Vec(diff).setLength(width/2);
+            mesh.setColor(startColor);
+            mesh.add(a); mesh.add(d); mesh.add(start.sub(capOffset));
+            mesh.setColor(endColor);
+            mesh.add(c); mesh.add(b); mesh.add(end.add(capOffset));
+        }
     }
 
     _drawLevel(rows) {
