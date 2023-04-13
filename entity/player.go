@@ -23,8 +23,8 @@ const (
 
 const (
 	// TODO: these can be shared values if server prediction/correction is made to be the same
-	maxPredictedInputs   = 600 // needs to be large enough to allow catchup of burst of delayed inputs
-	maxMotionPredictions = 5   // too much motion extrapolation causes overshoot
+	maxPredictedInputs   = 6000 // needs to be large enough to allow catchup of burst of delayed inputs
+	maxMotionPredictions = 5    // too much motion extrapolation causes overshoot
 )
 
 type PlayerPredicted struct {
@@ -156,6 +156,16 @@ func processAckedInputs(world *World, player *Player) {
 				laser.Type = ProjTypeBouncy
 				world.NewLasers = append(world.NewLasers, laser)
 			}
+		}
+
+		// If we are acking multiple shots at once we spread them out at least one tick apart so the result
+		// is closer to what the shooter expects. We could try and provide the exact spread, but that might
+		// be too much catchup for oppenents trying to dodge these projectiles.
+
+		firstCatchup := len(world.NewLasers) - 1
+		for i := range world.NewLasers {
+			//logger.Debug("catchup: ", world.LaserList[i].CatchupTicks)
+			world.NewLasers[i].CatchupTicks = firstCatchup - i
 		}
 
 		player.Acked.Energy = mymath.MinInt(conf.Shared.MaxLaserEnergy, player.Acked.Energy+1)

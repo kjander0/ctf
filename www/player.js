@@ -32,7 +32,7 @@ class Player {
     static STATE_JAILED = 1;
     static STATE_ALIVE = 2;
 
-    static MAX_INPUT_PREDICTIONS = 600;
+    static MAX_INPUT_PREDICTIONS = 6000;
     static MAX_DIR_PREDICTIONS = 5;
 
     id;
@@ -103,12 +103,15 @@ function sampleInput(game) {
 }
 
 function update(game) {
-    console.log(game.player.predictedInputs);
     for (let other of game.otherPlayers) {
         _updateOtherPlayer(other, game);
     }
 
     _updatePlayer(game);
+    // TODO: print more to debug netcode, like % unacked that have movement
+    // TODO: also print server side since error might be there!
+    //console.log("client tick: ", game.clientTick, "server tick: ", game.serverTick , "num unacked: ", game.player.predictedInputs.unacked.length);
+    //console.log("acked Y: ", game.player.acked.pos.y, " Y: ", game.player.predicted.pos.y, " dy: ", game.player.acked.pos.y - game.player.predicted.pos.y);
 }
 
 function _updatePlayer(game) {
@@ -170,9 +173,10 @@ function _updateOtherPlayer(player, game) {
     // Predict movement for next tick
     let lastTick = player.predictedDirs.lastTickOrNull();
     if (lastTick === null) {
+        console.log("server tick null");
         lastTick = game.serverTick;
     }
-    player.predictedDirs.predict(player.lastAckedDirNum, lastTick+1);
+    player.predictedDirs.predict(player.lastAckedDirNum, (lastTick+1) % 256);
 }
 
 function _constrainPlayerPos(game, pos) {

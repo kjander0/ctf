@@ -129,8 +129,15 @@ function _processUpdateMsg(game, decoder) {
     const ackPos = decoder.readVec();
     const ackEnergy = decoder.readUint16();
     const ackBouncyEnergy = decoder.readUint16();
-    if (ackedTick != -1 || game.player.stateChanged) {
+    if (ackedTick != -1) {
         game.player.predictedInputs.ack(ackedTick);
+        game.player.acked.pos = ackPos;
+        game.player.acked.energy = ackEnergy;
+        game.player.acked.bouncyEnergy = ackBouncyEnergy;
+    }
+
+    // Even if server is not acking a tick, if state changed we want the latest position
+    if (game.player.stateChanged) {
         game.player.acked.pos = ackPos;
         game.player.acked.energy = ackEnergy;
         game.player.acked.bouncyEnergy = ackBouncyEnergy;

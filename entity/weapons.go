@@ -12,12 +12,13 @@ const (
 )
 
 type Laser struct {
-	Type        uint8
-	PlayerId    uint8
-	Line        mymath.Line
-	Dir         mymath.Vec
-	Angle       float64
-	ActiveTicks int
+	Type         uint8
+	PlayerId     uint8
+	Line         mymath.Line
+	Dir          mymath.Vec
+	Angle        float64
+	ActiveTicks  int
+	CatchupTicks int
 }
 
 func UpdateProjectiles(world *World) {
@@ -43,6 +44,7 @@ func UpdateProjectiles(world *World) {
 		line.Start = line.End
 		line.End = line.End.Add(dir.Scale(speed))
 		world.LaserList[i].Line = line
+		world.LaserList[i].CatchupTicks = 0
 	}
 
 	// Check collisions
@@ -52,6 +54,9 @@ func UpdateProjectiles(world *World) {
 			world.LaserList = world.LaserList[:len(world.LaserList)-1]
 		}
 	}
+
+	Catchup new lasers!!! (re-use code above that advances lasers forward)
+	* float64(world.LaserList[i].CatchupTicks+1)
 
 	// Stage new lasers to be moved forward on the next tick in sync with the clients
 	world.LaserList = append(world.LaserList, world.NewLasers...)

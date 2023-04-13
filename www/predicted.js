@@ -26,13 +26,18 @@ class Predicted {
         if (isNaN(tick)) {
             throw "bad tick parameter"
         }
+        let found = false;
         let numAcked = 0;
         for (let h of this.unacked) {
             if (h.tick === tick) {
+                found = true;
                 numAcked++;
                 break;
             }
             numAcked++;
+        }
+        if (!found) {
+            console.log("predicted not found: ", tick);
         }
         this.unacked.splice(0, numAcked);
         return numAcked;
