@@ -32,7 +32,7 @@ class Player {
     static STATE_JAILED = 1;
     static STATE_ALIVE = 2;
 
-    static MAX_INPUT_PREDICTIONS = 60;
+    static MAX_INPUT_PREDICTIONS = 600;
     static MAX_DIR_PREDICTIONS = 5;
 
     id;
@@ -103,6 +103,7 @@ function sampleInput(game) {
 }
 
 function update(game) {
+    console.log(game.player.predictedInputs);
     for (let other of game.otherPlayers) {
         _updateOtherPlayer(other, game);
     }
@@ -126,8 +127,6 @@ function _updatePlayer(game) {
     if (game.player.inputState.doSecondary) {
         sound.playBouncy();
     }
-
-    const bouncyEnergyBefore = game.player.predicted.bouncyEnergy;
 
     for (let unacked of game.player.predictedInputs.unacked) {
         let inputState = unacked.val;

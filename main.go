@@ -22,12 +22,17 @@ import (
 // - sanitise user input (assume bytes could be anything)
 // - remove debug delay/jitter
 
+// MVP FEATURES
+// - choose name (appears below player)
+// - stats (kills, deaths, assists)
+// - king of the hill, or ctf goal
+
 // WEAPON IDEAS
 // - shift to temporarily boost, draining laser energy
 // - lock on homing missile
 // - orbs with linking laser chain (maybe they wrap walls or orbs explode if laser touches something)
 // - shotgun 4 lasers
-// - flak, slow shell which explodes into multuple lasers
+// - flak/firework, slow shell which explodes into multuple lasers
 
 // GRAPHICS IDEAS
 // - particles falling away from lasers (or maybe just special lasers to set them apart, i.e flak)
