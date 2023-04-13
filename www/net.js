@@ -3,6 +3,7 @@ import { Player} from "./player.js";
 import { Laser } from "./weapons.js";
 import { Map } from "./map.js";
 import * as sound from "./sound.js";
+import * as particle from "./gfx/particle.js";
 
 let socket;
 
@@ -195,6 +196,8 @@ function _processUpdateMsg(game, decoder) {
     let numNewHits = decoder.readUint16();
     for (let i = 0; i < numNewHits; i++) {
         let hitPos = decoder.readVec();
+        const emitter = new particle.Emitter(hitPos, particle.sparkEmitterParams);
+        game.emitterList.push(emitter);
         // TODO: handle hits
     }
     if (numNewHits > 0) {

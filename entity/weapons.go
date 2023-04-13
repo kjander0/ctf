@@ -83,7 +83,6 @@ func processCollisions(world *World, laserIndex int) bool {
 		}
 
 		if world.LaserList[laserIndex].Type != ProjTypeBouncy {
-			world.NewHits = append(world.NewHits, hitPos)
 			return true
 		}
 

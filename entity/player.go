@@ -23,6 +23,8 @@ const (
 
 const (
 	// TODO: these can be shared values if server prediction/correction is made to be the same
+	netcode has problems, especially when maxPredictedInputs is low enough that frames are dropped
+	eventually feels like there is no prediction at all
 	maxPredictedInputs   = 60 // needs to be large enough to allow catchup of burst of delayed inputs
 	maxMotionPredictions = 5  // too much motion extrapolation causes overshoot
 )

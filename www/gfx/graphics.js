@@ -6,7 +6,6 @@ import * as conf from "../conf.js";
 import { Renderer } from "./renderer.js";
 import { Color } from "./color.js";
 import { Mesh, Model, VertAttrib} from "./mesh.js";
-import {Emitter, EmitterParams} from "./particle.js";
 import { Shader } from "./shader.js";
 import { Texture } from "./texture.js";
 import { Camera } from "./camera.js";
@@ -44,8 +43,6 @@ class Graphics {
     shapeShader;
     texShader;
 
-    testEmitter;
-
     constructor (canvas, gl) {
         this.canvas = canvas;
         this.gl = gl;
@@ -71,10 +68,6 @@ class Graphics {
         resizeObserver.observe(this.canvas);
     
         this._onresize(); // initial resize
-
-        const testParams = new EmitterParams();
-        testParams.startPos = new Vec(100, 100);
-        this.testEmitter = new Emitter(testParams);
     }
 
     _onresize() {
@@ -263,16 +256,18 @@ class Graphics {
                 const endColor = new Color(0, 1, 0, 1);
                 const segmentStartFraction = (segmentStartDist - drawStartDist) / (drawEndDist - drawStartDist);
                 const segmentEndFraction = (segmentEndDist - drawStartDist) / (drawEndDist - drawStartDist);
-                console.log(segmentStartFraction, segmentEndFraction);
                 const segmentStartColor = startColor.lerp(endColor, segmentStartFraction);
                 const segmentEndColor = startColor.lerp(endColor, segmentEndFraction);
                 this._drawLaserLine(this.renderer.shapeMesh, start, end, lineWidth, segmentStartColor, segmentEndColor);
             }
         }
 
-        this.testEmitter.update();
-        this.renderer.drawModel(this.testEmitter.makeModel(this.gl));
+        for (let emitter of game.emitterList) {
+            this.renderer.drawModel(emitter.makeModel(this.gl));
+        }
+        
         this.renderer.render(this.camera);
+
         // ========== END DRAW LASERS ==========
 
         // ========== BEGIN DRAW UI ==========

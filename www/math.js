@@ -9,6 +9,10 @@ class Vec {
         }
     }
 
+    static fromAngleRads(angleRads) {
+        return new Vec(Math.cos(angleRads), Math.sin(angleRads));
+    }
+
     set(x, y) {
         if (x instanceof Vec) {
             this.x = x.x;

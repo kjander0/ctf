@@ -7,6 +7,7 @@ import (
 )
 
 // TODO
+// - allocate all short lived javascript objects up front (Vec, Transform, Particle, Color, etc)
 // - load assets in parallel with loading bar
 // - consider using z-depth for layering sprites (maybe X number layers?)
 // - draw lasers underneath tank

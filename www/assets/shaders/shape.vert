@@ -9,4 +9,6 @@ void main() {
     vColor = aColor;
     vec2 screenPos = (uCamMatrix * vec3(aVertexPosition, 1)).xy;
     gl_Position = uProjMatrix * vec4(screenPos, 0, 1);
+
+    gl_PointSize = 1.0; // TODO: remove this once we have better method of drawing particles
 }

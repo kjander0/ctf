@@ -2,7 +2,9 @@ import * as conf from "./conf.js";
 import * as player from "./player.js";
 import * as weapons from "./weapons.js";
 import * as net from "./net.js";
+import {Vec} from "./math.js";
 import {Input} from "./input.js";
+import {Emitter, EmitterParams} from "./gfx/particle.js";
 
 class Game {
     doDebug = true;
@@ -16,6 +18,7 @@ class Game {
     player = new player.Player();
     otherPlayers = [];
     laserList = [];
+    emitterList = [];
 
     constructor(graphics, input) {
         this.graphics = graphics;
@@ -43,6 +46,13 @@ class Game {
     _update() {
         if (this.input.wasActivated(Input.CMD_TOGGLE_DEBUG)) {
             this.doDebug = !this.doDebug;
+        }
+
+        for (let i = this.emitterList.length-1; i >= 0; i--) { // loop backwards for removing elements
+            if (!this.emitterList[i].update()) {
+                this.emitterList.splice(i, 1);
+            }
+            
         }
 
         player.sampleInput(this);
