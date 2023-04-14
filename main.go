@@ -7,6 +7,7 @@ import (
 )
 
 // TODO
+// - handle user leaving tab (updates stop being called), maybe ignore net updates during this time and reset predicted buffers etc
 // - tune max predictions on client and server to good values
 // - display fps, ping, packet drop (+- stddev)
 // - allocate all short lived javascript objects up front (Vec, Transform, Particle, Color, etc)

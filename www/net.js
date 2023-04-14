@@ -109,13 +109,6 @@ function _processInitMsg(game, decoder) {
 }
 
 function _processUpdateMsg(game, decoder) {
-    TODO
-    // We might receive more than one of these messages in a tick.
-    // This is a problem because all the lasers just get pooled together.
-    // - catchup all lasers to acount for the tick skip?
-    // - would anything else need catchup?
-    // - would world state history help? 
-
     let flags = decoder.readUint8();
 
     game.serverTick = decoder.readUint8();
@@ -175,7 +168,6 @@ function _processUpdateMsg(game, decoder) {
     }
 
     let numNewLasers = decoder.readUint16();
-    console.log(numNewLasers);
     let gotOtherLaser = false;
     let gotOtherBouncy = false;
     for (let i = 0; i < numNewLasers; i++) {
@@ -193,10 +185,7 @@ function _processUpdateMsg(game, decoder) {
         }
         let laserEnd = decoder.readVec();
         let aimAngle = decoder.readFloat64();
-        let newLaser = new Laser(type, id, player.acked.pos, aimAngle);
-        if (player === game.player) {
-            newLaser.compensated = true;
-        }
+        let newLaser = new Laser(type, id, player.acked.pos, aimAngle, game.serverTick);
         newLaser.line.end.set(laserEnd);
         console.log("new: ", newLaser.line.end.x, newLaser.line.end.y);
         game.laserList.push(newLaser);
