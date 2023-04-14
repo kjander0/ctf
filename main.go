@@ -7,6 +7,7 @@ import (
 )
 
 // TODO
+// - tune max predictions on client and server to good values
 // - display fps, ping, packet drop (+- stddev)
 // - allocate all short lived javascript objects up front (Vec, Transform, Particle, Color, etc)
 // - load assets in parallel with loading bar

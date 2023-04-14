@@ -2,6 +2,7 @@ package entity
 
 import (
 	"github.com/kjander0/ctf/conf"
+	"github.com/kjander0/ctf/logger"
 	"github.com/kjander0/ctf/mymath"
 )
 
@@ -21,6 +22,17 @@ type Laser struct {
 	CatchupTicks int
 }
 
+func LaserSpeed(laserType uint8) float64 {
+	switch laserType {
+	case ProjTypeLaser:
+		return conf.Shared.LaserSpeed
+	case ProjTypeBouncy:
+		return conf.Shared.BouncySpeed
+	}
+	logger.Panic("unsupported laser type")
+	return -1
+}
+
 func UpdateProjectiles(world *World) {
 	world.NewHits = world.NewHits[:0]
 
@@ -35,16 +47,7 @@ func UpdateProjectiles(world *World) {
 
 	// Move lasers forward
 	for i := range world.LaserList {
-		speed := conf.Shared.LaserSpeed
-		if world.LaserList[i].Type == ProjTypeBouncy {
-			speed = conf.Shared.BouncySpeed
-		}
-		line := world.LaserList[i].Line
-		dir := world.LaserList[i].Dir
-		line.Start = line.End
-		line.End = line.End.Add(dir.Scale(speed))
-		world.LaserList[i].Line = line
-		world.LaserList[i].CatchupTicks = 0
+		advanceLaser(&world.LaserList[i], 1)
 	}
 
 	// Check collisions
@@ -55,11 +58,24 @@ func UpdateProjectiles(world *World) {
 		}
 	}
 
-	Catchup new lasers!!! (re-use code above that advances lasers forward)
-	* float64(world.LaserList[i].CatchupTicks+1)
+	// Catchup new lasers
+	for i := range world.NewLasers {
+		laser := &world.NewLasers[i]
+		advanceLaser(laser, laser.CatchupTicks)
+		laser.CatchupTicks = 0
+	}
 
-	// Stage new lasers to be moved forward on the next tick in sync with the clients
+	// Stage new lasers to be first moved on the next tick (same as client) TODO: verify this by printing!!!
 	world.LaserList = append(world.LaserList, world.NewLasers...)
+}
+
+func advanceLaser(laser *Laser, count int) {
+	speed := LaserSpeed(laser.Type)
+	dir := laser.Dir
+	laser.Line.Start = laser.Line.End
+	disp := speed * float64(count)
+	laser.Line.End = laser.Line.End.Add(dir.Scale(disp))
+	laser.CatchupTicks = 0
 }
 
 // Returns true if laser has hit a wall and should be destroyed

@@ -158,18 +158,19 @@ func processAckedInputs(world *World, player *Player) {
 			}
 		}
 
-		// If we are acking multiple shots at once we spread them out at least one tick apart so the result
-		// is closer to what the shooter expects. We could try and provide the exact spread, but that might
-		// be too much catchup for oppenents trying to dodge these projectiles.
-
-		firstCatchup := len(world.NewLasers) - 1
-		for i := range world.NewLasers {
-			//logger.Debug("catchup: ", world.LaserList[i].CatchupTicks)
-			world.NewLasers[i].CatchupTicks = firstCatchup - i
-		}
-
 		player.Acked.Energy = mymath.MinInt(conf.Shared.MaxLaserEnergy, player.Acked.Energy+1)
 		player.Acked.BouncyEnergy = mymath.MinInt(conf.Shared.MaxBouncyEnergy, player.Acked.BouncyEnergy+1)
+	}
+
+	// If we are acking multiple shots at once we spread them out at least one tick apart so the result
+	// is closer to what the shooter expects. We could try and provide the exact spread, but that might
+	// be too much catchup for oppenents trying to dodge these projectiles.
+	firstCatchup := len(world.NewLasers) - 1
+	if len(world.NewLasers) > 0 {
+		logger.Debug("num new: ", len(world.NewLasers))
+	}
+	for i := range world.NewLasers {
+		world.NewLasers[i].CatchupTicks = firstCatchup - i
 	}
 }
 
