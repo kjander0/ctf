@@ -35,7 +35,7 @@ class Game {
         }
 
         this.accumMs += deltaMs;
-        if (this.accumMs >= conf.UPDATE_MS) {
+        if (this.accumMs >= conf.UPDATE_MS * 1.25) {
             this.accumMs = Math.min(this.accumMs - conf.UPDATE_MS, conf.UPDATE_MS);
             this._update();
             this.clientTick = (this.clientTick + 1) % 256;

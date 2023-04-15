@@ -13,13 +13,12 @@ const (
 )
 
 type Laser struct {
-	Type         uint8
-	PlayerId     uint8
-	Line         mymath.Line
-	Dir          mymath.Vec
-	Angle        float64
-	ActiveTicks  int
-	CatchupTicks int
+	Type        uint8
+	PlayerId    uint8
+	Line        mymath.Line
+	Dir         mymath.Vec
+	Angle       float64
+	ActiveTicks int
 }
 
 func LaserSpeed(laserType uint8) float64 {
@@ -36,7 +35,10 @@ func LaserSpeed(laserType uint8) float64 {
 func UpdateProjectiles(world *World) {
 	world.NewHits = world.NewHits[:0]
 
-	// Remove old lasers
+	// Stage new lasers (they get advanced forward on same tick they were created)
+	world.LaserList = append(world.LaserList, world.NewLasers...)
+
+	// Increment activeTicks count and remove old lasers
 	for i := len(world.LaserList) - 1; i >= 0; i-- {
 		world.LaserList[i].ActiveTicks += 1
 		if world.LaserList[i].ActiveTicks > conf.Shared.LaserTimeTicks {
@@ -47,7 +49,12 @@ func UpdateProjectiles(world *World) {
 
 	// Move lasers forward
 	for i := range world.LaserList {
-		advanceLaser(&world.LaserList[i], 1)
+		laser := &world.LaserList[i]
+		speed := LaserSpeed(laser.Type)
+		dir := laser.Dir
+		laser.Line.Start = laser.Line.End
+		disp := speed
+		laser.Line.End = laser.Line.End.Add(dir.Scale(disp))
 	}
 
 	// Check collisions
@@ -57,25 +64,6 @@ func UpdateProjectiles(world *World) {
 			world.LaserList = world.LaserList[:len(world.LaserList)-1]
 		}
 	}
-
-	// Catchup new lasers
-	for i := range world.NewLasers {
-		laser := &world.NewLasers[i]
-		advanceLaser(laser, laser.CatchupTicks)
-		laser.CatchupTicks = 0
-	}
-
-	// Stage new lasers to be first moved on the next tick (same as client) TODO: verify this by printing!!!
-	world.LaserList = append(world.LaserList, world.NewLasers...)
-}
-
-func advanceLaser(laser *Laser, count int) {
-	speed := LaserSpeed(laser.Type)
-	dir := laser.Dir
-	laser.Line.Start = laser.Line.End
-	disp := speed * float64(count)
-	laser.Line.End = laser.Line.End.Add(dir.Scale(disp))
-	laser.CatchupTicks = 0
 }
 
 // Returns true if laser has hit a wall and should be destroyed

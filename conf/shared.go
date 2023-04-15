@@ -33,7 +33,7 @@ var Shared = SharedParams{
 	MaxBouncyEnergy:  270,
 	JailTimeTicks:    75,
 	LaserSpeed:       10,
-	LaserTimeTicks:   180,
+	LaserTimeTicks:   60,
 	LaserEnergyCost:  18,
 	BouncyEnergyCost: 90,
 	BouncySpeed:      15,

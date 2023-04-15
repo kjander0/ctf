@@ -227,8 +227,8 @@ func prepareWorldUpdate(world *entity.World, playerIndex int) []byte {
 		laser := world.NewLasers[i]
 		encoder.WriteUint8(laser.Type)
 		encoder.WriteUint8(laser.PlayerId)
+		encoder.WriteVec(laser.Line.Start)
 		encoder.WriteVec(laser.Line.End)
-		logger.Debug("laser end: ", laser.Line.End)
 		encoder.WriteFloat64(laser.Angle)
 		numNewLasers += 1
 	}

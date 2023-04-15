@@ -16,8 +16,8 @@ class Laser {
     line = new Line();
     drawPoints;
     dir = new Vec();
-    compensated = false;
     activeTicks = 0;
+    compensated = false;
     startServerTick;
 
     constructor(type, playerId, pos, angle, serverTick) {
@@ -64,16 +64,28 @@ function update(game) {
     for (let i = game.laserList.length-1; i >= 0; i--) {
         let laser = game.laserList[i];
         let numberSteps = 1;
-        if (!laser.compensated) {
-            DONT COMPENSATE PLAYER's own lasers
-            // Projectiles are first moved on the tick following their creation
+        if (!laser.compensated) { // one off lag compensation of projectiles
             laser.compensated = true;
-            const tickDiff = game.player.predictedInputs.unacked.length;
-            numberSteps = tickDiff;
+
+            // For lasers from other players we fast forward them to account for how far ahead we
+            // have predicted our own movement. Preferences laser location relative to us, versus relative
+            // to other players.
+            if (laser.playerId !== game.player.id) {
+                const tickDiff = game.player.predictedInputs.unacked.length-1;
+                numberSteps += tickDiff;
+                laser.activeTicks += tickDiff;
+            }
+            
+            // Fast forward lasers to the current tick (lasers can be older if we received multiple messages
+            // on the same client tick)
+            let tickDiff = game.serverTick - laser.startServerTick;
+            if (tickDiff < 0) { // game.serverTick wrapped > 255
+                tickDiff += 256;
+            }
+            numberSteps += tickDiff;
             laser.activeTicks += tickDiff;
         }
-        Do fastforward player laser based on server tick difference (account for wrap around)
-        - reuse function for comparing server ticks
+
         for (let j = 0; j < numberSteps; j++) {
             let line = laser.line;
             line.start.set(line.end);

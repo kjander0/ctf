@@ -183,11 +183,12 @@ function _processUpdateMsg(game, decoder) {
                 gotOtherBouncy = true;
             }
         }
+        let laserStart = decoder.readVec();
         let laserEnd = decoder.readVec();
         let aimAngle = decoder.readFloat64();
         let newLaser = new Laser(type, id, player.acked.pos, aimAngle, game.serverTick);
+        newLaser.line.start.set(laserStart);
         newLaser.line.end.set(laserEnd);
-        console.log("new: ", newLaser.line.end.x, newLaser.line.end.y);
         game.laserList.push(newLaser);
     }
 
