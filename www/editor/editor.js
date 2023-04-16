@@ -14,6 +14,76 @@ let gl;
 let camDir = new Vec();
 let camPos = new Vec();
 let screenSize = new Vec();
+let frame;
+let selectedTileType = Tile.WALL;
+
+class Button {
+    pos = new Vec();
+    size;
+
+    constructor(size) {
+        this.size = new Vec(size);
+    }
+
+    onmousedown(x, y) {
+        console.log("button onpress()");
+    }
+
+    ondraw() {
+        console.log("button ondraw()");
+    }
+}
+
+class Frame {
+    pos;
+    size;
+    margin;
+
+    children = [];
+
+    constructor(pos, size, margin=10) {
+        this.pos = new Vec(pos);
+        this.size = new Vec(size);
+        this.margin = margin;
+    }
+
+    addChild(child) {
+        this.children.push(child);
+    }
+
+    onmousedown(x, y) {
+        for (let child of this.children) {
+            if (x > child.pos.x && x < child.pos.x + child.size.x) {
+                if (y > child.pos.y && child.pos.y + child.size.y) {
+                    child.onmousedown(x, y);
+                }
+            }
+        }
+    }
+
+    onresize(width, height) {
+        this.size.set(width, height);
+
+        let contentWidth = this.children.length * this.margin;
+        for (let child of this.children) {
+            contentWidth += child.size.x;
+        }
+        
+        let childX = (this.size.x - contentWidth)/2;
+        for (let child of this.children) {
+            child.pos.x = childX;
+            child.pos.y = this.margin;
+            childX += this.margin + child.size.x;
+        }
+    }
+
+    ondraw() {
+        for (let child of this.children) {
+            child.ondraw();
+        }
+    }
+}
+
 
 window.onload = async function() {
     await conf.retrieveConf(); // important to do this first
@@ -39,6 +109,8 @@ window.onload = async function() {
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
     renderer = new Renderer(gl);
+    initUI();
+    loadMap();
 
     document.addEventListener("keydown", (event) => onKeyDown(event));
     document.addEventListener("keyup", (event) => onKeyUp(event));
@@ -51,8 +123,6 @@ window.onload = async function() {
     resizeObserver.observe(canvas);
     onresize(); // initial resize
 
-    loadMap();
-
     function onFrame() {
         update();
         render();
@@ -60,6 +130,45 @@ window.onload = async function() {
     }
     window.requestAnimationFrame(onFrame);
 };
+
+function initUI() {
+    frame = new Frame(new Vec(), screenSize);
+    const buttonSize = new Vec(50, 50);
+    const wallButton = new Button(buttonSize);
+    const offset = (wallButton.size.x - conf.TILE_SIZE) / 2;
+    wallButton.ondraw = () => {
+        renderer.setColor(1, 1, 1);
+        renderer.drawRect(wallButton.pos.x, wallButton.pos.y, wallButton.size.x, wallButton.size.y);
+        renderer.setColor(0.3, 0.3, 0.3);
+        renderer.drawRect(wallButton.pos.x + offset, wallButton.pos.y + offset, conf.TILE_SIZE, conf.TILE_SIZE);
+    }
+
+    const wallTriangle = new Button(buttonSize);
+    wallTriangle.ondraw = () => {
+        renderer.setColor(1, 1, 1);
+        renderer.drawRect(wallTriangle.pos.x, wallTriangle.pos.y, wallTriangle.size.x, wallTriangle.size.y);
+        renderer.setColor(0.3, 0.3, 0.3);
+        const p0 = wallTriangle.pos.addXY(offset, offset);
+        const p1 = p0.addXY(conf.TILE_SIZE, 0);
+        const p2 = p0.addXY(conf.TILE_SIZE/2, conf.TILE_SIZE/2);
+        renderer.drawTriangle(p0, p1, p2);
+    }
+
+    const wallCorner = new Button(buttonSize);
+    wallCorner.ondraw = () => {
+        renderer.setColor(1, 1, 1);
+        renderer.drawRect(wallCorner.pos.x, wallCorner.pos.y, wallCorner.size.x, wallCorner.size.y);
+        renderer.setColor(0.3, 0.3, 0.3);
+        const p0 = wallCorner.pos.addXY(offset, offset);
+        const p1 = p0.addXY(conf.TILE_SIZE, 0);
+        const p2 = p0.addXY(0, conf.TILE_SIZE);
+        renderer.drawTriangle(p0, p1, p2);
+    }
+
+    frame.addChild(wallButton);
+    frame.addChild(wallTriangle);
+    frame.addChild(wallCorner);
+}
 
 function loadMap() {
     let rawRows = [
@@ -105,6 +214,8 @@ function onresize() {
 
     screenSize.set(gl.drawingBufferWidth, gl.drawingBufferHeight);
 
+    frame.onresize(screenSize.x, screenSize.y);
+
     gl.viewport(0, 0, screenSize.x, screenSize.y);
 }
 
@@ -114,7 +225,6 @@ function onKeyDown(event) {
     }
 
     let key = event.key.toLowerCase();
-    console.log(key);
     switch (key) {
         case 'w':
             camDir.y = 1;
@@ -137,7 +247,6 @@ function onKeyUp(event) {
     }
 
     let key = event.key.toLowerCase();
-    console.log(key);
     switch (key) {
         case 'w':
             camDir.y = 0;
@@ -157,43 +266,35 @@ function onKeyUp(event) {
     }
 }
 
-function _relPos(clientX, clientY) {
-    const clientRect = this.graphics.canvas.getBoundingClientRect();
-    return new Vec(clientX / clientRect.width * this.graphics.screenSize.x, (1 - clientY / clientRect.height) *  this.graphics.screenSize.y);
+function eventToWorldPos(clientX, clientY) {
+    const clientRect = canvas.getBoundingClientRect();
+    const relPos = new Vec(clientX / clientRect.width * screenSize.x, (1 - clientY / clientRect.height) *  screenSize.y);
+    const aimPos = camera.unproject(relPos);
+    return aimPos;
+}
+
+function worldToTileCoords(worldPos) {
+    return [Math.floor(worldPos.y / conf.TILE_SIZE), Math.floor(worldPos.x / conf.TILE_SIZE)];
+}
+
+function tileAtWorldPos(worldPos) {
+    const [row, col] = worldToTileCoords(worldPos);
+    if (row < 0 || row >= rows.length || col < 0 || col >= rows[row].length) {
+        return null;
+    }
+    return rows[row][col];
 }
 
 function onMouseDown(event) {
-    // if (this._doRecord) {
-    //     this._recordedEvents.push(event);
-    //     this._didRecordEvent = true;
-    // }
-
-    // let cmdIndex = Input.CMD_SHOOT;
-    // if (event.button === 2) {
-    //     cmdIndex = Input.CMD_SECONDARY;
-    // }
-    // let cmd = this._commands[cmdIndex];
-    // if (cmd === undefined) {
-    //     return;
-    // }
-
-    // cmd.mousePos = this._relPos(event.clientX, event.clientY);
-    // cmd.active = true;
-    // cmd.wasActivated = true;
-    // cmd._pressed = true;
+    const worldPos = eventToWorldPos(event.clientX, event.clientY);
+    const tile = tileAtWorldPos(worldPos);
+    if (tile === null) {
+        return;
+    }
+    tile.type = selectedTileType;
 }
 
 function onMouseUp(event) {
-    // let cmdIndex = Input.CMD_SHOOT;
-    // if (event.button === 2) {
-    //     cmdIndex = Input.CMD_SECONDARY;
-    // }
-    // let cmd = this._commands[cmdIndex];
-    // if (cmd === undefined) {
-    //     return;
-    // }
-    // cmd.mousePos = this._relPos(event.clientX, event.clientY);
-    // cmd._pressed = false;
 }
 
 function update() {
@@ -201,6 +302,7 @@ function update() {
         camPos = camPos.add(camDir.resize(conf.TILE_SIZE));
     }
     camera.update(camPos.x, camPos.y, screenSize.x, screenSize.y);
+    uiCamera.update(screenSize.x/2, screenSize.y/2, screenSize.x, screenSize.y);
 }
 
 function render() {
@@ -228,4 +330,8 @@ function render() {
     }
 
     renderer.render(camera);
+
+    // ========== UI RENDERING ==========
+    frame.ondraw();
+    renderer.render(uiCamera);
 }
