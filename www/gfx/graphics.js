@@ -252,8 +252,8 @@ class Graphics {
                     default:
                         throw "unsupported laser type";
                 }
-                const startColor = new Color(0, 1, 0, 0);
-                const endColor = new Color(0, 1, 0, 1);
+                const startColor = new Color(1, 0, 0, 0);
+                const endColor = new Color(1, 0.2, 0.2, 1);
                 const segmentStartFraction = (segmentStartDist - drawStartDist) / (drawEndDist - drawStartDist);
                 const segmentEndFraction = (segmentEndDist - drawStartDist) / (drawEndDist - drawStartDist);
                 const segmentStartColor = startColor.lerp(endColor, segmentStartFraction);

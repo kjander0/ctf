@@ -20,10 +20,16 @@ class Input {
     static CMD_SHOOT = 4;
     static CMD_SECONDARY = 5;
     static CMD_TOGGLE_DEBUG = 6;
-    static CMD_LAST = 7; // MUST BE LAST
+    static CMD_TOGGLE_RECORD = 7;
+    static CMD_LAST = 8; // MUST BE LAST
 
     _commands = [];
     _keyMap = {};
+
+    _doRecord = false;
+    _recordedEvents = [];
+    _didRecordEvent = false;
+    _playbackIndex = 0;
 
     graphics;
 
@@ -35,6 +41,8 @@ class Input {
         this._keyMap['w'] = Input.CMD_UP;
         this._keyMap['s'] = Input.CMD_DOWN;
         this._keyMap['p'] = Input.CMD_TOGGLE_DEBUG;
+        this._keyMap['r'] = Input.CMD_TOGGLE_RECORD;
+
 
         for (let i = 0; i < Input.CMD_LAST; i++) {
             this._commands.push(new Command(i));
@@ -49,6 +57,13 @@ class Input {
             event.preventDefault();
             return false;
         }, false);
+    }
+
+    toggleRecord() {
+        if (!this._doRecord) {
+            this._recordedEvents = [];
+        }
+        this._doRecord = !this._doRecord;
     }
 
     getCommand(cmdIndex) {
@@ -67,7 +82,13 @@ class Input {
         if (event.repeat) {
             return
         }
+
         let key = event.key.toLowerCase();
+        if (this._doRecord && this._keyMap[key] !== Input.CMD_TOGGLE_RECORD) {
+            this._recordedEvents.push(event);
+            this._didRecordEvent = true;
+        }
+
         let cmdIndex = this._keyMap[key];
         if (cmdIndex === undefined) {
             return;
@@ -85,7 +106,13 @@ class Input {
         if (event.repeat) {
             return
         }
+        
         let key = event.key.toLowerCase();
+        if (this._doRecord && this._keyMap[key] !== Input.CMD_TOGGLE_RECORD) {
+            this._recordedEvents.push(event);
+            this._didRecordEvent = true;
+        }
+
         let cmdIndex = this._keyMap[key];
         if (cmdIndex === undefined) {
             return;
@@ -103,6 +130,11 @@ class Input {
     }
     
     _onMouseDown(event) {
+        if (this._doRecord) {
+            this._recordedEvents.push(event);
+            this._didRecordEvent = true;
+        }
+
         let cmdIndex = Input.CMD_SHOOT;
         if (event.button === 2) {
             cmdIndex = Input.CMD_SECONDARY;
@@ -119,6 +151,11 @@ class Input {
     }
     
     _onMouseUp(event) {
+        if (this._doRecord) {
+            this._recordedEvents.push(event);
+            this._didRecordEvent = true;
+        }
+
         let cmdIndex = Input.CMD_SHOOT;
         if (event.button === 2) {
             cmdIndex = Input.CMD_SECONDARY;
@@ -140,6 +177,28 @@ class Input {
                 cmd.active = false;
             }
             cmd.wasActivated = false;
+        }
+
+        if (this._doRecord && !this._didRecordEvent) {
+            this._recordedEvents.push(null);
+        }
+        this._didRecordEvent = false;
+
+        if (!this._doRecord && this._recordedEvents.length > 0) {
+            console.log("playback: ", this._playbackIndex, " / ", this._recordedEvents.length)
+            const evt = this._recordedEvents[this._playbackIndex];
+            if (evt !== null) {
+                if (evt.type === "mousedown") {
+                    this._onMouseDown(evt);
+                } else if (evt.type === "mouseup") {
+                    this._onMouseUp(evt);
+                } else if (evt.type === "keydown") {
+                    this._onKeyDown(evt);
+                } else if (evt.type === "keyup") {
+                    this._onKeyUp(evt);
+                }
+            }
+            this._playbackIndex = (this._playbackIndex + 1) % this._recordedEvents.length;
         }
     }
 }

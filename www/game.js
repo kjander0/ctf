@@ -35,7 +35,7 @@ class Game {
         }
 
         this.accumMs += deltaMs;
-        if (this.accumMs >= conf.UPDATE_MS * 1.25) {
+        if (this.accumMs >= conf.UPDATE_MS) {
             this.accumMs = Math.min(this.accumMs - conf.UPDATE_MS, conf.UPDATE_MS);
             this._update();
             this.clientTick = (this.clientTick + 1) % 256;
@@ -46,6 +46,10 @@ class Game {
     _update() {
         if (this.input.wasActivated(Input.CMD_TOGGLE_DEBUG)) {
             this.doDebug = !this.doDebug;
+        }
+
+        if (this.input.wasActivated(Input.CMD_TOGGLE_RECORD)) {
+            this.input.toggleRecord();
         }
 
         for (let i = this.emitterList.length-1; i >= 0; i--) { // loop backwards for removing elements
