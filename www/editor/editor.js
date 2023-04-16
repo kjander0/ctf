@@ -11,8 +11,8 @@ let uiCamera = new Camera();
 let renderer;
 let canvas;
 let gl;
+let camDir = new Vec();
 let camPos = new Vec();
-let camVel = new Vec();
 let screenSize = new Vec();
 
 window.onload = async function() {
@@ -117,19 +117,18 @@ function onKeyDown(event) {
     console.log(key);
     switch (key) {
         case 'w':
-            camVel.y = 1;
+            camDir.y = 1;
             break;
         case 's':
-            camVel.y = -1;
+            camDir.y = -1;
             break;
         case 'a':
-            camVel.x = -1;
+            camDir.x = -1;
             break;
         case 'd':
-            camVel.x = 1;
+            camDir.x = 1;
             break;
     }
-    camVel = camVel.resize(conf.TILE_SIZE);
 }
 
 function onKeyUp(event) {
@@ -141,20 +140,20 @@ function onKeyUp(event) {
     console.log(key);
     switch (key) {
         case 'w':
-            camVel.y = 0;
+            camDir.y = 0;
             break;
         case 's':
-            camVel.y = 0;
+            camDir.y = 0;
             break;
         case 'a':
-            camVel.x = 0;
+            camDir.x = 0;
             break;
         case 'd':
-            camVel.x = 0;
+            camDir.x = 0;
             break;
     }
-    if (camVel.x !== 0 || camVel.y !== 0) {
-        camVel = camVel.resize(conf.TILE_SIZE);
+    if (camDir.x !== 0 || camDir.y !== 0) {
+        camDir = camDir.resize(conf.TILE_SIZE);
     }
 }
 
@@ -198,7 +197,9 @@ function onMouseUp(event) {
 }
 
 function update() {
-    camPos = camPos.add(camVel);
+    if (camDir.x !== 0 || camDir.y !== 0) {
+        camPos = camPos.add(camDir.resize(conf.TILE_SIZE));
+    }
     camera.update(camPos.x, camPos.y, screenSize.x, screenSize.y);
 }
 
