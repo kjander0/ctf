@@ -7,7 +7,6 @@ import (
 )
 
 // TODO
-// - add debug recordings so I can record some inputs that will be played back over and over (for testing multiple players)
 // - handle user leaving tab (updates stop being called), maybe ignore net updates during this time and reset predicted buffers etc
 // - tune max predictions on client and server to good values
 // - display fps, ping, packet drop (+- stddev)
@@ -25,6 +24,7 @@ import (
 // - 32 bit float to save bandwidth
 // - sanitise user input (assume bytes could be anything)
 // - remove debug delay/jitter
+// - run release build in production!
 
 // MVP FEATURES
 // - choose name (appears below player)

@@ -18,7 +18,7 @@ let texShader;
 
 const shipPixelRatio = 406/512;
 
-async function loadAssets(gl) {
+async function loadAssets(gl) {    
     // TODO: load assets in parallel
     shapeVertSrc = await requestText("assets/shaders/shape.vert");
     shapeFragSrc = await requestText("assets/shaders/shape.frag");
