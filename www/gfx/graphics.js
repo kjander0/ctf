@@ -9,6 +9,7 @@ import { Mesh, Model, VertAttrib} from "./mesh.js";
 import { Shader } from "./shader.js";
 import { Texture } from "./texture.js";
 import { Camera } from "./camera.js";
+import { gl } from "./gl.js";
 import * as assets from "../assets.js";
 
 const ATTRIB_LIGHT_POS_LOC = 3;
@@ -23,7 +24,6 @@ class Graphics {
 
     renderer;
     canvas;
-    gl;
 
     screenSize = new Vec();
 
@@ -43,24 +43,22 @@ class Graphics {
     shapeShader;
     texShader;
 
-    constructor (canvas, gl) {
+    constructor (canvas) {
         this.canvas = canvas;
-        this.gl = gl;
 
-        this.gl.disable(this.gl.DEPTH_TEST);
-        this.gl.enable(this.gl.BLEND);
-        this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
-        this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
-        this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        gl.disable(gl.DEPTH_TEST);
+        gl.enable(gl.BLEND);
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
-        this.renderer = new Renderer(this.gl);
+        this.renderer = new Renderer(gl);
 
-        this.lightsShader = new Shader(this.gl, assets.lightsVertSrc, assets.lightsFragSrc);
-        this.spriteShader = new Shader(this.gl, assets.spriteVertSrc, assets.spriteFragSrc);
-        this.gammaShader = new Shader(this.gl, assets.texVertSrc, assets.gammaFragSrc);
+        this.lightsShader = new Shader(gl, assets.lightsVertSrc, assets.lightsFragSrc);
+        this.spriteShader = new Shader(gl, assets.spriteVertSrc, assets.spriteFragSrc);
+        this.gammaShader = new Shader(gl, assets.texVertSrc, assets.gammaFragSrc);
 
-        this.shipAlbedoTex = Texture.fromImage(this.gl, assets.shipAlbedoImage, true);
-        this.shipNormalTex = Texture.fromImage(this.gl, assets.shipNormalImage, false);
+        this.shipAlbedoTex = Texture.fromImage(assets.shipAlbedoImage, true);
+        this.shipNormalTex = Texture.fromImage(assets.shipNormalImage, false);
     
         const resizeObserver = new ResizeObserver(() => {
             this._onresize();
@@ -75,27 +73,23 @@ class Graphics {
         this.canvas.width = this.canvas.clientWidth;
         this.canvas.height = this.canvas.clientHeight;
 
-        this.screenSize.set(this.gl.drawingBufferWidth, this.gl.drawingBufferHeight);
+        this.screenSize.set(gl.drawingBufferWidth, gl.drawingBufferHeight);
     
-        this.gl.viewport(0, 0, this.screenSize.x, this.screenSize.y);
+        gl.viewport(0, 0, this.screenSize.x, this.screenSize.y);
 
         this.albedoTex = Texture.fromSize(
-            this.gl,
             this.screenSize.x,
             this.screenSize.y,
         );
         this.normalTex = Texture.fromSize(
-            this.gl,
             this.screenSize.x,
             this.screenSize.y,
         );
         this.highlightTex = Texture.fromSize(
-            this.gl,
             this.screenSize.x,
             this.screenSize.y,
         );
         this.finalTex = Texture.fromSize (
-            this.gl,
             this.screenSize.x,
             this.screenSize.y,
         );
@@ -117,14 +111,14 @@ class Graphics {
             shipPositions.push(lerpPos);
         }
 
-        this.gl.clearColor(0.0, 0.0, 1.0, 0.0);
+        gl.clearColor(0.0, 0.0, 1.0, 0.0);
         this.renderer.setAndClearTarget(this.normalTex);
         for (let pos of shipPositions) {
             this.renderer.drawTexture(pos.x - shipRadius, pos.y - shipRadius, shipRadius * 2, shipRadius * 2, this.shipNormalTex);
         }
         this.renderer.render(this.camera);
 
-        this.gl.clearColor(0, 0, 0, 1.0);
+        gl.clearColor(0, 0, 0, 1.0);
         this.renderer.setAndClearTarget(this.albedoTex);
         for (let pos of shipPositions) {
             this.renderer.drawTexture(pos.x - shipRadius, pos.y - shipRadius, shipRadius * 2, shipRadius * 2, this.shipAlbedoTex);
@@ -140,38 +134,38 @@ class Graphics {
             lightPosData.push(laser.line.end.x, laser.line.end.y);
         }
 
-        let lightPosAttrib = new VertAttrib(ATTRIB_LIGHT_POS_LOC, 2, this.gl.FLOAT, 1);
+        let lightPosAttrib = new VertAttrib(ATTRIB_LIGHT_POS_LOC, 2, gl.FLOAT, 1);
         lightPosAttrib.data = lightPosData;
 
         this.lightsShader.setUniform("uScreenSize", [this.screenSize.x, this.screenSize.y]);
         this.lightsShader.setUniform("uRadius", lightRadius);
 
         let lightsModel = new Model(
-            this.gl,
+            gl,
             lightsMesh,
-            this.gl.TRIANGLES,
+            gl.TRIANGLES,
             this.lightsShader,
             [this.normalTex],
             [lightPosAttrib],
             lightPosData.length/2,
         );
         this.renderer.drawModel(lightsModel);
-        this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.DST_ALPHA); // combine lights equally
-        this.gl.clearColor(0, 0, 0, 0);
+        gl.blendFunc(gl.SRC_ALPHA, gl.DST_ALPHA); // combine lights equally
+        gl.clearColor(0, 0, 0, 0);
         this.renderer.setAndClearTarget(this.highlightTex);
         this.renderer.render(this.camera);
-        this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
         
         // this.renderer.drawTexture(0, 0, this.screenSize.x, this.screenSize.y, this.highlightTex);
         // this.renderer.setAndClearTarget(null);
         // this.renderer.render(this.uiCamera);
 
         let screenMesh = new Mesh(VertAttrib.POS_BIT | VertAttrib.TEX_BIT);
-        screenMesh.addRect(0, 0, this.gl.drawingBufferWidth, this.gl.drawingBufferHeight);
+        screenMesh.addRect(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
         let spriteModel = new Model(
-            this.gl,
+            gl,
             screenMesh,
-            this.gl.TRIANGLES,
+            gl.TRIANGLES,
             this.spriteShader,
             [this.albedoTex, this.highlightTex]
         );
@@ -180,9 +174,9 @@ class Graphics {
         this.renderer.render(this.uiCamera);
 
         let screenModel = new Model(
-            this.gl,
+            gl,
             screenMesh,
-            this.gl.TRIANGLES,
+            gl.TRIANGLES,
             this.gammaShader,
             [this.finalTex]
         );
@@ -263,7 +257,7 @@ class Graphics {
         }
 
         for (let emitter of game.emitterList) {
-            this.renderer.drawModel(emitter.makeModel(this.gl));
+            this.renderer.drawModel(emitter.makeModel(gl));
         }
         
         this.renderer.render(this.camera);

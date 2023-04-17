@@ -45,6 +45,14 @@ class Renderer {
         this.shapeMesh.addRect(x, y, width, height);
     }
 
+    drawRectLine(x, y, width, height, lineWidth=1) {
+        this.shapeMesh.setTransform(this.transformStack[this.transformStack.length-1]);
+        this.shapeMesh.addRect(x, y, width, lineWidth);
+        this.shapeMesh.addRect(x, y, lineWidth, height);
+        this.shapeMesh.addRect(x + width, y, lineWidth, height);
+        this.shapeMesh.addRect(x, y+height, width, lineWidth);
+    }
+
     drawTriangle(p0, p1, p2) {
         this.shapeMesh.setTransform(this.transformStack[this.transformStack.length-1]);
         this.shapeMesh.add(p0.x, p0.y);
@@ -75,6 +83,24 @@ class Renderer {
         }
         texMesh.setTransform(this.transformStack[this.transformStack.length-1]);
         texMesh.addRect(x, y, width, height);
+    }
+
+    drawText(text, x, y, font, height=20) {
+        let texMesh = this.texMeshMap.get(font.texture);
+        if (texMesh === undefined) {
+            texMesh = new Mesh(VertAttrib.POS_BIT | VertAttrib.TEX_BIT);
+            this.texMeshMap.set(font.texture, texMesh);
+        }
+        texMesh.setTransform(this.transformStack[this.transformStack.length-1]);
+
+        let xOffset = x;
+        for (let i = 0; i < text.length; i++) {
+            const asciiCode = text.charCodeAt(i);
+            const glyph = font.glyphs[asciiCode];
+            texMesh.addRect(xOffset, y, font.cellWidth, font.fontHeight, glyph.s0, glyph.t0, glyph.s1, glyph.t1);
+            //texMesh.addRect(0, 0, 100, 100, 0, 0, 0.2, 0.2);
+            xOffset += glyph.width;
+        }
     }
     
     drawModel(model) {

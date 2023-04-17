@@ -14,24 +14,18 @@ import { Graphics } from "./gfx/graphics.js";
 import * as net from "./net.js";
 import * as conf from "./conf.js";
 import * as asset from "./assets.js";
+import { initGL } from "./gfx/gl.js";
 
 window.onload = async function() {
     await conf.retrieveConf(); // important to do this first
 
     const canvas = document.getElementById("glcanvas");
-    const gl = canvas.getContext("webgl2", {
-        alpha: false,
-        depth: false,
-        stencil: false,
-        // TODO: try enable antialias
-    });
-    if (gl === null) {
-        throw "could not get webgl2 context";
-    }
 
-    await asset.loadAssets(gl);
+    initGL(canvas);
 
-    const graphics = new Graphics(canvas, gl);
+    await asset.loadAssets();
+
+    const graphics = new Graphics(canvas);
     const input = new Input(graphics);
 
     const game = new Game(graphics, input);

@@ -1,5 +1,6 @@
+import {gl} from "./gl.js";
+
 class Texture {
-    gl;
     glTexture;
     s0 = 0;
     s1 = 1;
@@ -9,9 +10,8 @@ class Texture {
     width;
     height;
 
-    static fromSize(gl, width, height, srgb=false) {
+    static fromSize(width, height, srgb=false) {
         let tex = new Texture();
-        tex.gl = gl;
         tex.width = width;
         tex.height = height;
         tex.glTexture = gl.createTexture();
@@ -28,9 +28,8 @@ class Texture {
         return tex;
     }
 
-    static fromImage(gl, image, srgb=false) {
+    static fromImage(image, srgb=false) {
         let tex = new Texture();
-        tex.gl = gl;
         tex.width = image.naturalWidth;
         tex.height = image.naturalHeight;
         tex.glTexture = gl.createTexture();
@@ -64,7 +63,7 @@ class Texture {
     }
 
     dispose() {
-        this.gl.deleteTexture(this.glTexture);
+        gl.deleteTexture(glTexture);
     }
 }
 

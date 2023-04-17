@@ -1,4 +1,6 @@
 import { Shader } from "./gfx/shader.js";
+import { gl } from "./gfx/gl.js";
+import { Font } from "./gfx/text.js";
 
 let shipAlbedoImage;
 let shipNormalImage;
@@ -16,10 +18,14 @@ let gammaFragSrc;
 let shapeShader;
 let texShader;
 
+let arialFont;
+
 const shipPixelRatio = 406/512;
 
-async function loadAssets(gl) {    
+async function loadAssets() {    
     // TODO: load assets in parallel
+
+    // ========== SHADERS ==========
     shapeVertSrc = await requestText("assets/shaders/shape.vert");
     shapeFragSrc = await requestText("assets/shaders/shape.frag");
 
@@ -37,8 +43,14 @@ async function loadAssets(gl) {
     shapeShader = new Shader(gl, shapeVertSrc, shapeFragSrc);
     texShader = new Shader(gl, texVertSrc, texFragSrc);
 
+    // ========== IMAGES ==========
     shipAlbedoImage = await requestImage("assets/ship.png");
     shipNormalImage = await requestImage("assets/ship_normal.png");
+
+    // ========== FONTS ==========
+    const arialFontImage = await requestImage("assets/arial.png");
+    const arialCSVText = await requestText("assets/arial.csv");
+    arialFont = new Font(arialFontImage, arialCSVText);
 }
 
 // TODO: reuse this function for conf.js
@@ -93,4 +105,6 @@ export {
     shipAlbedoImage,
     shipNormalImage,
     shipPixelRatio,
+
+    arialFont,
 }

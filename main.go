@@ -7,6 +7,7 @@ import (
 )
 
 // TODO
+// - if you temporarily minimise tab motion prediction limit is reached. And it stays that way even once you return.
 // - handle user leaving tab (updates stop being called), maybe ignore net updates during this time and reset predicted buffers etc
 // - tune max predictions on client and server to good values
 // - display fps, ping, packet drop (+- stddev)
