@@ -34,20 +34,22 @@ type PlayerPredicted struct {
 }
 
 type Player struct {
-	Id              uint8
-	NetState        int
-	State           int
-	Client          web.Client
-	Health          int
-	Acked           PlayerPredicted
-	Predicted       PlayerPredicted
-	PredictedInputs PredictedInputs
-	LastInput       PlayerInput
-	DoDisconnect    bool
-	JailTimeTicks   int
+	Id                  uint8
+	NetState            int
+	State               int
+	Client              web.Client
+	Health              int
+	Acked               PlayerPredicted
+	Predicted           PlayerPredicted
+	TicksSinceLastInput int
+	ReceivedInputs      []PlayerInput
+	LastInput           PlayerInput
+	DoDisconnect        bool
+	JailTimeTicks       int
 }
 
 type PlayerInput struct {
+	Tick           uint8
 	Left           bool
 	Right          bool
 	Up             bool
@@ -94,14 +96,14 @@ func NewPlayer(id uint8, client web.Client) Player {
 	}
 
 	return Player{
-		Id:              id,
-		NetState:        PlayerNetStateJoining,
-		State:           PlayerStateSpectating,
-		Health:          conf.Shared.PlayerHealth,
-		Acked:           acked,
-		Predicted:       predicted,
-		Client:          client,
-		PredictedInputs: NewPredictedInputs(maxPredictedInputs),
+		Id:             id,
+		NetState:       PlayerNetStateJoining,
+		State:          PlayerStateSpectating,
+		Health:         conf.Shared.PlayerHealth,
+		Acked:          acked,
+		Predicted:      predicted,
+		Client:         client,
+		ReceivedInputs: make([]PlayerInput, maxPredictedInputs),
 	}
 }
 
@@ -115,6 +117,8 @@ func UpdatePlayers(world *World) {
 			continue
 		}
 
+		player.TicksSinceLastInput++ // increment once per tick, decrement for each input received
+
 		if player.State == PlayerStateJailed {
 			player.JailTimeTicks -= 1
 			if player.JailTimeTicks <= 0 {
@@ -124,13 +128,21 @@ func UpdatePlayers(world *World) {
 		}
 
 		processAckedInputs(world, player)
-		processPredictedInputs(world, player)
-		predictNextInput(world, player)
+		predictInputs(world, player)
 	}
 }
 
 func processAckedInputs(world *World, player *Player) {
-	for _, input := range player.PredictedInputs.Acked {
+	numReceivedInputs := len(player.ReceivedInputs)
+	if numReceivedInputs > player.TicksSinceLastInput {
+		excessCount := numReceivedInputs - player.TicksSinceLastInput
+		logger.Debug("Discarding %d additional inputs", excessCount)
+		player.ReceivedInputs = player.ReceivedInputs[excessCount:] // keep the most recent inputs
+	}
+
+	for _, input := range player.ReceivedInputs {
+		player.TicksSinceLastInput--
+
 		disp := calcDisplacement(input)
 		player.Acked.Pos = player.Acked.Pos.Add(disp)
 		player.Acked.Pos = constrainPlayerPos(world, player.Acked.Pos)
@@ -163,13 +175,16 @@ func processAckedInputs(world *World, player *Player) {
 	}
 }
 
-func processPredictedInputs(world *World, player *Player) {
+func predictInputs(world *World, player *Player) {
 	player.Predicted = player.Acked
 
-	for _, prediction := range player.PredictedInputs.Predicted {
-		disp := calcDisplacement(prediction.input)
-		player.Predicted.Pos = player.Predicted.Pos.Add(disp)
-		player.Predicted.Pos = constrainPlayerPos(world, player.Predicted.Pos)
+	for i := 0; i < player.TicksSinceLastInput; i++ {
+		var disp mymath.Vec
+		if i < maxMotionPredictions {
+			disp = calcDisplacement(player.LastInput)
+			player.Predicted.Pos = player.Predicted.Pos.Add(disp)
+			player.Predicted.Pos = constrainPlayerPos(world, player.Predicted.Pos)
+		}
 		player.Predicted.Energy = mymath.MinInt(conf.Shared.MaxLaserEnergy, player.Predicted.Energy+1)
 		player.Predicted.BouncyEnergy = mymath.MinInt(conf.Shared.MaxBouncyEnergy, player.Predicted.BouncyEnergy+1)
 	}
@@ -199,22 +214,6 @@ func constrainPlayerPos(world *World, pos mymath.Vec) mymath.Vec {
 		pos = pos.Sub(overlap)
 	}
 	return pos
-}
-
-func predictNextInput(world *World, player *Player) {
-	// Predict next ticks input
-	predicted := PlayerInput{}
-	// Extrapolation of movement for a limited number of ticks
-	numPredicted := len(player.PredictedInputs.Predicted)
-	if numPredicted < maxMotionPredictions {
-		predicted.Left = player.LastInput.Left
-		predicted.Right = player.LastInput.Right
-		predicted.Up = player.LastInput.Up
-		predicted.Down = player.LastInput.Down
-	} else {
-		logger.Debug("reached motion prediction limit")
-	}
-	player.PredictedInputs.Predict(predicted, world.Tick+1)
 }
 
 func calcDisplacement(input PlayerInput) mymath.Vec {

@@ -54,7 +54,6 @@ class Player {
 }
 
 class PlayerInputState {
-    clientTick = 0;
     left = false;
     right = false;
     up = false;
@@ -66,7 +65,6 @@ class PlayerInputState {
 
 function sampleInput(game) {
     let inputState = new PlayerInputState();
-    inputState.clientTick = game.clientTick;
     if (game.input.isActive(Input.CMD_LEFT)) {
         inputState.left = true;
     }
@@ -99,7 +97,8 @@ function sampleInput(game) {
     }
 
     game.player.inputState = inputState;
-    game.player.predictedInputs.predict(inputState, game.clientTick);
+    TODO pass next expected tick or current server tick (assuming that is the tick we simulating?)
+    game.player.predictedInputs.predict(inputState, game.serverTick);
 }
 
 function update(game) {

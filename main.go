@@ -32,12 +32,13 @@ import (
 // - stats (kills, deaths, assists)
 // - king of the hill, or ctf goal
 
-// WEAPON IDEAS
+// GAME IDEAS
 // - shift to temporarily boost, draining laser energy
 // - lock on homing missile
 // - orbs with linking laser chain (maybe they wrap walls or orbs explode if laser touches something)
 // - shotgun 4 lasers
 // - flak/firework, slow shell which explodes into multuple lasers
+// - tiles that can be opened or destroyed
 
 // GRAPHICS IDEAS
 // - particles falling away from lasers (or maybe just special lasers to set them apart, i.e flak)

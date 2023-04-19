@@ -91,7 +91,8 @@ outer:
 func processInputMsg(player *entity.Player, decoder Decoder) {
 	flags := decoder.ReadUint8()
 	var newInputState entity.PlayerInput
-	clientTick := decoder.ReadUint8() // read tick count
+
+	newInputState.Tick = decoder.ReadUint8()
 
 	cmdBits := decoder.ReadUint8()
 	if (cmdBits & leftBit) == leftBit {
@@ -130,7 +131,7 @@ func processInputMsg(player *entity.Player, decoder Decoder) {
 
 	player.LastInput = newInputState
 
-	player.PredictedInputs.Ack(newInputState, clientTick)
+	player.ReceivedInputs = append(player.ReceivedInputs, newInputState)
 }
 
 // Sends world state to all players
@@ -189,9 +190,9 @@ func prepareWorldUpdate(world *entity.World, playerIndex int) []byte {
 
 	var flags uint8
 
-	numAcked := len(player.PredictedInputs.Acked)
+	numInputsReceived := len(player.ReceivedInputs)
 
-	if numAcked > 0 {
+	if numInputsReceived > 0 {
 		flags |= ackInputFlagBit
 	}
 
@@ -199,10 +200,10 @@ func prepareWorldUpdate(world *entity.World, playerIndex int) []byte {
 	encoder.WriteUint8(flags)
 	encoder.WriteUint8(world.Tick)
 
-	if numAcked > 0 {
-		encoder.WriteUint8(player.PredictedInputs.LastAckedTick)
+	if numInputsReceived > 0 {
+		encoder.WriteUint8(uint8(player.LastInput.Tick))
 	}
-	player.PredictedInputs.ClearAcked()
+	player.ReceivedInputs = player.ReceivedInputs[:0]
 
 	encoder.WriteUint8(uint8(player.State))
 	encoder.WriteVec(player.Acked.Pos)
