@@ -97,8 +97,7 @@ function sampleInput(game) {
     }
 
     game.player.inputState = inputState;
-    game.player.predictedInputs.predict(game.clientTick);
-
+    game.player.predictedInputs.predict(inputState, game.clientTick);
 }
 
 function update(game) {

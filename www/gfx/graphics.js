@@ -265,7 +265,7 @@ class Graphics {
         // ========== END DRAW LASERS ==========
 
         // ========== BEGIN DRAW UI ==========
-        let border = 10;
+        const border = 10;
         // Draw laser energy bar
         {
             const barWidth = 80;
@@ -293,6 +293,15 @@ class Graphics {
                 }
                 bouncyNum++;
                 remainingEnergy -= conf.BOUNCY_ENERGY_COST;
+            }
+        }
+
+        // Draw diagnostics (fps, latency, etc)
+        {
+            const height = 20;
+            this.renderer.drawText("FPS: " + (1000 / game.deltaMs).toFixed(2), border, this.screenSize.y - border - height, assets.arialFont, height)
+            if (game.doSpeedup) {
+                this.renderer.drawText("SPEEDUP", border, this.screenSize.y - 2 * (border + height), assets.arialFont, height)
             }
         }
 

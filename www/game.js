@@ -2,15 +2,15 @@ import * as conf from "./conf.js";
 import * as player from "./player.js";
 import * as weapons from "./weapons.js";
 import * as net from "./net.js";
-import {Vec} from "./math.js";
 import {Input} from "./input.js";
-import {Emitter, EmitterParams} from "./gfx/particle.js";
 
 class Game {
     doDebug = true;
+    doSpeedup = false;
     serverTick = -1; // from server (0-255)
     clientTick = -1; // client tick will be ahead of server (predicted data)
     accumMs = conf.UPDATE_MS;
+    deltaMs;
     map = null;
     graphics;
     input;
@@ -25,7 +25,7 @@ class Game {
         this.input = input;
     }
 
-    update(deltaMs) {
+    update(inDeltaMs) {
         if (this.serverTick === -1) {
             return; // wait until we have a world update from server
         }
@@ -34,7 +34,12 @@ class Game {
             this.clientTick = this.serverTick;
         }
 
-        this.accumMs += deltaMs;
+        this.deltaMs = inDeltaMs;
+        if (this.doSpeedup) {
+            this.deltaMs *= 1.05;
+        }
+
+        this.accumMs += this.deltaMs;
         if (this.accumMs >= conf.UPDATE_MS) {
             this.accumMs = Math.min(this.accumMs - conf.UPDATE_MS, conf.UPDATE_MS);
             this._update();

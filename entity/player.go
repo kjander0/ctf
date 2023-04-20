@@ -23,8 +23,8 @@ const (
 
 const (
 	// TODO: these can be shared values if server prediction/correction is made to be the same
-	maxPredictedInputs   = 6000 // needs to be large enough to allow catchup of burst of delayed inputs
-	maxMotionPredictions = 5    // too much motion extrapolation causes overshoot
+	maxPredictedInputs   = 300 // needs to be large enough to allow catchup of burst of delayed inputs
+	maxMotionPredictions = 5   // too much motion extrapolation causes overshoot
 )
 
 type PlayerPredicted struct {
@@ -103,7 +103,7 @@ func NewPlayer(id uint8, client web.Client) Player {
 		Acked:          acked,
 		Predicted:      predicted,
 		Client:         client,
-		ReceivedInputs: make([]PlayerInput, maxPredictedInputs),
+		ReceivedInputs: make([]PlayerInput, 0, maxPredictedInputs),
 	}
 }
 
@@ -118,7 +118,7 @@ func UpdatePlayers(world *World) {
 		}
 
 		player.TicksSinceLastInput++ // increment once per tick, decrement for each input received
-
+		logger.Debug("ticks since last input: ", player.TicksSinceLastInput)
 		if player.State == PlayerStateJailed {
 			player.JailTimeTicks -= 1
 			if player.JailTimeTicks <= 0 {
@@ -127,12 +127,12 @@ func UpdatePlayers(world *World) {
 			}
 		}
 
-		processAckedInputs(world, player)
-		predictInputs(world, player)
+		processReceivedInputs(world, player)
+		processPredictedInputs(world, player)
 	}
 }
 
-func processAckedInputs(world *World, player *Player) {
+func processReceivedInputs(world *World, player *Player) {
 	numReceivedInputs := len(player.ReceivedInputs)
 	if numReceivedInputs > player.TicksSinceLastInput {
 		excessCount := numReceivedInputs - player.TicksSinceLastInput
@@ -175,8 +175,13 @@ func processAckedInputs(world *World, player *Player) {
 	}
 }
 
-func predictInputs(world *World, player *Player) {
+func processPredictedInputs(world *World, player *Player) {
 	player.Predicted = player.Acked
+
+	if player.TicksSinceLastInput > maxPredictedInputs {
+		logger.Debug("hit prediction limit")
+		player.TicksSinceLastInput = maxPredictedInputs
+	}
 
 	for i := 0; i < player.TicksSinceLastInput; i++ {
 		var disp mymath.Vec

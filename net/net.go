@@ -41,6 +41,7 @@ const (
 // Flags from server
 const (
 	ackInputFlagBit = 1
+	speedupFlagBit  = 2
 )
 
 func ReceiveMessages(world *entity.World) {
@@ -190,9 +191,14 @@ func prepareWorldUpdate(world *entity.World, playerIndex int) []byte {
 
 	var flags uint8
 
-	numInputsReceived := len(player.ReceivedInputs)
+	if player.TicksSinceLastInput > 0 {
+		// Server has ticked without receiving a player input, tell the player to catchup
+		flags |= speedupFlagBit
+	}
 
-	if numInputsReceived > 0 {
+	doAck := len(player.ReceivedInputs) > 0
+
+	if doAck {
 		flags |= ackInputFlagBit
 	}
 
@@ -200,9 +206,10 @@ func prepareWorldUpdate(world *entity.World, playerIndex int) []byte {
 	encoder.WriteUint8(flags)
 	encoder.WriteUint8(world.Tick)
 
-	if numInputsReceived > 0 {
+	if doAck {
 		encoder.WriteUint8(uint8(player.LastInput.Tick))
 	}
+
 	player.ReceivedInputs = player.ReceivedInputs[:0]
 
 	encoder.WriteUint8(uint8(player.State))

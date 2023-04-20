@@ -43,8 +43,20 @@ const secondaryFlagBit = 2;
 
 // Flags from server
 const ackInputFlagBit = 1;
+const speedupFlagBit = 2;
 
 let encoder = new Encoder();
+
+function resetNetState(game) {
+    how to detect animation callback paused and what to do about it?
+    game.clientTick = game.serverTick;
+
+    game.player.predictedInputs.clear();
+
+    for (let otherPlayer of game.otherPlayers) {
+        otherPlayer.predictedDirs.clear();
+    }
+}
 
 function sendInput(game) {
     // TODO: don't send anything if player isn't doing anything
@@ -75,7 +87,7 @@ function sendInput(game) {
     encoder.reset();
     encoder.writeUint8(inputMsgType);
     encoder.writeUint8(flags);
-    encoder.writeUint8(game.clientTick); // Tick that this input is used to simulate
+    encoder.writeUint8(game.clientTick); // tick that this input should be applied
     encoder.writeUint8(cmdBits);
     if (playerInput.doShoot || playerInput.doSecondary) {
         encoder.writeFloat64(playerInput.aimAngle);
@@ -110,6 +122,11 @@ function _processInitMsg(game, decoder) {
 
 function _processUpdateMsg(game, decoder) {
     let flags = decoder.readUint8();
+    
+    game.doSpeedup = false;
+    if ((flags & speedupFlagBit) === speedupFlagBit) {
+        game.doSpeedup = true;
+    }
 
     game.serverTick = decoder.readUint8();
 
@@ -129,7 +146,7 @@ function _processUpdateMsg(game, decoder) {
     const ackPos = decoder.readVec();
     const ackEnergy = decoder.readUint16();
     const ackBouncyEnergy = decoder.readUint16();
-    if (ackedTick != -1) {
+    if (ackedTick !== -1) {
         game.player.predictedInputs.ack(ackedTick);
         game.player.acked.pos = ackPos;
         game.player.acked.energy = ackEnergy;
