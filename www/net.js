@@ -75,7 +75,7 @@ function sendInput(game) {
     encoder.reset();
     encoder.writeUint8(inputMsgType);
     encoder.writeUint8(flags);
-    encoder.writeUint8(game.worldTick);
+    encoder.writeUint8(game.clientTick); // Tick that this input is used to simulate
     encoder.writeUint8(cmdBits);
     if (playerInput.doShoot || playerInput.doSecondary) {
         encoder.writeFloat64(playerInput.aimAngle);

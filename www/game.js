@@ -9,6 +9,7 @@ import {Emitter, EmitterParams} from "./gfx/particle.js";
 class Game {
     doDebug = true;
     serverTick = -1; // from server (0-255)
+    clientTick = -1; // client tick will be ahead of server (predicted data)
     accumMs = conf.UPDATE_MS;
     map = null;
     graphics;
@@ -29,10 +30,15 @@ class Game {
             return; // wait until we have a world update from server
         }
 
+        if (this.clientTick === -1) {
+            this.clientTick = this.serverTick;
+        }
+
         this.accumMs += deltaMs;
         if (this.accumMs >= conf.UPDATE_MS) {
             this.accumMs = Math.min(this.accumMs - conf.UPDATE_MS, conf.UPDATE_MS);
             this._update();
+            this.clientTick = (this.clientTick + 1) % 256;
         }
         this._render();
     }

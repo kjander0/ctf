@@ -97,8 +97,8 @@ function sampleInput(game) {
     }
 
     game.player.inputState = inputState;
-    TODO pass next expected tick or current server tick (assuming that is the tick we simulating?)
-    game.player.predictedInputs.predict(inputState, game.serverTick);
+    game.player.predictedInputs.predict(game.clientTick);
+
 }
 
 function update(game) {
@@ -107,10 +107,6 @@ function update(game) {
     }
 
     _updatePlayer(game);
-    // TODO: print more to debug netcode, like % unacked that have movement
-    // TODO: also print server side since error might be there!
-    //console.log("client tick: ", game.clientTick, "server tick: ", game.serverTick , "num unacked: ", game.player.predictedInputs.unacked.length);
-    //console.log("acked Y: ", game.player.acked.pos.y, " Y: ", game.player.predicted.pos.y, " dy: ", game.player.acked.pos.y - game.player.predicted.pos.y);
 }
 
 function _updatePlayer(game) {

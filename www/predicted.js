@@ -1,5 +1,5 @@
 
-// Client predicts game state bast on predicted inputs
+// Buffer of predicted values which can later be acked
 class Predicted {
     unacked = []
     capacity
@@ -41,13 +41,6 @@ class Predicted {
         }
         this.unacked.splice(0, numAcked);
         return numAcked;
-    }
-
-    lastTickOrNull() {
-        if (this.unacked.length > 0) {
-            return this.unacked[this.unacked.length-1].tick;
-        }
-        return null;
     }
 }
 
