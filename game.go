@@ -1,6 +1,8 @@
 package main
 
 import (
+	"math/rand"
+
 	"github.com/kjander0/ctf/conf"
 	"github.com/kjander0/ctf/entity"
 	"github.com/kjander0/ctf/logger"
@@ -25,6 +27,8 @@ func (g *Game) Run() {
 	ticker := NewTicker(float64(conf.Shared.TickRate))
 	ticker.Start()
 
+	reset(g)
+
 	for {
 		// TODO: probs wanna accept more than 1 client per tick?
 		select {
@@ -34,19 +38,52 @@ func (g *Game) Run() {
 				logger.Debug("server full, rejecting connection")
 				close(newClient.WriteC)
 			}
-			g.World.PlayerList = append(g.World.PlayerList, entity.NewPlayer(id, newClient))
+			team := findNextTeam(&g.World)
+			g.World.PlayerList = append(g.World.PlayerList, entity.NewPlayer(id, team, newClient))
 		default:
 		}
 
 		net.ReceiveMessages(&g.World)
 		entity.UpdatePlayers(&g.World)
 		entity.UpdateProjectiles(&g.World)
+		entity.UpdateFlags(&g.World)
 		net.SendMessages(&g.World)
 		removeDisconnectedPlayers(&g.World)
 
 		g.World.Tick += 1
 
 		ticker.Sleep()
+	}
+}
+
+func reset(g *Game) {
+	g.World.FlagList = make([]entity.Flag, len(g.World.Map.FlagSpawns))
+	for i := range g.World.Map.FlagSpawns {
+		g.World.FlagList[i] = entity.NewFlag(g.World.Map.FlagSpawns[i])
+	}
+}
+
+func findNextTeam(world *entity.World) int {
+	greenCount := 0
+	redCount := 0
+	for i := range world.PlayerList {
+		switch world.PlayerList[i].Team {
+		case entity.TeamGreen:
+			greenCount += 1
+		case entity.TeamRed:
+			redCount += 1
+		}
+	}
+	if greenCount > redCount {
+		return entity.TeamGreen
+	} else if redCount > greenCount {
+		return entity.TeamGreen
+	} else {
+		if rand.Intn(2) == 0 {
+			return entity.TeamGreen
+		} else {
+			return entity.TeamRed
+		}
 	}
 }
 

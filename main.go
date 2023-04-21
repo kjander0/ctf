@@ -39,6 +39,7 @@ import (
 // - shotgun 4 lasers
 // - flak/firework, slow shell which explodes into multuple lasers
 // - tiles that can be opened or destroyed
+// - slower when carrying flags, but perhaps primary laser gets stronger?
 
 // GRAPHICS IDEAS
 // - particles falling away from lasers (or maybe just special lasers to set them apart, i.e flak)

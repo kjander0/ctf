@@ -4,6 +4,7 @@ import { Font } from "./gfx/text.js";
 
 let shipAlbedoImage;
 let shipNormalImage;
+let flagImage;
 
 let shapeVertSrc;
 let shapeFragSrc;
@@ -46,6 +47,9 @@ async function loadAssets() {
     // ========== IMAGES ==========
     shipAlbedoImage = await requestImage("assets/ship.png");
     shipNormalImage = await requestImage("assets/ship_normal.png");
+    
+    flagImage = await requestImage("assets/flag.png");
+
 
     // ========== FONTS ==========
     const arialFontImage = await requestImage("assets/arial.png");
@@ -105,6 +109,7 @@ export {
     shipAlbedoImage,
     shipNormalImage,
     shipPixelRatio,
+    flagImage,
 
     arialFont,
 }

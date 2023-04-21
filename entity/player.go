@@ -22,6 +22,11 @@ const (
 )
 
 const (
+	TeamGreen = iota
+	TeamRed
+)
+
+const (
 	// TODO: these can be shared values if server prediction/correction is made to be the same
 	maxPredictedInputs   = 300 // needs to be large enough to allow catchup of burst of delayed inputs
 	maxMotionPredictions = 5   // too much motion extrapolation causes overshoot
@@ -35,6 +40,7 @@ type PlayerPredicted struct {
 
 type Player struct {
 	Id                  uint8
+	Team                int
 	NetState            int
 	State               int
 	Client              web.Client
@@ -45,7 +51,9 @@ type Player struct {
 	ReceivedInputs      []PlayerInput
 	LastInput           PlayerInput
 	DoDisconnect        bool
+	DoSpeedup           bool
 	JailTimeTicks       int
+	FlagIndex           int // -1 means no flag
 }
 
 type PlayerInput struct {
@@ -83,7 +91,7 @@ func (in PlayerInput) GetDirNum() int {
 	return dirMap[row][col]
 }
 
-func NewPlayer(id uint8, client web.Client) Player {
+func NewPlayer(id uint8, team int, client web.Client) Player {
 	acked := PlayerPredicted{
 		mymath.Vec{},
 		conf.Shared.MaxLaserEnergy,
@@ -97,6 +105,7 @@ func NewPlayer(id uint8, client web.Client) Player {
 
 	return Player{
 		Id:             id,
+		Team:           team,
 		NetState:       PlayerNetStateJoining,
 		State:          PlayerStateSpectating,
 		Health:         conf.Shared.PlayerHealth,
@@ -118,12 +127,15 @@ func UpdatePlayers(world *World) {
 		}
 
 		player.TicksSinceLastInput++ // increment once per tick, decrement for each input received
-		logger.Debug("ticks since last input: ", player.TicksSinceLastInput)
 		if player.State == PlayerStateJailed {
 			player.JailTimeTicks -= 1
 			if player.JailTimeTicks <= 0 {
 				player.State = PlayerStateAlive
-				player.Acked.Pos = world.Map.RandomSpawnLocation()
+				if player.Team == TeamGreen {
+					player.Acked.Pos = world.Map.RandomLocation(world.Map.GreenJails)
+				} else {
+					player.Acked.Pos = world.Map.RandomLocation(world.Map.RedJails)
+				}
 			}
 		}
 
@@ -136,7 +148,7 @@ func processReceivedInputs(world *World, player *Player) {
 	numReceivedInputs := len(player.ReceivedInputs)
 	if numReceivedInputs > player.TicksSinceLastInput {
 		excessCount := numReceivedInputs - player.TicksSinceLastInput
-		logger.Debug("Discarding %d additional inputs", excessCount)
+		logger.Debug("Discarding ", excessCount, " additional inputs")
 		player.ReceivedInputs = player.ReceivedInputs[excessCount:] // keep the most recent inputs
 	}
 
@@ -181,6 +193,12 @@ func processPredictedInputs(world *World, player *Player) {
 	if player.TicksSinceLastInput > maxPredictedInputs {
 		logger.Debug("hit prediction limit")
 		player.TicksSinceLastInput = maxPredictedInputs
+	}
+
+	// we might be approaching prediction limit because player tick has fallen behind, tell them to tick faster
+	player.DoSpeedup = false
+	if player.TicksSinceLastInput > maxPredictedInputs/2 {
+		player.DoSpeedup = true
 	}
 
 	for i := 0; i < player.TicksSinceLastInput; i++ {

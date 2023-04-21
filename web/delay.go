@@ -9,7 +9,7 @@ import (
 const (
 	delayMs  = 150
 	jitterMs = 25
-	lossRate = 0.1
+	lossRate = 0.05
 )
 
 // Channel for adding artificial delay/jitter to data
@@ -44,7 +44,7 @@ func (dc *DelayChannel) Start() {
 
 			durationMs := delayMs
 			if jitterMs > 0 {
-				durationMs += rand.Intn(jitterMs) - jitterMs/2
+				durationMs += 2*rand.Intn(jitterMs) - jitterMs
 				if durationMs < 0 {
 					durationMs = 0
 				}

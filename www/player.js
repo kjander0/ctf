@@ -4,7 +4,6 @@ import {Predicted} from "./predicted.js"
 import * as conf from "./conf.js"
 import * as sound from "./sound.js"
 import * as collision from "./collision/collision.js"
-import * as sat from "./collision/sat.js"
 import {Tile} from "./map.js";
 
 class PlayerNetData {
@@ -54,6 +53,7 @@ class Player {
 }
 
 class PlayerInputState {
+    tick;
     left = false;
     right = false;
     up = false;
@@ -96,8 +96,9 @@ function sampleInput(game) {
         }
     }
 
+    inputState.tick = (game.serverTick + game.player.predictedInputs.unacked.length) % 256;
+    game.player.predictedInputs.predict(inputState, inputState.tick);
     game.player.inputState = inputState;
-    game.player.predictedInputs.predict(inputState, game.clientTick);
 }
 
 function update(game) {
@@ -165,12 +166,8 @@ function _updateOtherPlayer(player, game) {
     }
 
     // Predict movement for next tick
-    let lastTick = player.predictedDirs.lastTickOrNull();
-    if (lastTick === null) {
-        console.log("server tick null");
-        lastTick = game.serverTick;
-    }
-    player.predictedDirs.predict(player.lastAckedDirNum, (lastTick+1) % 256);
+    const nextTick = (game.serverTick + 1 + player.predictedDirs.unacked.length) % 256;
+    player.predictedDirs.predict(player.lastAckedDirNum, nextTick);
 }
 
 function _constrainPlayerPos(game, pos) {

@@ -4,14 +4,20 @@ import { Vec } from "./math.js"
 class Tile {
     static EMPTY = 0;
     static WALL = 1;
-    static JAIL = 2;
-    static SPAWN = 3;
+    static GREEN_JAIL = 2;
+    static RED_JAIL = 3;
+    static GREEN_SPAWN = 4;
+    static RED_SPAWN = 5;
     //  /\
     // /__\
-    static WALL_TRIANGLE = 4;
+    static WALL_TRIANGLE = 6;
     // |\
     // |_\
-    static WALL_TRIANGLE_CORNER = 5;
+    static WALL_TRIANGLE_CORNER = 7;
+    static FLAG_SPAWN = 8;
+    static GREEN_FLAG_GOAL = 9;
+    static RED_FLAG_GOAL = 10;
+
 
     type = null;
     pos = null;
@@ -86,14 +92,21 @@ function isSolidType(type) {
 
 class Map {
     tileRows = [];
+    numFlags = 0;
 
     constructor(rows) {
         for (let r = 0; r < rows.length; r++) {
             this.tileRows.push([]);
             for (let c = 0; c < rows[r].length; c++) {
                 const tile = new Tile(rows[r][c], new Vec(c, r).scale(conf.TILE_SIZE));
-                if (tile.type === Tile.WALL_TRIANGLE || tile.type === Tile.WALL_TRIANGLE_CORNER) {
-                    tile.orientation = this._findTriangleOrientation(rows, r, c);
+                switch (tile.type) {
+                    case Tile.WALL_TRIANGLE:
+                    case Tile.WALL_TRIANGLE_CORNER:
+                        tile.orientation = this._findTriangleOrientation(rows, r, c);
+                        break;
+                    case Tile.FLAG_SPAWN:
+                        this.numFlags++;
+                        break;
                 }
                 this.tileRows[r].push(tile);
             }

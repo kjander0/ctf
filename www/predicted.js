@@ -42,6 +42,11 @@ class Predicted {
         this.unacked.splice(0, numAcked);
         return numAcked;
     }
+
+    clear() {
+        this.unacked = [];
+    }
+
 }
 
 class Prediction {

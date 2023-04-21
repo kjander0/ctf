@@ -77,7 +77,11 @@ outer:
 			}
 			if player.NetState == entity.PlayerNetStateWaitingForInput {
 				player.State = entity.PlayerStateJailed
-				player.Acked.Pos = world.Map.RandomJailLocation()
+				if player.Team == entity.TeamGreen {
+					player.Acked.Pos = world.Map.RandomLocation(world.Map.GreenJails)
+				} else {
+					player.Acked.Pos = world.Map.RandomLocation(world.Map.RedJails)
+				}
 				player.NetState = entity.PlayerNetStateReady
 				player.JailTimeTicks = conf.Shared.JailTimeTicks
 			}
@@ -191,8 +195,7 @@ func prepareWorldUpdate(world *entity.World, playerIndex int) []byte {
 
 	var flags uint8
 
-	if player.TicksSinceLastInput > 0 {
-		// Server has ticked without receiving a player input, tell the player to catchup
+	if player.DoSpeedup {
 		flags |= speedupFlagBit
 	}
 
@@ -245,6 +248,11 @@ func prepareWorldUpdate(world *entity.World, playerIndex int) []byte {
 	encoder.WriteUint16(uint16(len(world.NewHits)))
 	for i := range world.NewHits {
 		encoder.WriteVec(world.NewHits[i])
+	}
+
+	encoder.WriteUint8(uint8(len(world.FlagList)))
+	for i := range world.FlagList {
+		encoder.WriteVec(world.FlagList[i].Pos)
 	}
 
 	if encoder.Error != nil {

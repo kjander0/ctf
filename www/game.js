@@ -4,13 +4,17 @@ import * as weapons from "./weapons.js";
 import * as net from "./net.js";
 import {Input} from "./input.js";
 
+const BACKGROUNDED_MS = 1000;
+
 class Game {
     doDebug = true;
     doSpeedup = false;
+    doNetReset = false;
     serverTick = -1; // from server (0-255)
-    clientTick = -1; // client tick will be ahead of server (predicted data)
     accumMs = conf.UPDATE_MS;
     deltaMs;
+    updateTimestampMs = performance.now();
+    
     map = null;
     graphics;
     input;
@@ -19,36 +23,47 @@ class Game {
     otherPlayers = [];
     laserList = [];
     emitterList = [];
+    flagList = [];
 
     constructor(graphics, input) {
         this.graphics = graphics;
         this.input = input;
     }
 
+    isBackgrounded() {
+        if (performance.now() - this.updateTimestampMs > BACKGROUNDED_MS) {
+            console.log("game backgrounded");
+            return true;
+        }
+        return false;
+    }
+
     update(inDeltaMs) {
+        this.updateTimestampMs = performance.now();
+
         if (this.serverTick === -1) {
             return; // wait until we have a world update from server
         }
 
-        if (this.clientTick === -1) {
-            this.clientTick = this.serverTick;
-        }
-
         this.deltaMs = inDeltaMs;
         if (this.doSpeedup) {
-            this.deltaMs *= 1.05;
+            this.deltaMs *= 1.02;
         }
 
         this.accumMs += this.deltaMs;
         if (this.accumMs >= conf.UPDATE_MS) {
             this.accumMs = Math.min(this.accumMs - conf.UPDATE_MS, conf.UPDATE_MS);
             this._update();
-            this.clientTick = (this.clientTick + 1) % 256;
         }
         this._render();
     }
 
     _update() {
+        if (this.doNetReset) {
+            this._resetNetState();
+            this.doNetReset = false;
+        }
+
         if (this.input.wasActivated(Input.CMD_TOGGLE_DEBUG)) {
             this.doDebug = !this.doDebug;
         }
@@ -69,7 +84,7 @@ class Game {
         // move projectiles before spawning new ones (gives an additional tick for lagg compensation)
         weapons.update(this);
         player.update(this);
-        this.removeDisconnectedPlayers();
+        this._removeDisconnectedPlayers();
 
         this.input.reset(); // do last
     }
@@ -78,7 +93,7 @@ class Game {
         this.graphics.drawGame(this);
     }
 
-    removeDisconnectedPlayers() {
+    _removeDisconnectedPlayers() {
         for (let i = this.otherPlayers.length-1; i >= 0; i--) { // loop backwards for removing elements
             let otherPlayer = this.otherPlayers[i];
             if (!otherPlayer.disconnected) {
@@ -87,6 +102,17 @@ class Game {
             this.otherPlayers.splice(i, 1);
         }
     }
+
+    _resetNetState() {
+        console.log("resetting net state");   
+        this.player.predictedInputs.clear();
+    
+        for (let otherPlayer of this.otherPlayers) {
+            otherPlayer.predictedDirs.clear();
+        }
+    }
+
+
 }
 
 export { Game };

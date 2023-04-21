@@ -11,10 +11,15 @@ import (
 const (
 	TileEmpty = iota
 	TileWall
-	TileJail
-	TileSpawn
+	TileGreenJail
+	TileRedJail
+	TileGreenSpawn
+	TileRedSpawn
 	TileWallTriangle
 	TileWallTriangleCorner
+	FlagSpawn
+	GreenFlagGoal
+	RedFlagGoal
 )
 
 type Tile struct {
@@ -31,9 +36,14 @@ type Tile struct {
 }
 
 type Map struct {
-	Rows   [][]Tile
-	Jails  []mymath.Vec
-	Spawns []mymath.Vec
+	Rows           [][]Tile
+	GreenJails     []mymath.Vec
+	RedJails       []mymath.Vec
+	GreenSpawns    []mymath.Vec
+	RedSpawns      []mymath.Vec
+	FlagSpawns     []mymath.Vec
+	GreenFlagGoals []mymath.Vec
+	RedFlagGoals   []mymath.Vec
 }
 
 func (t Tile) CalcTrianglePoints() (mymath.Vec, mymath.Vec, mymath.Vec) {
@@ -109,10 +119,20 @@ func NewMap(rows [][]uint8) Map {
 				tile.Solid = true
 			case TileWallTriangleCorner:
 				tile.Solid = true
-			case TileJail:
-				newMap.Jails = append(newMap.Jails, TileCentre(r, c))
-			case TileSpawn:
-				newMap.Spawns = append(newMap.Spawns, TileCentre(r, c))
+			case TileGreenJail:
+				newMap.GreenJails = append(newMap.GreenJails, TileCentre(r, c))
+			case TileRedJail:
+				newMap.RedJails = append(newMap.RedJails, TileCentre(r, c))
+			case TileGreenSpawn:
+				newMap.GreenSpawns = append(newMap.GreenSpawns, TileCentre(r, c))
+			case TileRedSpawn:
+				newMap.RedSpawns = append(newMap.RedSpawns, TileCentre(r, c))
+			case FlagSpawn:
+				newMap.FlagSpawns = append(newMap.FlagSpawns, TileCentre(r, c))
+			case GreenFlagGoal:
+				newMap.GreenFlagGoals = append(newMap.GreenFlagGoals, TileCentre(r, c))
+			case RedFlagGoal:
+				newMap.RedFlagGoals = append(newMap.RedFlagGoals, TileCentre(r, c))
 			}
 
 			newMap.Rows[r] = append(newMap.Rows[r], tile)
@@ -122,12 +142,8 @@ func NewMap(rows [][]uint8) Map {
 	return newMap
 }
 
-func (m *Map) RandomJailLocation() mymath.Vec {
-	return m.Jails[rand.Intn(len(m.Jails))]
-}
-
-func (m *Map) RandomSpawnLocation() mymath.Vec {
-	return m.Spawns[rand.Intn(len(m.Spawns))]
+func (m *Map) RandomLocation(locations []mymath.Vec) mymath.Vec {
+	return locations[rand.Intn(len(locations))]
 }
 
 func (m *Map) SampleSolidTiles(pos mymath.Vec, radius float64) []Tile {

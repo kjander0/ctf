@@ -59,6 +59,7 @@ class Graphics {
 
         this.shipAlbedoTex = Texture.fromImage(assets.shipAlbedoImage, true);
         this.shipNormalTex = Texture.fromImage(assets.shipNormalImage, false);
+        this.flagTex = Texture.fromImage(assets.flagImage, true);
     
         const resizeObserver = new ResizeObserver(() => {
             this._onresize();
@@ -255,14 +256,17 @@ class Graphics {
                 this._drawLaserLine(this.renderer.shapeMesh, start, end, lineWidth, segmentStartColor, segmentEndColor);
             }
         }
+        // ========== END DRAW LASERS ==========
+
+        for (let flag of game.flagList) {
+            this.renderer.drawTexture(flag.x, flag.y, conf.TILE_SIZE, conf.TILE_SIZE, this.flagTex);
+        }
 
         for (let emitter of game.emitterList) {
             this.renderer.drawModel(emitter.makeModel(gl));
         }
         
         this.renderer.render(this.camera);
-
-        // ========== END DRAW LASERS ==========
 
         // ========== BEGIN DRAW UI ==========
         const border = 10;
@@ -299,9 +303,10 @@ class Graphics {
         // Draw diagnostics (fps, latency, etc)
         {
             const height = 20;
-            this.renderer.drawText("FPS: " + (1000 / game.deltaMs).toFixed(2), border, this.screenSize.y - border - height, assets.arialFont, height)
+            this.renderer.drawText("FPS: " + (1000 / game.deltaMs).toFixed(2), border, this.screenSize.y - border - height, assets.arialFont, height);
+            this.renderer.drawText("PREDICTIONS: " + game.player.predictedInputs.unacked.length, border, this.screenSize.y - 2 * (border + height), assets.arialFont, height)
             if (game.doSpeedup) {
-                this.renderer.drawText("SPEEDUP", border, this.screenSize.y - 2 * (border + height), assets.arialFont, height)
+                this.renderer.drawText("SPEEDUP", border, this.screenSize.y - 3 * (border + height), assets.arialFont, height)
             }
         }
 

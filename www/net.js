@@ -47,17 +47,6 @@ const speedupFlagBit = 2;
 
 let encoder = new Encoder();
 
-function resetNetState(game) {
-    how to detect animation callback paused and what to do about it?
-    game.clientTick = game.serverTick;
-
-    game.player.predictedInputs.clear();
-
-    for (let otherPlayer of game.otherPlayers) {
-        otherPlayer.predictedDirs.clear();
-    }
-}
-
 function sendInput(game) {
     // TODO: don't send anything if player isn't doing anything
     // TODO: send last x inputs so server can more easily correct (no need for tick to be sent with inputs)
@@ -87,7 +76,7 @@ function sendInput(game) {
     encoder.reset();
     encoder.writeUint8(inputMsgType);
     encoder.writeUint8(flags);
-    encoder.writeUint8(game.clientTick); // tick that this input should be applied
+    encoder.writeUint8(playerInput.tick); // tick that this input should be applied
     encoder.writeUint8(cmdBits);
     if (playerInput.doShoot || playerInput.doSecondary) {
         encoder.writeFloat64(playerInput.aimAngle);
@@ -96,11 +85,20 @@ function sendInput(game) {
 }
 
 function consumeMessage(msg, game) {
+    // If app is backgrounded by browser it will stop receiving animation callbacks, but it will still receive
+    // network callbacks. We can ignore game state update messages from the server and reset the client net state
+    // once the app is active again.
+    if (game.isBackgrounded()) {
+        game.doNetReset = true;
+    }
+
     let decoder = new Decoder(msg);
     let msgType = decoder.readUint8();
     switch (msgType) {
         case stateUpdateMsgType:
-            _processUpdateMsg(game, decoder);
+            if (!game.doNetReset) {
+                _processUpdateMsg(game, decoder);
+            }
             break;
         case initMsgType:
             _processInitMsg(game, decoder);
@@ -221,10 +219,17 @@ function _processUpdateMsg(game, decoder) {
         let hitPos = decoder.readVec();
         const emitter = new particle.Emitter(hitPos, particle.sparkEmitterParams);
         game.emitterList.push(emitter);
-        // TODO: handle hits
     }
     if (numNewHits > 0) {
         sound.playHit();
+    }
+
+    let numFlags = decoder.readUint8();
+    if (game.flagList.length !== numFlags) {
+        game.flagList = new Array(numFlags);
+    }
+    for (let i = 0; i < numFlags; i++) {
+        game.flagList[i] = decoder.readVec();
     }
 }
 

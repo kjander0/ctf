@@ -98,7 +98,7 @@ class Mesh {
         }
     }
 
-    addRect(x, y, width, height, s0=0, t0=0, s1=1, t1=1) {
+    addRect(x, y, width, height, s0=0, t0=1, s1=1, t1=0) {
         this.add(x, y, s0, t0);
         this.add(x+width, y, s1, t0);
         this.add(x+width, y+height, s1, t1);
