@@ -59,6 +59,8 @@ class Graphics {
 
         this.shipAlbedoTex = Texture.fromImage(assets.shipAlbedoImage, true);
         this.shipNormalTex = Texture.fromImage(assets.shipNormalImage, false);
+        this.floorAlbedoTex = Texture.fromImage(assets.floorAlbedoImage, true);
+        this.floorNormalTex = Texture.fromImage(assets.floorNormalImage, false);
         this.flagTex = Texture.fromImage(assets.flagImage, true);
     
         const resizeObserver = new ResizeObserver(() => {
@@ -113,17 +115,42 @@ class Graphics {
         }
 
         gl.clearColor(0.0, 0.0, 1.0, 0.0);
+
+        const rows = game.map.tileRows;
+        for (let r = 0; r < rows.length; r++) {
+            for (let c = 0; c < rows[r].length; c++) {
+                switch(rows[r][c].type) {
+                    case Tile.EMPTY:
+                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.floorNormalTex);
+                        break;
+                }
+            }
+        }
+
         this.renderer.setAndClearTarget(this.normalTex);
         for (let pos of shipPositions) {
             this.renderer.drawTexture(pos.x - shipRadius, pos.y - shipRadius, shipRadius * 2, shipRadius * 2, this.shipNormalTex);
         }
+
         this.renderer.render(this.camera);
 
         gl.clearColor(0, 0, 0, 1.0);
+
+        for (let r = 0; r < rows.length; r++) {
+            for (let c = 0; c < rows[r].length; c++) {
+                switch(rows[r][c].type) {
+                    case Tile.EMPTY:
+                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.floorAlbedoTex);
+                        break;
+                }
+            }
+        }
+        
         this.renderer.setAndClearTarget(this.albedoTex);
         for (let pos of shipPositions) {
             this.renderer.drawTexture(pos.x - shipRadius, pos.y - shipRadius, shipRadius * 2, shipRadius * 2, this.shipAlbedoTex);
         }
+
         this.renderer.render(this.camera);
 
         let lightsMesh = new Mesh(VertAttrib.POS_BIT);
@@ -132,7 +159,12 @@ class Graphics {
 
         let lightPosData = [];
         for (let laser of game.laserList) {
-            lightPosData.push(laser.line.end.x, laser.line.end.y);
+            const numPoints = laser.drawPoints.length;
+            let lastSegment = laser.drawPoints[numPoints-1].sub(laser.drawPoints[numPoints-2]);
+            let segmentLen = lastSegment.length();
+            let targetLen = Math.max(segmentLen - (1-lerpFraction) * laser.getSpeed(), 0);
+            let lightPos = laser.drawPoints[numPoints-2].add(lastSegment.scale(targetLen/segmentLen));
+            lightPosData.push(lightPos.x, lightPos.y);
         }
 
         let lightPosAttrib = new VertAttrib(ATTRIB_LIGHT_POS_LOC, 2, gl.FLOAT, 1);

@@ -4,6 +4,8 @@ import { Font } from "./gfx/text.js";
 
 let shipAlbedoImage;
 let shipNormalImage;
+let floorAlbedoImage;
+let floorNormalImage;
 let flagImage;
 
 let shapeVertSrc;
@@ -47,6 +49,9 @@ async function loadAssets() {
     // ========== IMAGES ==========
     shipAlbedoImage = await requestImage("assets/ship.png");
     shipNormalImage = await requestImage("assets/ship_normal.png");
+
+    floorAlbedoImage = await requestImage("assets/floor.png");
+    floorNormalImage = await requestImage("assets/floor_normal.png");
     
     flagImage = await requestImage("assets/flag.png");
 
@@ -108,6 +113,8 @@ export {
 
     shipAlbedoImage,
     shipNormalImage,
+    floorAlbedoImage,
+    floorNormalImage,
     shipPixelRatio,
     flagImage,
 

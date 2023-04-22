@@ -13,7 +13,7 @@ void main() {
     vec4 normalSample = texture(uTex0, vTexCoord);
     vec3 normal = normalize(2.f * normalSample.rgb - vec3(1.f));
 
-    vec3 lightDir = vec3(vPos - vLightPos, 0.01f); // small z component to allow normalize (div by zero)
+    vec3 lightDir = vec3(vPos - vLightPos, -0.6f); // small z component to allow normalize (div by zero)
     float dist = length(lightDir);
     lightDir = normalize(lightDir);
 
