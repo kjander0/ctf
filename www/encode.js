@@ -49,6 +49,12 @@ class Decoder {
         this._dv = new DataView(buf);
     }
 
+    readInt8() {
+        let val = this._dv.getInt8(this._offset);
+        this._offset += 1;
+        return val;
+    }
+
     readUint8() {
         let val = this._dv.getUint8(this._offset);
         this._offset += 1;

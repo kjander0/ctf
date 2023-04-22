@@ -258,8 +258,19 @@ class Graphics {
         }
         // ========== END DRAW LASERS ==========
 
-        for (let flag of game.flagList) {
-            this.renderer.drawTexture(flag.x, flag.y, conf.TILE_SIZE, conf.TILE_SIZE, this.flagTex);
+        for (let flagIndex = 0; flagIndex < game.flagList.length; flagIndex++) {
+            let flagPos = game.flagList[flagIndex];
+            console.log(flagIndex, game.player.flagIndex);
+            if (game.player.flagIndex === flagIndex) {
+                flagPos = lerpVec(game.player.prevPos, game.player.pos, lerpFraction);
+            }
+            for (let player of game.otherPlayers) {
+                if (player.flagIndex === flagIndex) {
+                    flagPos = lerpVec(player.prevPos, player.pos, lerpFraction);
+                    break;
+                }
+            }
+            this.renderer.drawTexture(flagPos.x, flagPos.y, conf.TILE_SIZE, conf.TILE_SIZE, this.flagTex);
         }
 
         for (let emitter of game.emitterList) {

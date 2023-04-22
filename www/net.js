@@ -139,6 +139,9 @@ function _processUpdateMsg(game, decoder) {
     }
     game.player.state = newState;
 
+    game.player.flagIndex = decoder.readInt8();
+    console.log("flag index: ", game.player.flagIndex);
+
     // TODO: setting lastAckedPos without ackedTick could cause stuttered movement
     // but we want to make sure pos is available for first load into game
     const ackPos = decoder.readVec();

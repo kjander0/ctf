@@ -36,6 +36,7 @@ class Player {
 
     id;
     state = Player.STATE_SPECTATING;
+    flagIndex = -1;
     stateChanged = false;
     inputState = null;
     predictedInputs = new Predicted(Player.MAX_INPUT_PREDICTIONS);

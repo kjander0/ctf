@@ -113,6 +113,7 @@ func NewPlayer(id uint8, team int, client web.Client) Player {
 		Predicted:      predicted,
 		Client:         client,
 		ReceivedInputs: make([]PlayerInput, 0, maxPredictedInputs),
+		FlagIndex:      -1,
 	}
 }
 

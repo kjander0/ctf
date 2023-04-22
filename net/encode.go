@@ -19,6 +19,14 @@ func NewEncoder(buf *bytes.Buffer) Encoder {
 	}
 }
 
+func (e *Encoder) WriteInt8(val int8) {
+	if e.Error != nil {
+		return
+	}
+	e.Error = binary.Write(e.Buf, binary.BigEndian, val)
+	e.Offset += 1
+}
+
 func (e *Encoder) WriteUint8(val uint8) {
 	if e.Error != nil {
 		return

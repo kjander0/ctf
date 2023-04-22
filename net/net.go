@@ -216,6 +216,8 @@ func prepareWorldUpdate(world *entity.World, playerIndex int) []byte {
 	player.ReceivedInputs = player.ReceivedInputs[:0]
 
 	encoder.WriteUint8(uint8(player.State))
+	logger.Debug("flag index: ", player.FlagIndex)
+	encoder.WriteInt8(int8(player.FlagIndex))
 	encoder.WriteVec(player.Acked.Pos)
 	encoder.WriteUint16(uint16(player.Acked.Energy))
 	encoder.WriteUint16(uint16(player.Acked.BouncyEnergy))
