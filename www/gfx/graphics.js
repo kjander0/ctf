@@ -61,6 +61,10 @@ class Graphics {
         this.shipNormalTex = Texture.fromImage(assets.shipNormalImage, false);
         this.floorAlbedoTex = Texture.fromImage(assets.floorAlbedoImage, true);
         this.floorNormalTex = Texture.fromImage(assets.floorNormalImage, false);
+        this.wallAlbedoTex = Texture.fromImage(assets.wallAlbedoImage, true);
+        this.wallNormalTex = Texture.fromImage(assets.wallNormalImage, false);
+        this.wallTriangleAlbedoTex = Texture.fromImage(assets.wallTriangleAlbedoImage, true);
+        this.wallTriangleNormalTex = Texture.fromImage(assets.wallTriangleNormalImage, false);
         this.flagTex = Texture.fromImage(assets.flagImage, true);
     
         const resizeObserver = new ResizeObserver(() => {
@@ -119,8 +123,15 @@ class Graphics {
         const rows = game.map.tileRows;
         for (let r = 0; r < rows.length; r++) {
             for (let c = 0; c < rows[r].length; c++) {
-                switch(rows[r][c].type) {
-                    case Tile.EMPTY:
+                const type = rows[r][c].type;
+                switch (type) {
+                    case Tile.WALL:
+                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.wallNormalTex);
+                        break;
+                    case Tile.WALL_TRIANGLE:
+                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.wallTriangleNormalTex);
+                        break;
+                    default:
                         this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.floorNormalTex);
                         break;
                 }
@@ -138,8 +149,15 @@ class Graphics {
 
         for (let r = 0; r < rows.length; r++) {
             for (let c = 0; c < rows[r].length; c++) {
-                switch(rows[r][c].type) {
-                    case Tile.EMPTY:
+                const type = rows[r][c].type;
+                switch (type) {
+                    case Tile.WALL:
+                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.wallAlbedoTex);
+                        break;
+                    case Tile.WALL_TRIANGLE:
+                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.wallTriangleAlbedoTex);
+                        break;
+                    default:
                         this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.floorAlbedoTex);
                         break;
                 }
@@ -399,7 +417,7 @@ class Graphics {
             for (let c = 0; c < rows[r].length; c++) {
                 switch(rows[r][c].type) {
                     case Tile.WALL:
-                        this.renderer.drawRect(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE);
+                        //this.renderer.drawRect(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE);
                         break;
                     case Tile.WALL_TRIANGLE:
                     case Tile.WALL_TRIANGLE_CORNER:

@@ -14,6 +14,7 @@ import (
 // - allocate all short lived javascript objects up front (Vec, Transform, Particle, Color, etc)
 // - load assets in parallel with loading bar
 // - consider using z-depth for layering sprites (maybe X number layers?)
+// - single texture atlas for everything
 // - draw lasers underneath tank
 // - 9 sprites for tank movement
 // - Predicted buffer will fill up if client running faster than server. Reconsider adding some throttling.
@@ -33,6 +34,7 @@ import (
 // - king of the hill, or ctf goal
 
 // GAME IDEAS
+// - swept raycast to calculate light volume so e.g. back side or occluded walls arn't lit up
 // - shift to temporarily boost, draining laser energy
 // - lock on homing missile
 // - orbs with linking laser chain (maybe they wrap walls or orbs explode if laser touches something)

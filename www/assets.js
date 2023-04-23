@@ -2,10 +2,15 @@ import { Shader } from "./gfx/shader.js";
 import { gl } from "./gfx/gl.js";
 import { Font } from "./gfx/text.js";
 
+// TODO: Automate all this for each time a new asset is added
 let shipAlbedoImage;
 let shipNormalImage;
 let floorAlbedoImage;
 let floorNormalImage;
+let wallAlbedoImage;
+let wallNormalImage;
+let wallTriangleAlbedoImage;
+let wallTriangleNormalImage;
 let flagImage;
 
 let shapeVertSrc;
@@ -52,6 +57,12 @@ async function loadAssets() {
 
     floorAlbedoImage = await requestImage("assets/floor.png");
     floorNormalImage = await requestImage("assets/floor_normal.png");
+
+    wallAlbedoImage = await requestImage("assets/wall.png");
+    wallNormalImage = await requestImage("assets/wall_normal.png");
+
+    wallTriangleAlbedoImage = await requestImage("assets/wall_triangle.png");
+    wallTriangleNormalImage = await requestImage("assets/wall_triangle_normal.png");
     
     flagImage = await requestImage("assets/flag.png");
 
@@ -115,6 +126,10 @@ export {
     shipNormalImage,
     floorAlbedoImage,
     floorNormalImage,
+    wallAlbedoImage,
+    wallNormalImage,
+    wallTriangleAlbedoImage,
+    wallTriangleNormalImage,
     shipPixelRatio,
     flagImage,
 
