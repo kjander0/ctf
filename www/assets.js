@@ -9,8 +9,8 @@ let floorAlbedoImage;
 let floorNormalImage;
 let wallAlbedoImage;
 let wallNormalImage;
-let wallTriangleAlbedoImage;
-let wallTriangleNormalImage;
+let cornerTriangleAlbedoImage;
+let cornerTriangleNormalImage;
 let flagImage;
 
 let shapeVertSrc;
@@ -61,8 +61,8 @@ async function loadAssets() {
     wallAlbedoImage = await requestImage("assets/wall.png");
     wallNormalImage = await requestImage("assets/wall_normal.png");
 
-    wallTriangleAlbedoImage = await requestImage("assets/wall_triangle.png");
-    wallTriangleNormalImage = await requestImage("assets/wall_triangle_normal.png");
+    cornerTriangleAlbedoImage = await requestImage("assets/wall_triangle.png");
+    cornerTriangleNormalImage = await requestImage("assets/wall_triangle_normal.png");
     
     flagImage = await requestImage("assets/flag.png");
 
@@ -128,8 +128,8 @@ export {
     floorNormalImage,
     wallAlbedoImage,
     wallNormalImage,
-    wallTriangleAlbedoImage,
-    wallTriangleNormalImage,
+    cornerTriangleAlbedoImage,
+    cornerTriangleNormalImage,
     shipPixelRatio,
     flagImage,
 

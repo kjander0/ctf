@@ -102,7 +102,7 @@ class Map {
                 switch (tile.type) {
                     case Tile.WALL_TRIANGLE:
                     case Tile.WALL_TRIANGLE_CORNER:
-                        tile.orientation = this._findTriangleOrientation(rows, r, c);
+                        tile.orientation = 0;
                         break;
                     case Tile.FLAG_SPAWN:
                         this.numFlags++;
@@ -132,47 +132,6 @@ class Map {
             }
         }
         return samples;
-    }
-
-    _findTriangleOrientation(rows, r, c) {
-        function isWall(ri, ci) {
-            if (ri < 0 || ri >= rows.length) {
-                return false;
-            }
-            if (ci < 0 || ci >= rows[ri].length) {
-                return false;
-            }
-            return isSolidType(rows[ri][ci]);
-        }
-
-        const left = isWall(r, c-1);
-        const right = isWall(r, c+1);
-        const above = isWall(r+1, c);
-        const below = isWall(r-1, c);
-
-        if (below) {
-            if (right) {
-                return 1;
-            }
-            return 0;
-        }
-
-        if (above) {
-            if (left) {
-                return 3
-            }
-            return 2;
-        }
-
-        if (right) {
-            return 1;
-        }
-
-        if (left) {
-            return 3;
-        }
-
-        return 0;
     }
 }
 

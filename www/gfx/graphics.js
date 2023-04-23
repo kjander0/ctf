@@ -63,8 +63,8 @@ class Graphics {
         this.floorNormalTex = Texture.fromImage(assets.floorNormalImage, false);
         this.wallAlbedoTex = Texture.fromImage(assets.wallAlbedoImage, true);
         this.wallNormalTex = Texture.fromImage(assets.wallNormalImage, false);
-        this.wallTriangleAlbedoTex = Texture.fromImage(assets.wallTriangleAlbedoImage, true);
-        this.wallTriangleNormalTex = Texture.fromImage(assets.wallTriangleNormalImage, false);
+        this.cornerTriangleAlbedoTex = Texture.fromImage(assets.cornerTriangleAlbedoImage, true);
+        this.cornerTriangleNormalTex = Texture.fromImage(assets.cornerTriangleNormalImage, false);
         this.flagTex = Texture.fromImage(assets.flagImage, true);
     
         const resizeObserver = new ResizeObserver(() => {
@@ -123,13 +123,18 @@ class Graphics {
         const rows = game.map.tileRows;
         for (let r = 0; r < rows.length; r++) {
             for (let c = 0; c < rows[r].length; c++) {
-                const type = rows[r][c].type;
-                switch (type) {
+                const tile = rows[r][c];
+                switch (tile.type) {
                     case Tile.WALL:
                         this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.wallNormalTex);
                         break;
-                    case Tile.WALL_TRIANGLE:
-                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.wallTriangleNormalTex);
+                    case Tile.WALL_TRIANGLE_CORNER:
+                        TODO
+                        // TODO:
+                        // - normals below causing trouble
+                        // - can't just supply rotated version if lighting isn't directly from above!
+                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.floorNormalTex);
+                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.cornerTriangleNormalTex, tile.orientation);
                         break;
                     default:
                         this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.floorNormalTex);
@@ -149,13 +154,14 @@ class Graphics {
 
         for (let r = 0; r < rows.length; r++) {
             for (let c = 0; c < rows[r].length; c++) {
-                const type = rows[r][c].type;
-                switch (type) {
+                const tile = rows[r][c];
+                switch (tile.type) {
                     case Tile.WALL:
                         this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.wallAlbedoTex);
                         break;
-                    case Tile.WALL_TRIANGLE:
-                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.wallTriangleAlbedoTex);
+                    case Tile.WALL_TRIANGLE_CORNER:
+                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.floorAlbedoTex);
+                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.cornerTriangleAlbedoTex, tile.orientation);
                         break;
                     default:
                         this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.floorAlbedoTex);
@@ -389,21 +395,23 @@ class Graphics {
         const c = end.add(perp);
         const d = start.add(perp);
         mesh.setColor(startColor);
-        mesh.add(a);
+        mesh.add(a.x, a.y);
         mesh.setColor(endColor);
-        mesh.add(b);mesh.add(c);
-        mesh.add(c);
+        mesh.add(b.x, b.y);mesh.add(c.x, c.y);
+        mesh.add(c.x, c.y);
         mesh.setColor(startColor);
-        mesh.add(d);
-        mesh.add(a);
+        mesh.add(d.x, d.y);
+        mesh.add(a.x, a.y);
 
         // triangle end caps
         if (width > 1) {
             const capOffset = new Vec(diff).setLength(width/2);
+            const startCap = start.sub(capOffset);
+            const endCap = end.add(capOffset);
             mesh.setColor(startColor);
-            mesh.add(a); mesh.add(d); mesh.add(start.sub(capOffset));
+            mesh.add(a.x, a.y); mesh.add(d.x, d.y); mesh.add(startCap.x, startCap.y);
             mesh.setColor(endColor);
-            mesh.add(c); mesh.add(b); mesh.add(end.add(capOffset));
+            mesh.add(c.x, c.y); mesh.add(b.x, b.y); mesh.add(endCap.x, endCap.y);
         }
     }
 
@@ -420,7 +428,7 @@ class Graphics {
                         //this.renderer.drawRect(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE);
                         break;
                     case Tile.WALL_TRIANGLE:
-                    case Tile.WALL_TRIANGLE_CORNER:
+                    //case Tile.WALL_TRIANGLE_CORNER:
                         rows[r][c].setTrianglePoints(p0, p1, p2);
                         this.renderer.drawTriangle(p0, p1, p2);
                         break;

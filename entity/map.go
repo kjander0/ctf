@@ -109,7 +109,7 @@ func NewMap(rows [][]uint8) Map {
 			}
 
 			if tile.Type == TileWallTriangle || tile.Type == TileWallTriangleCorner {
-				tile.Orientation = findTriangleOrientation(rows, r, c)
+				tile.Orientation = 0
 			}
 
 			switch tile.Type {
@@ -175,38 +175,6 @@ func isWall(rows [][]uint8, ri int, ci int) bool {
 		return false
 	}
 	return IsSolidType(rows[ri][ci])
-}
-
-func findTriangleOrientation(rows [][]uint8, r int, c int) uint8 {
-
-	left := isWall(rows, r, c-1)
-	right := isWall(rows, r, c+1)
-	above := isWall(rows, r+1, c)
-	below := isWall(rows, r-1, c)
-
-	if below {
-		if right {
-			return 1
-		}
-		return 0
-	}
-
-	if above {
-		if left {
-			return 3
-		}
-		return 2
-	}
-
-	if right {
-		return 1
-	}
-
-	if left {
-		return 3
-	}
-
-	return 0
 }
 
 func TileCentre(row int, col int) mymath.Vec {

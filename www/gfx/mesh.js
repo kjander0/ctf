@@ -65,8 +65,7 @@ class Mesh {
     }
 
     add(x, y, s, t) {
-        const pos = this.transform.mul(x, y);
-        this.data.push(pos.x, pos.y);
+        this.data.push(x, y);
         if ((this.attribBits & VertAttrib.COLOR_BIT) === VertAttrib.COLOR_BIT) {
             this.data.push(this.color[0], this.color[1], this.color[2], this.color[3]);
         }
@@ -87,14 +86,16 @@ class Mesh {
         const b = end.sub(perp);
         const c = end.add(perp);
         const d = start.add(perp);
-        this.add(a);this.add(b);this.add(c);
-        this.add(a);this.add(c);this.add(d);
+        this.add(a.x, a.y);this.add(b.x, b.y);this.add(c.x, c.y);
+        this.add(a.x, a.y);this.add(c.x, c.y);this.add(d.x, d.y);
 
         // triangle end caps
         if (width > 1) {
             const capOffset = new Vec(diff).setLength(width/2);
-            this.add(a); this.add(d); this.add(start.sub(capOffset));
-            this.add(c); this.add(b); this.add(end.add(capOffset));
+            const startPoint = start.sub(capOffset);
+            const endPoint = end.add(capOffset);
+            this.add(a.x, a.y); this.add(d.x, d.y); this.add(startPoint.x, startPoint.y);
+            this.add(c.x, c.y); this.add(b.x, b.y); this.add(endPoint.x, endPoint.y);
         }
     }
 

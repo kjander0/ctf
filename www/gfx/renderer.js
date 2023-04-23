@@ -7,7 +7,6 @@ class Renderer {
     gl;
     fbo;
     
-    transformStack = [new Transform()];
     bufferSize = new Vec();
     shapeMesh;
     texMeshMap = new Map();
@@ -20,33 +19,16 @@ class Renderer {
     
         this.shapeMesh = new Mesh(VertAttrib.POS_BIT | VertAttrib.COLOR_BIT);
     }
-
-    pushTransform(t) {
-        this.transformStack.push(this.transformStack[this.transformStack.length-1].combine(t));
-    }
-    
-    popTransform() {
-        if (this.transformStack.length < 2) {
-            return;
-        }
-        this.transformStack.pop();
-    }
-    
-    getTransform() {
-        return this.transformStack[this.transformStack.length-1];
-    }
     
     setColor (r, g, b, a=1) {
         this.shapeMesh.setColor(r, g, b, a);
     }
     
     drawRect(x, y, width, height) {
-        this.shapeMesh.setTransform(this.transformStack[this.transformStack.length-1]);
         this.shapeMesh.addRect(x, y, width, height);
     }
 
     drawRectLine(x, y, width, height, lineWidth=1) {
-        this.shapeMesh.setTransform(this.transformStack[this.transformStack.length-1]);
         this.shapeMesh.addRect(x, y, width, lineWidth);
         this.shapeMesh.addRect(x, y, lineWidth, height);
         this.shapeMesh.addRect(x + width, y, lineWidth, height);
@@ -54,35 +36,50 @@ class Renderer {
     }
 
     drawTriangle(p0, p1, p2) {
-        this.shapeMesh.setTransform(this.transformStack[this.transformStack.length-1]);
         this.shapeMesh.add(p0.x, p0.y);
         this.shapeMesh.add(p1.x, p1.y);
         this.shapeMesh.add(p2.x, p2.y);
     }
     
     drawCircle(x, y, radius) {
-        this.shapeMesh.setTransform(this.transformStack[this.transformStack.length-1]);
         this.shapeMesh.addCircle(x, y, radius);
     }
     
     drawCircleLine(x, y, radius, width=1) {
-        this.shapeMesh.setTransform(this.transformStack[this.transformStack.length-1]);
         this.shapeMesh.addCircleLine(x, y, radius, width);
     }
     
     drawLine(start, end, width=1) {
-        this.shapeMesh.setTransform(this.transformStack[this.transformStack.length-1]);
         this.shapeMesh.addLine(start, end, width);    
     }
     
-    drawTexture(x, y, width, height, texture) {
+    drawTexture(x, y, width, height, texture, ccwOrientation=0) {
         let texMesh = this.texMeshMap.get(texture);
         if (texMesh === undefined) {
             texMesh = new Mesh(VertAttrib.POS_BIT | VertAttrib.TEX_BIT);
             this.texMeshMap.set(texture, texMesh);
         }
-        texMesh.setTransform(this.transformStack[this.transformStack.length-1]);
-        texMesh.addRect(x, y, width, height);
+
+        const s0=0, t0=1, s1=1, t1=0;
+        if (ccwOrientation === 0) {
+            texMesh.add(x, y, s0, t0);
+            texMesh.add(x+width, y, s1, t0);
+            texMesh.add(x+width, y+height, s1, t1);
+            texMesh.add(x, y, s0, t0);
+            texMesh.add(x+width, y+height, s1, t1);
+            texMesh.add(x, y+height, s0, t1);
+        } else if (ccwOrientation === 1) {
+            texMesh.add(x, y, s0, t1);
+            texMesh.add(x+width, y, s0, t0);
+            texMesh.add(x+width, y+height, s1, t0);
+            texMesh.add(x, y, s1, t1);
+            texMesh.add(x+width, y+height, s0, t0);
+            texMesh.add(x, y+height, s1, t1);
+        } else if (ccwOrientation === 2) {
+
+        } else if (ccwOrientation === 3) {
+
+        }
     }
 
     drawText(text, x, y, font, height=20) {
@@ -91,7 +88,6 @@ class Renderer {
             texMesh = new Mesh(VertAttrib.POS_BIT | VertAttrib.TEX_BIT);
             this.texMeshMap.set(font.texture, texMesh);
         }
-        texMesh.setTransform(this.transformStack[this.transformStack.length-1]);
 
         let xOffset = x;
         for (let i = 0; i < text.length; i++) {
