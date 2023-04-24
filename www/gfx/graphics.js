@@ -1,5 +1,5 @@
 import {lerpVec, extrapolateVec} from "../interpolate.js";
-import { Vec } from "../math.js";
+import { Vec, Transform } from "../math.js";
 import {Tile} from "../map.js";
 import {Laser} from "../weapons.js";
 import * as conf from "../conf.js";
@@ -65,6 +65,8 @@ class Graphics {
         this.wallNormalTex = Texture.fromImage(assets.wallNormalImage, false);
         this.cornerTriangleAlbedoTex = Texture.fromImage(assets.cornerTriangleAlbedoImage, true);
         this.cornerTriangleNormalTex = Texture.fromImage(assets.cornerTriangleNormalImage, false);
+        this.triangleAlbedoTex = Texture.fromImage(assets.triangleAlbedoImage, true);
+        this.triangleNormalTex = Texture.fromImage(assets.triangleNormalImage, false);
         this.flagTex = Texture.fromImage(assets.flagImage, true);
     
         const resizeObserver = new ResizeObserver(() => {
@@ -118,8 +120,10 @@ class Graphics {
             shipPositions.push(lerpPos);
         }
 
-        gl.clearColor(0.0, 0.0, 1.0, 0.0);
-
+        // ========== DRAW NORMALS ==========
+        gl.clearColor(0.0, 0.0, 0.0, 0.0); // < 1 in alpha channel for normals means no lighting
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+        
         const rows = game.map.tileRows;
         for (let r = 0; r < rows.length; r++) {
             for (let c = 0; c < rows[r].length; c++) {
@@ -128,8 +132,12 @@ class Graphics {
                     case Tile.WALL:
                         this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.wallNormalTex);
                         break;
+                    case Tile.WALL_TRIANGLE:
+                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.floorNormalTex);
+                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.triangleNormalTex, tile.orientation);
+                        break;
                     case Tile.WALL_TRIANGLE_CORNER:
-                        TODO
+                        //TODO
                         // TODO:
                         // - normals below causing trouble
                         // - can't just supply rotated version if lighting isn't directly from above!
@@ -143,14 +151,15 @@ class Graphics {
             }
         }
 
-        this.renderer.setAndClearTarget(this.normalTex);
         for (let pos of shipPositions) {
             this.renderer.drawTexture(pos.x - shipRadius, pos.y - shipRadius, shipRadius * 2, shipRadius * 2, this.shipNormalTex);
         }
 
+        this.renderer.setAndClearTarget(this.normalTex);
         this.renderer.render(this.camera);
 
-        gl.clearColor(0, 0, 0, 1.0);
+        // ========= DRAW ALBEDO ==========
+        gl.clearColor(0.3, 0.1, 0.5, 1.0);
 
         for (let r = 0; r < rows.length; r++) {
             for (let c = 0; c < rows[r].length; c++) {
@@ -158,6 +167,10 @@ class Graphics {
                 switch (tile.type) {
                     case Tile.WALL:
                         this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.wallAlbedoTex);
+                        break;
+                    case Tile.WALL_TRIANGLE:
+                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.floorAlbedoTex);
+                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.triangleAlbedoTex, tile.orientation);
                         break;
                     case Tile.WALL_TRIANGLE_CORNER:
                         this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.floorAlbedoTex);
@@ -170,11 +183,11 @@ class Graphics {
             }
         }
         
-        this.renderer.setAndClearTarget(this.albedoTex);
         for (let pos of shipPositions) {
             this.renderer.drawTexture(pos.x - shipRadius, pos.y - shipRadius, shipRadius * 2, shipRadius * 2, this.shipAlbedoTex);
         }
 
+        this.renderer.setAndClearTarget(this.albedoTex);
         this.renderer.render(this.camera);
 
         let lightsMesh = new Mesh(VertAttrib.POS_BIT);
@@ -239,12 +252,7 @@ class Graphics {
         );
         this.renderer.drawModel(screenModel);
         this.renderer.setAndClearTarget(null);
-
         this.renderer.render(this.uiCamera);
-
-        if (game.map !== null) {
-            this._drawLevel(game.map.tileRows);
-        }
         
         if (game.doDebug) {
             this.renderer.setColor(0, 1, 0);
@@ -412,28 +420,6 @@ class Graphics {
             mesh.add(a.x, a.y); mesh.add(d.x, d.y); mesh.add(startCap.x, startCap.y);
             mesh.setColor(endColor);
             mesh.add(c.x, c.y); mesh.add(b.x, b.y); mesh.add(endCap.x, endCap.y);
-        }
-    }
-
-    _drawLevel(rows) {
-        const p0 = new Vec();
-        const p1 = new Vec();
-        const p2 = new Vec();
-
-        this.renderer.setColor(0.3, 0.3, 0.3);
-        for (let r = 0; r < rows.length; r++) {
-            for (let c = 0; c < rows[r].length; c++) {
-                switch(rows[r][c].type) {
-                    case Tile.WALL:
-                        //this.renderer.drawRect(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE);
-                        break;
-                    case Tile.WALL_TRIANGLE:
-                    //case Tile.WALL_TRIANGLE_CORNER:
-                        rows[r][c].setTrianglePoints(p0, p1, p2);
-                        this.renderer.drawTriangle(p0, p1, p2);
-                        break;
-                }
-            }
         }
     }
     

@@ -174,6 +174,7 @@ class Transform {
         const S = Math.sin(rads);
         t.mat[0] = C; t.mat[3] = -S;
         t.mat[1] = S; t.mat[4] = C;
+        return t;
     }
 }
 

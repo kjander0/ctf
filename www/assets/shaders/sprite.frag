@@ -9,5 +9,6 @@ out vec4 fragColor;
 
 void main() {
     fragColor = texture(uTex0, vTexCoord) + texture(uTex1, vTexCoord);
-    fragColor.rgb -= 0.25 * pow(fragColor.rgb, vec3(2.0));
+    fragColor.rgb -= 0.25 * pow(fragColor.rgb, vec3(2.0)); // tone map
+    fragColor.a = 1.0; // if not this, then disable depth test so final image is not mixed with clearColor
 }
