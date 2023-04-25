@@ -33,9 +33,6 @@ class Graphics {
     highlightTex = null;
     finalTex = null;
 
-    shipAlbedoTex;
-    shipNormalTex;
-
     // shaders
     lightsShader;
     spriteShader;
@@ -56,18 +53,6 @@ class Graphics {
         this.lightsShader = new Shader(gl, assets.lightsVertSrc, assets.lightsFragSrc);
         this.spriteShader = new Shader(gl, assets.spriteVertSrc, assets.spriteFragSrc);
         this.gammaShader = new Shader(gl, assets.texVertSrc, assets.gammaFragSrc);
-
-        this.shipAlbedoTex = Texture.fromImage(assets.shipAlbedoImage, true);
-        this.shipNormalTex = Texture.fromImage(assets.shipNormalImage, false);
-        this.floorAlbedoTex = Texture.fromImage(assets.floorAlbedoImage, true);
-        this.floorNormalTex = Texture.fromImage(assets.floorNormalImage, false);
-        this.wallAlbedoTex = Texture.fromImage(assets.wallAlbedoImage, true);
-        this.wallNormalTex = Texture.fromImage(assets.wallNormalImage, false);
-        this.cornerTriangleAlbedoTex = Texture.fromImage(assets.cornerTriangleAlbedoImage, true);
-        this.cornerTriangleNormalTex = Texture.fromImage(assets.cornerTriangleNormalImage, false);
-        this.triangleAlbedoTex = Texture.fromImage(assets.triangleAlbedoImage, true);
-        this.triangleNormalTex = Texture.fromImage(assets.triangleNormalImage, false);
-        this.flagTex = Texture.fromImage(assets.flagImage, true);
     
         const resizeObserver = new ResizeObserver(() => {
             this._onresize();
@@ -130,29 +115,29 @@ class Graphics {
                 const tile = rows[r][c];
                 switch (tile.type) {
                     case Tile.WALL:
-                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.wallNormalTex);
+                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("wall_normal"));
                         break;
                     case Tile.WALL_TRIANGLE:
-                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.floorNormalTex);
-                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.triangleNormalTex, tile.orientation);
+                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("floor_normal"));
+                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("wall_triangle_normal"), tile.orientation);
                         break;
                     case Tile.WALL_TRIANGLE_CORNER:
                         //TODO
                         // TODO:
                         // - normals below causing trouble
                         // - can't just supply rotated version if lighting isn't directly from above!
-                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.floorNormalTex);
-                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.cornerTriangleNormalTex, tile.orientation);
+                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("floor_normal"));
+                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("wall_triangle_corner_normal"), tile.orientation);
                         break;
                     default:
-                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.floorNormalTex);
+                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("floor_normal"));
                         break;
                 }
             }
         }
 
         for (let pos of shipPositions) {
-            this.renderer.drawTexture(pos.x - shipRadius, pos.y - shipRadius, shipRadius * 2, shipRadius * 2, this.shipNormalTex);
+            this.renderer.drawTexture(pos.x - shipRadius, pos.y - shipRadius, shipRadius * 2, shipRadius * 2, assets.getTexture("ship_normal"));
         }
 
         this.renderer.setAndClearTarget(this.normalTex);
@@ -166,25 +151,25 @@ class Graphics {
                 const tile = rows[r][c];
                 switch (tile.type) {
                     case Tile.WALL:
-                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.wallAlbedoTex);
+                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("wall"));
                         break;
                     case Tile.WALL_TRIANGLE:
-                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.floorAlbedoTex);
-                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.triangleAlbedoTex, tile.orientation);
+                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("floor"));
+                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("wall_triangle"), tile.orientation);
                         break;
                     case Tile.WALL_TRIANGLE_CORNER:
-                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.floorAlbedoTex);
-                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.cornerTriangleAlbedoTex, tile.orientation);
+                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("floor"));
+                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("wall_triangle_corner"), tile.orientation);
                         break;
                     default:
-                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, this.floorAlbedoTex);
+                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("floor"));
                         break;
                 }
             }
         }
         
         for (let pos of shipPositions) {
-            this.renderer.drawTexture(pos.x - shipRadius, pos.y - shipRadius, shipRadius * 2, shipRadius * 2, this.shipAlbedoTex);
+            this.renderer.drawTexture(pos.x - shipRadius, pos.y - shipRadius, shipRadius * 2, shipRadius * 2, assets.getTexture("ship"));
         }
 
         this.renderer.setAndClearTarget(this.albedoTex);
@@ -334,7 +319,7 @@ class Graphics {
                     break;
                 }
             }
-            this.renderer.drawTexture(flagPos.x, flagPos.y, conf.TILE_SIZE, conf.TILE_SIZE, this.flagTex);
+            this.renderer.drawTexture(flagPos.x, flagPos.y, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("flag"));
         }
 
         for (let emitter of game.emitterList) {

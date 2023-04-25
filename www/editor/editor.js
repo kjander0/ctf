@@ -2,6 +2,9 @@ import * as conf from "../conf.js";
 import * as assets from "../assets.js";
 import {Renderer} from "../gfx/renderer.js";
 import {Camera} from "../gfx/camera.js";
+import { Shader } from "../gfx/shader.js";
+import { Texture } from "../gfx/texture.js";
+import { Mesh, Model, VertAttrib } from "../gfx/mesh.js";
 import {Vec} from "../math.js";
 import {Tile} from "../map.js";
 import {gl, initGL} from "../gfx/gl.js";
@@ -10,6 +13,7 @@ let rows;
 let camera = new Camera();
 let uiCamera = new Camera();
 let renderer;
+let gammaShader;
 let canvas;
 let camDir = new Vec();
 let camPos = new Vec();
@@ -19,6 +23,7 @@ let selectedTileType = Tile.WALL;
 let placingTiles = false;
 let mouseEventPos = new Vec();
 let orientation = 0;
+let finalScreenTex;
 
 class Button {
     pos = new Vec();
@@ -98,6 +103,8 @@ window.onload = async function() {
 
     await assets.loadAssets(gl);
 
+    gammaShader = new Shader(gl, assets.texVertSrc, assets.gammaFragSrc)
+
     gl.disable(gl.DEPTH_TEST);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -137,6 +144,11 @@ function onresize() {
     frame.onresize(screenSize.x, screenSize.y);
 
     gl.viewport(0, 0, screenSize.x, screenSize.y);
+
+    finalScreenTex = Texture.fromSize(
+        screenSize.x,
+        screenSize.y,
+    );
 }
 
 function onKeyDown(event) {
@@ -366,22 +378,20 @@ function drawTile(tile) {
     switch(tile.type) {
         // TODO: reuse this drawing switch statement for drawing buttons and tiles!!!
         case Tile.WALL:
-            renderer.drawRect(tile.pos.x, tile.pos.y, conf.TILE_SIZE, conf.TILE_SIZE);
+            renderer.drawTexture(tile.pos.x, tile.pos.y, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("wall"));
+            //renderer.drawRect(tile.pos.x, tile.pos.y, conf.TILE_SIZE, conf.TILE_SIZE);
             break;
         case Tile.WALL_TRIANGLE:
+            renderer.drawTexture(tile.pos.x, tile.pos.y, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("wall_triangle"));
         case Tile.WALL_TRIANGLE_CORNER:
-            const p0 = new Vec();
-            const p1 = new Vec();
-            const p2 = new Vec();
-            tile.setTrianglePoints(p0, p1, p2);
-            renderer.drawTriangle(p0, p1, p2);
+            renderer.drawTexture(tile.pos.x, tile.pos.y, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("wall_triangle_corner"));
             break;
     }
 }
 
 function render() {
     gl.clearColor(0, 0, 0, 1.0);
-    renderer.setAndClearTarget(null);
+    renderer.setAndClearTarget(finalScreenTex);
     
     const worldPos = eventToWorldPos(mouseEventPos.x, mouseEventPos.y);
     const [row, col] = worldToRowCol(worldPos);
@@ -394,12 +404,10 @@ function render() {
                 const tmpType = tile.type;
                 tile.orientation = orientation;
                 tile.type = selectedTileType;
-                renderer.setColor(1.0, 0.1, 0.1);
                 drawTile(tile);
                 tile.orientation = tmpOrientation;
                 tile.type = tmpType;
             } else {
-                renderer.setColor(0.3, 0.3, 0.3);
                 drawTile(tile);
             }
         }
@@ -415,5 +423,19 @@ function render() {
     frame.ondraw();
     const margin = 10;
     renderer.drawText("Pan: wasd", margin, screenSize.y - 20 - margin, assets.arialFont, 20);
+    renderer.render(uiCamera);
+
+    // Gamma correct everything
+    let screenMesh = new Mesh(VertAttrib.POS_BIT | VertAttrib.TEX_BIT);
+    screenMesh.addRect(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, 0, 0, 1, 1);
+    let screenModel = new Model(
+        gl,
+        screenMesh,
+        gl.TRIANGLES,
+        gammaShader,
+        [finalScreenTex]
+    );
+    renderer.drawModel(screenModel);
+    renderer.setAndClearTarget(null);
     renderer.render(uiCamera);
 }

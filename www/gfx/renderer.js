@@ -6,7 +6,6 @@ import * as assets from "../assets.js";
 class Renderer {
     gl;
     fbo;
-    
     bufferSize = new Vec();
     shapeMesh;
     texMeshMap = new Map();

@@ -1,19 +1,7 @@
 import { Shader } from "./gfx/shader.js";
 import { gl } from "./gfx/gl.js";
 import { Font } from "./gfx/text.js";
-
-// TODO: Automate all this for each time a new asset is added
-let shipAlbedoImage;
-let shipNormalImage;
-let floorAlbedoImage;
-let floorNormalImage;
-let wallAlbedoImage;
-let wallNormalImage;
-let cornerTriangleAlbedoImage;
-let cornerTriangleNormalImage;
-let triangleAlbedoImage;
-let triangleNormalImage;
-let flagImage;
+import { Texture } from "./gfx/texture.js";
 
 let shapeVertSrc;
 let shapeFragSrc;
@@ -30,10 +18,30 @@ let texShader;
 
 let arialFont;
 
+const textures = {};
+
 const shipPixelRatio = 406/512;
+
+const srgbImageList = [
+    "ship",
+    "floor",
+    "wall",
+    "wall_triangle",
+    "wall_triangle_corner",
+    "flag",
+]
+
+const xyzImageList = [
+    "ship_normal",
+    "floor_normal",
+    "wall_normal",
+    "wall_triangle_normal",
+    "wall_triangle_corner_normal",
+]
 
 async function loadAssets() {    
     // TODO: load assets in parallel
+
 
     // ========== SHADERS ==========
     shapeVertSrc = await requestText("assets/shaders/shape.vert");
@@ -54,23 +62,14 @@ async function loadAssets() {
     texShader = new Shader(gl, texVertSrc, texFragSrc);
 
     // ========== IMAGES ==========
-    shipAlbedoImage = await requestImage("assets/ship.png");
-    shipNormalImage = await requestImage("assets/ship_normal.png");
-
-    floorAlbedoImage = await requestImage("assets/floor.png");
-    floorNormalImage = await requestImage("assets/floor_normal.png");
-
-    wallAlbedoImage = await requestImage("assets/wall.png");
-    wallNormalImage = await requestImage("assets/wall_normal.png");
-
-    cornerTriangleAlbedoImage = await requestImage("assets/wall_triangle_corner.png");
-    cornerTriangleNormalImage = await requestImage("assets/wall_triangle_corner_normal.png");
-
-    triangleAlbedoImage = await requestImage("assets/wall_triangle.png");
-    triangleNormalImage = await requestImage("assets/wall_triangle_normal.png");
-    
-    flagImage = await requestImage("assets/flag.png");
-
+    for (let name of srgbImageList) {
+        let img = await requestImage("assets/" + name + ".png");
+        textures[name] = Texture.fromImage(img, true);
+    }
+    for (let name of xyzImageList) {
+        let img = await requestImage("assets/" + name + ".png");
+        textures[name] = Texture.fromImage(img, false);
+    }
 
     // ========== FONTS ==========
     const arialFontImage = await requestImage("assets/arial.png");
@@ -109,10 +108,15 @@ async function requestImage(urlPath) {
     });
 }
 
+function getTexture(name) {
+    return textures[name];
+}
+
 export {
     loadAssets,
     requestText,
     requestImage,
+    getTexture,
 
     shapeVertSrc,
     shapeFragSrc,
@@ -127,18 +131,7 @@ export {
     shapeShader,
     texShader,
 
-    shipAlbedoImage,
-    shipNormalImage,
-    floorAlbedoImage,
-    floorNormalImage,
-    wallAlbedoImage,
-    wallNormalImage,
-    cornerTriangleAlbedoImage,
-    cornerTriangleNormalImage,
-    triangleAlbedoImage,
-    triangleNormalImage,
     shipPixelRatio,
-    flagImage,
 
     arialFont,
 }
