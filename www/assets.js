@@ -26,8 +26,14 @@ const srgbImageList = [
     "ship",
     "floor",
     "wall",
-    "wall_triangle",
-    "wall_triangle_corner",
+    "wall_triangle0",
+    "wall_triangle1",
+    "wall_triangle2",
+    "wall_triangle3",
+    "wall_triangle_corner0",
+    "wall_triangle_corner1",
+    "wall_triangle_corner2",
+    "wall_triangle_corner3",
     "flag",
 ]
 
@@ -35,8 +41,14 @@ const xyzImageList = [
     "ship_normal",
     "floor_normal",
     "wall_normal",
-    "wall_triangle_normal",
-    "wall_triangle_corner_normal",
+    "wall_triangle_normal0",
+    "wall_triangle_normal1",
+    "wall_triangle_normal2",
+    "wall_triangle_normal3",
+    "wall_triangle_corner_normal0",
+    "wall_triangle_corner_normal1",
+    "wall_triangle_corner_normal2",
+    "wall_triangle_corner_normal3",
 ]
 
 async function loadAssets() {    

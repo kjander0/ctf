@@ -10,6 +10,7 @@ import { Shader } from "./shader.js";
 import { Texture } from "./texture.js";
 import { Camera } from "./camera.js";
 import { gl } from "./gl.js";
+import * as tile_textures from "./tile_textures.js";
 import * as assets from "../assets.js";
 
 const ATTRIB_LIGHT_POS_LOC = 3;
@@ -113,26 +114,14 @@ class Graphics {
         for (let r = 0; r < rows.length; r++) {
             for (let c = 0; c < rows[r].length; c++) {
                 const tile = rows[r][c];
-                switch (tile.type) {
-                    case Tile.WALL:
-                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("wall_normal"));
-                        break;
-                    case Tile.WALL_TRIANGLE:
-                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("floor_normal"));
-                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("wall_triangle_normal"), tile.orientation);
-                        break;
-                    case Tile.WALL_TRIANGLE_CORNER:
-                        //TODO
-                        // TODO:
-                        // - normals below causing trouble
-                        // - can't just supply rotated version if lighting isn't directly from above!
-                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("floor_normal"));
-                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("wall_triangle_corner_normal"), tile.orientation);
-                        break;
-                    default:
-                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("floor_normal"));
-                        break;
+                if (tile.type !== Tile.EMPTY) {
+                    this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("floor_normal"));
                 }
+                const normTex = tile_textures.getNormalTexture(tile);
+                if (normTex === null) {
+                    continue;
+                }
+                this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, normTex);
             }
         }
 
@@ -149,22 +138,11 @@ class Graphics {
         for (let r = 0; r < rows.length; r++) {
             for (let c = 0; c < rows[r].length; c++) {
                 const tile = rows[r][c];
-                switch (tile.type) {
-                    case Tile.WALL:
-                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("wall"));
-                        break;
-                    case Tile.WALL_TRIANGLE:
-                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("floor"));
-                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("wall_triangle"), tile.orientation);
-                        break;
-                    case Tile.WALL_TRIANGLE_CORNER:
-                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("floor"));
-                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("wall_triangle_corner"), tile.orientation);
-                        break;
-                    default:
-                        this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("floor"));
-                        break;
+                const tex = tile_textures.getAlbedoTexture(tile);
+                if (tex === null) {
+                    continue;
                 }
+                this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, tex);
             }
         }
         

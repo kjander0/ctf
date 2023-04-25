@@ -52,33 +52,13 @@ class Renderer {
         this.shapeMesh.addLine(start, end, width);    
     }
     
-    drawTexture(x, y, width, height, texture, ccwOrientation=0) {
+    drawTexture(x, y, width, height, texture) {
         let texMesh = this.texMeshMap.get(texture);
         if (texMesh === undefined) {
             texMesh = new Mesh(VertAttrib.POS_BIT | VertAttrib.TEX_BIT);
             this.texMeshMap.set(texture, texMesh);
         }
-
-        const s0=0, t0=1, s1=1, t1=0;
-        if (ccwOrientation === 0) {
-            texMesh.add(x, y, s0, t0);
-            texMesh.add(x+width, y, s1, t0);
-            texMesh.add(x+width, y+height, s1, t1);
-            texMesh.add(x, y, s0, t0);
-            texMesh.add(x+width, y+height, s1, t1);
-            texMesh.add(x, y+height, s0, t1);
-        } else if (ccwOrientation === 1) {
-            texMesh.add(x, y, s0, t1);
-            texMesh.add(x+width, y, s0, t0);
-            texMesh.add(x+width, y+height, s1, t0);
-            texMesh.add(x, y, s1, t1);
-            texMesh.add(x+width, y+height, s0, t0);
-            texMesh.add(x, y+height, s1, t1);
-        } else if (ccwOrientation === 2) {
-
-        } else if (ccwOrientation === 3) {
-
-        }
+        texMesh.addRect(x, y, width, height);
     }
 
     drawText(text, x, y, font, height=20) {

@@ -5,6 +5,7 @@ import {Camera} from "../gfx/camera.js";
 import { Shader } from "../gfx/shader.js";
 import { Texture } from "../gfx/texture.js";
 import { Mesh, Model, VertAttrib } from "../gfx/mesh.js";
+import * as tile_textures from "../gfx/tile_textures.js";
 import {Vec} from "../math.js";
 import {Tile} from "../map.js";
 import {gl, initGL} from "../gfx/gl.js";
@@ -246,8 +247,8 @@ function initUI() {
             renderer.setColor(0.9, 0.9, 0);
         }
         renderer.drawRect(wallButton.pos.x, wallButton.pos.y, wallButton.size.x, wallButton.size.y);
-        renderer.setColor(0.3, 0.3, 0.3);
-        renderer.drawRect(wallButton.pos.x + offset, wallButton.pos.y + offset, conf.TILE_SIZE, conf.TILE_SIZE);
+        renderer.drawTexture(wallButton.pos.x + offset, wallButton.pos.y + offset, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("wall"));
+
     }
     wallButton.onmousedown = () => {
         selectedTileType = Tile.WALL;
@@ -260,11 +261,7 @@ function initUI() {
             renderer.setColor(0.9, 0.9, 0);
         }
         renderer.drawRect(wallTriangle.pos.x, wallTriangle.pos.y, wallTriangle.size.x, wallTriangle.size.y);
-        renderer.setColor(0.3, 0.3, 0.3);
-        const p0 = wallTriangle.pos.addXY(offset, offset);
-        const p1 = p0.addXY(conf.TILE_SIZE, 0);
-        const p2 = p0.addXY(conf.TILE_SIZE/2, conf.TILE_SIZE/2);
-        renderer.drawTriangle(p0, p1, p2);
+        renderer.drawTexture(wallTriangle.pos.x + offset, wallTriangle.pos.y + offset, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("wall_triangle0"));
     }
     wallTriangle.onmousedown = () => {
         selectedTileType = Tile.WALL_TRIANGLE;
@@ -277,11 +274,7 @@ function initUI() {
             renderer.setColor(0.9, 0.9, 0);
         }
         renderer.drawRect(wallCorner.pos.x, wallCorner.pos.y, wallCorner.size.x, wallCorner.size.y);
-        renderer.setColor(0.3, 0.3, 0.3);
-        const p0 = wallCorner.pos.addXY(offset, offset);
-        const p1 = p0.addXY(conf.TILE_SIZE, 0);
-        const p2 = p0.addXY(0, conf.TILE_SIZE);
-        renderer.drawTriangle(p0, p1, p2);
+        renderer.drawTexture(wallCorner.pos.x + offset, wallCorner.pos.y + offset, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("wall_triangle_corner0"));
     }
     wallCorner.onmousedown = () => {
         selectedTileType = Tile.WALL_TRIANGLE_CORNER;
@@ -374,20 +367,6 @@ function update() {
     }
 }
 
-function drawTile(tile) {
-    switch(tile.type) {
-        // TODO: reuse this drawing switch statement for drawing buttons and tiles!!!
-        case Tile.WALL:
-            renderer.drawTexture(tile.pos.x, tile.pos.y, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("wall"));
-            //renderer.drawRect(tile.pos.x, tile.pos.y, conf.TILE_SIZE, conf.TILE_SIZE);
-            break;
-        case Tile.WALL_TRIANGLE:
-            renderer.drawTexture(tile.pos.x, tile.pos.y, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("wall_triangle"));
-        case Tile.WALL_TRIANGLE_CORNER:
-            renderer.drawTexture(tile.pos.x, tile.pos.y, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("wall_triangle_corner"));
-            break;
-    }
-}
 
 function render() {
     gl.clearColor(0, 0, 0, 1.0);
@@ -399,17 +378,21 @@ function render() {
     for (let r = 0; r < rows.length; r++) {
         for (let c = 0; c < rows[r].length; c++) {
             const tile = rows[r][c];
+            const tmpOrientation = tile.orientation;
+            const tmpType = tile.type;
+
             if (r === row && c === col) {
-                const tmpOrientation = tile.orientation;
-                const tmpType = tile.type;
                 tile.orientation = orientation;
                 tile.type = selectedTileType;
-                drawTile(tile);
-                tile.orientation = tmpOrientation;
-                tile.type = tmpType;
-            } else {
-                drawTile(tile);
             }
+
+            let tileTex = tile_textures.getAlbedoTexture(tile);
+            if (tileTex === null) {
+                tileTex = assets.getTexture("floor");
+            }
+            renderer.drawTexture(tile.pos.x, tile.pos.y, conf.TILE_SIZE, conf.TILE_SIZE, tileTex);
+            tile.orientation = tmpOrientation;
+            tile.type = tmpType;
         }
     }
 
@@ -422,7 +405,9 @@ function render() {
     // draw UI
     frame.ondraw();
     const margin = 10;
-    renderer.drawText("Pan: wasd", margin, screenSize.y - 20 - margin, assets.arialFont, 20);
+    const height = 20;
+    renderer.drawText("Pan:    wasd", margin, screenSize.y - (margin+height), assets.arialFont, height);
+    renderer.drawText("Rotate: r", margin, screenSize.y - 2*(margin+height), assets.arialFont, height);
     renderer.render(uiCamera);
 
     // Gamma correct everything

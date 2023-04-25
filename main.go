@@ -34,16 +34,16 @@ import (
 // - king of the hill, or ctf goal
 
 // GAME IDEAS
-// - swept raycast to calculate light volume so e.g. back side or occluded walls arn't lit up
 // - shift to temporarily boost, draining laser energy
 // - lock on homing missile
 // - orbs with linking laser chain (maybe they wrap walls or orbs explode if laser touches something)
 // - shotgun 4 lasers
 // - flak/firework, slow shell which explodes into multuple lasers
 // - tiles that can be opened or destroyed
-// - slower when carrying flags, but perhaps primary laser gets stronger?
+// - flag is a crystal, flag carrier is slower, but shoots larger purple lasers
 
 // GRAPHICS IDEAS
+// - swept raycast to calculate light volume so e.g. back side or occluded walls arn't lit up
 // - particles falling away from lasers (or maybe just special lasers to set them apart, i.e flak)
 // - 3d models rendered 2d, normal maps too
 // - models should have an inner skeleton with different coloured/styled armour (like mobile suits)
