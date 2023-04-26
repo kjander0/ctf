@@ -1,4 +1,5 @@
 // TODO
+// - reconsider message size limits (e.g. 1024 in encode.js)
 // - inputs tend to clump up with bad netowrk conditions. If server is consuming multiple inputs at the same time, it could fast
 //      forward lasers by some limited amount so they get the true spread.
 // - disable client collisions to test server collisions and vice versa

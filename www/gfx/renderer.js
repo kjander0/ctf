@@ -61,20 +61,19 @@ class Renderer {
         texMesh.addRect(x, y, width, height);
     }
 
-    drawText(text, x, y, font, height=20) {
+    drawText(text, x, y, font, height=24) {
         let texMesh = this.texMeshMap.get(font.texture);
         if (texMesh === undefined) {
             texMesh = new Mesh(VertAttrib.POS_BIT | VertAttrib.TEX_BIT);
             this.texMeshMap.set(font.texture, texMesh);
         }
-
+        const scale = height / font.fontHeight;
         let xOffset = x;
         for (let i = 0; i < text.length; i++) {
             const asciiCode = text.charCodeAt(i);
             const glyph = font.glyphs[asciiCode];
-            texMesh.addRect(xOffset, y, font.cellWidth, font.fontHeight, glyph.s0, glyph.t0, glyph.s1, glyph.t1);
-            //texMesh.addRect(0, 0, 100, 100, 0, 0, 0.2, 0.2);
-            xOffset += glyph.width;
+            texMesh.addRect(xOffset, y, scale * font.cellWidth, height, glyph.s0, glyph.t0, glyph.s1, glyph.t1);
+            xOffset += scale * glyph.width;
         }
     }
     

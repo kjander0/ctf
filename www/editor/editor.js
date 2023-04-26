@@ -9,6 +9,10 @@ import * as tile_textures from "../gfx/tile_textures.js";
 import {Vec} from "../math.js";
 import {Tile} from "../map.js";
 import {gl, initGL} from "../gfx/gl.js";
+import { marshal, unmarshal } from "./marshal.js";
+
+// TODO
+// - show error if badly formatted map file
 
 let rows;
 let camera = new Camera();
@@ -19,7 +23,8 @@ let canvas;
 let camDir = new Vec();
 let camPos = new Vec();
 let screenSize = new Vec();
-let frame;
+let tileButtonsFrame;
+let actionsFrame;
 let selectedTileType = Tile.WALL;
 let placingTiles = false;
 let mouseEventPos = new Vec();
@@ -29,6 +34,7 @@ let finalScreenTex;
 class Button {
     pos = new Vec();
     size;
+    usserdata = null;
 
     constructor(size) {
         this.size = new Vec(size);
@@ -46,14 +52,14 @@ class Button {
 class Frame {
     pos;
     size;
-    margin;
+    margin = 10;
+    layoutHorizontal = true;
 
     children = [];
 
-    constructor(pos, size, margin=10) {
+    constructor(pos, size) {
         this.pos = new Vec(pos);
         this.size = new Vec(size);
-        this.margin = margin;
     }
 
     addChild(child) {
@@ -75,17 +81,27 @@ class Frame {
     onresize(width, height) {
         this.size.set(width, height);
 
-        let contentWidth = this.children.length * this.margin;
+        let contentSize = new Vec(1, 1).scale(this.children.length * this.margin);
         for (let child of this.children) {
-            contentWidth += child.size.x;
+            contentSize = contentSize.add(child.size);
         }
         
-        let childX = (this.size.x - contentWidth)/2;
-        for (let child of this.children) {
-            child.pos.x = childX;
-            child.pos.y = this.margin;
-            childX += this.margin + child.size.x;
+        if (this.layoutHorizontal) {
+            let childX = (this.size.x - contentSize.x)/2;
+            for (let child of this.children) {
+                child.pos.x = childX;
+                child.pos.y = this.margin;
+                childX += this.margin + child.size.x;
+            }
+        } else {
+            let childY = (this.size.y - contentSize.y)/2;
+            for (let child of this.children) {
+                child.pos.x = this.margin;
+                child.pos.y = childY;
+                childY += this.margin + child.size.y;
+            }
         }
+
     }
 
     ondraw() {
@@ -142,7 +158,8 @@ function onresize() {
 
     screenSize.set(gl.drawingBufferWidth, gl.drawingBufferHeight);
 
-    frame.onresize(screenSize.x, screenSize.y);
+    tileButtonsFrame.onresize(screenSize.x, screenSize.y);
+    actionsFrame.onresize(screenSize.x, screenSize.y);
 
     gl.viewport(0, 0, screenSize.x, screenSize.y);
 
@@ -204,7 +221,11 @@ function onKeyUp(event) {
 
 function onMouseDown(event) {
     const uiPos = eventToUIPos(event.clientX, event.clientY);
-    if (frame.onmousedown(uiPos.x, uiPos.y)) {
+    if (tileButtonsFrame.onmousedown(uiPos.x, uiPos.y)) {
+        return;
+    }
+
+    if (actionsFrame.onmousedown(uiPos.x, uiPos.y)) {
         return;
     }
 
@@ -220,70 +241,41 @@ function onMouseMove(event) {
 }
 
 function initUI() {
-    frame = new Frame(new Vec(), screenSize);
+    tileButtonsFrame = new Frame(new Vec(), screenSize);
+    tileButtonsFrame.layoutHorizontal = true;
 
-    const buttonSize = new Vec(50, 50);
-    const offset = (buttonSize.x - conf.TILE_SIZE) / 2;
+    let buttonSize = new Vec(50, 50);
+    for (let tileType of [Tile.EMPTY, Tile.WALL, Tile.WALL_TRIANGLE, Tile.WALL_TRIANGLE_CORNER]) {
+        const btn = new Button(buttonSize);
+        btn.userdata = tileType;
+        btn.onmousedown = () => {
+            selectedTileType = tileType;
+        };
+        tileButtonsFrame.addChild(btn);
+    }
 
-    const clearButton = new Button(buttonSize);
-    clearButton.ondraw = () => {
-        renderer.setColor(0.9, 0.9, 0.9);
-        if (selectedTileType === Tile.EMPTY) {
-            renderer.setColor(0.9, 0.9, 0);
+    actionsFrame = new Frame(new Vec(), screenSize);
+    actionsFrame.layoutHorizontal = false;
+    buttonSize = new Vec(70, 40);
+    const importBtn = new Button(buttonSize);
+    importBtn.userdata = "Import";
+    importBtn.onmousedown = () => {
+        pickFile();
+    };
+    const exportBtn = new Button(buttonSize);
+    exportBtn.userdata = "Export";
+    actionsFrame.addChild(importBtn);
+    actionsFrame.addChild(exportBtn);
+}
+
+function pickFile() {
+    const picker = document.getElementById("filePicker");
+    picker.onchange = async () => {
+        if (picker.files.length > 0) {
+            rows = await unmarshal(picker.files[0]);
         }
-        renderer.drawRect(clearButton.pos.x, clearButton.pos.y, clearButton.size.x, clearButton.size.y);
-        renderer.setColor(1.0, 0, 0);
-        renderer.drawLine(clearButton.pos.addXY(offset, offset), clearButton.pos.addXY(offset + conf.TILE_SIZE, offset + conf.TILE_SIZE), 3);
-        renderer.drawLine(clearButton.pos.addXY(offset + conf.TILE_SIZE, offset), clearButton.pos.addXY(offset, offset + conf.TILE_SIZE), 3);
-    }
-    clearButton.onmousedown = () => {
-        selectedTileType = Tile.EMPTY;
-    }
-
-    const wallButton = new Button(buttonSize);
-    wallButton.ondraw = () => {
-        renderer.setColor(0.9, 0.9, 0.9);
-        if (selectedTileType === Tile.WALL) {
-            renderer.setColor(0.9, 0.9, 0);
-        }
-        renderer.drawRect(wallButton.pos.x, wallButton.pos.y, wallButton.size.x, wallButton.size.y);
-        renderer.drawTexture(wallButton.pos.x + offset, wallButton.pos.y + offset, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("wall"));
-
-    }
-    wallButton.onmousedown = () => {
-        selectedTileType = Tile.WALL;
-    }
-
-    const wallTriangle = new Button(buttonSize);
-    wallTriangle.ondraw = () => {
-        renderer.setColor(0.9, 0.9, 0.9);
-        if (selectedTileType === Tile.WALL_TRIANGLE) {
-            renderer.setColor(0.9, 0.9, 0);
-        }
-        renderer.drawRect(wallTriangle.pos.x, wallTriangle.pos.y, wallTriangle.size.x, wallTriangle.size.y);
-        renderer.drawTexture(wallTriangle.pos.x + offset, wallTriangle.pos.y + offset, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("wall_triangle0"));
-    }
-    wallTriangle.onmousedown = () => {
-        selectedTileType = Tile.WALL_TRIANGLE;
-    }
-
-    const wallCorner = new Button(buttonSize);
-    wallCorner.ondraw = () => {
-        renderer.setColor(0.9, 0.9, 0.9);
-        if (selectedTileType === Tile.WALL_TRIANGLE_CORNER) {
-            renderer.setColor(0.9, 0.9, 0);
-        }
-        renderer.drawRect(wallCorner.pos.x, wallCorner.pos.y, wallCorner.size.x, wallCorner.size.y);
-        renderer.drawTexture(wallCorner.pos.x + offset, wallCorner.pos.y + offset, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("wall_triangle_corner0"));
-    }
-    wallCorner.onmousedown = () => {
-        selectedTileType = Tile.WALL_TRIANGLE_CORNER;
-    }
-
-    frame.addChild(clearButton);
-    frame.addChild(wallButton);
-    frame.addChild(wallTriangle);
-    frame.addChild(wallCorner);
+    };
+    picker.click();
 }
 
 function loadMap() {
@@ -395,19 +387,60 @@ function render() {
             tile.type = tmpType;
         }
     }
+    renderer.render(camera);
 
     // draw tile highlight
     renderer.setColor(1.0, 0, 0.0);
     renderer.drawRectLine(col * conf.TILE_SIZE, row * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE);
-
     renderer.render(camera);
 
     // draw UI
-    frame.ondraw();
     const margin = 10;
-    const height = 20;
-    renderer.drawText("Pan:    wasd", margin, screenSize.y - (margin+height), assets.arialFont, height);
-    renderer.drawText("Rotate: r", margin, screenSize.y - 2*(margin+height), assets.arialFont, height);
+    const fontSize = 24;
+    // TODO: Use UI frame + labels for these
+    renderer.drawText("Pan:    wasd", margin, screenSize.y - (margin+fontSize), assets.arialFont, fontSize);
+    renderer.drawText("Rotate: r", margin, screenSize.y - 2*(margin+fontSize), assets.arialFont, fontSize);
+
+    for (let btn of actionsFrame.children) {
+        renderer.setColor(.1, .1, .1);
+        renderer.drawRect(btn.pos.x, btn.pos.y, btn.size.x, btn.size.y);
+        const textSize = assets.arialFont.calcBounds(btn.userdata, fontSize);
+        const offset = btn.size.sub(textSize).scale(0.5);
+        renderer.drawText(btn.userdata, btn.pos.x + offset.x, btn.pos.y + offset.y, assets.arialFont, fontSize);
+    }
+
+    for (let btn of tileButtonsFrame.children) {
+        const tileType = btn.userdata;
+
+        renderer.setColor(0.9, 0.9, 0.9);
+        if (selectedTileType === tileType) {
+            renderer.setColor(.9, .9, 0);
+        }
+        renderer.drawRect(btn.pos.x, btn.pos.y, btn.size.x, btn.size.y);
+
+        const offset = (btn.size.x - conf.TILE_SIZE) / 2;
+        let texture;
+        switch (tileType) {
+            case Tile.EMPTY:
+                renderer.setColor(1.0, 0, 0);
+                renderer.drawLine(btn.pos.addXY(offset, offset), btn.pos.addXY(offset + conf.TILE_SIZE, offset + conf.TILE_SIZE), 3);
+                renderer.drawLine(btn.pos.addXY(offset + conf.TILE_SIZE, offset), btn.pos.addXY(offset, offset + conf.TILE_SIZE), 3);
+                break;
+            case Tile.WALL:
+                texture = assets.getTexture("wall");
+                renderer.drawTexture(btn.pos.x + offset, btn.pos.y + offset, conf.TILE_SIZE, conf.TILE_SIZE, texture);
+                break;
+            case Tile.WALL_TRIANGLE:
+                texture = assets.getTexture("wall_triangle0");
+                renderer.drawTexture(btn.pos.x + offset, btn.pos.y + offset, conf.TILE_SIZE, conf.TILE_SIZE, texture);
+                break;
+            case Tile.WALL_TRIANGLE_CORNER:
+                texture = assets.getTexture("wall_triangle_corner0");
+                renderer.drawTexture(btn.pos.x + offset, btn.pos.y + offset, conf.TILE_SIZE, conf.TILE_SIZE, texture);
+                break;
+        }
+    }
+
     renderer.render(uiCamera);
 
     // Gamma correct everything
@@ -420,6 +453,7 @@ function render() {
         gammaShader,
         [finalScreenTex]
     );
+
     renderer.drawModel(screenModel);
     renderer.setAndClearTarget(null);
     renderer.render(uiCamera);

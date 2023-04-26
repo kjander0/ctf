@@ -1,4 +1,5 @@
 import {Texture} from "./texture.js";
+import { Vec } from "../math.js";
 
 // Contains information for rendering glyphs of bitmap font.
 // Bitmap and csv file come from 'Codehead Bitmap Font Generator' 
@@ -17,6 +18,17 @@ class Font {
     constructor(bitmap, csvText) {
         this.texture = Texture.fromImage(bitmap)
         this._parseCSV(csvText);
+    }
+
+    calcBounds(text, height) {
+        const scale = height / this.fontHeight;
+        const size = new Vec(0, height);
+        for (let i = 0; i < text.length; i++) {
+            const asciiCode = text.charCodeAt(i);
+            const glyph = this.glyphs[asciiCode];
+            size.x += scale * glyph.width;
+        }
+        return size;
     }
 
     _parseCSV(text) {
