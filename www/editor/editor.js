@@ -9,6 +9,7 @@ import * as tile_textures from "../gfx/tile_textures.js";
 import {Vec} from "../math.js";
 import {Tile} from "../map.js";
 import {gl, initGL} from "../gfx/gl.js";
+import { UIFrame, UIButton, UIImage, UIText } from "../ui.js";
 import { marshal, unmarshal } from "./marshal.js";
 
 // TODO
@@ -23,94 +24,15 @@ let canvas;
 let camDir = new Vec();
 let camPos = new Vec();
 let screenSize = new Vec();
-let tileButtonsFrame;
-let actionsFrame;
 let selectedTileType = Tile.WALL;
 let placingTiles = false;
 let mouseEventPos = new Vec();
 let orientation = 0;
 let finalScreenTex;
 
-class Button {
-    pos = new Vec();
-    size;
-    usserdata = null;
-
-    constructor(size) {
-        this.size = new Vec(size);
-    }
-
-    onmousedown(x, y) {
-        console.log("button onpress()");
-    }
-
-    ondraw() {
-        console.log("button ondraw()");
-    }
-}
-
-class Frame {
-    pos;
-    size;
-    margin = 10;
-    layoutHorizontal = true;
-
-    children = [];
-
-    constructor(pos, size) {
-        this.pos = new Vec(pos);
-        this.size = new Vec(size);
-    }
-
-    addChild(child) {
-        this.children.push(child);
-    }
-
-    onmousedown(x, y) {
-        for (let child of this.children) {
-            if (x > child.pos.x && x < child.pos.x + child.size.x) {
-                if (y > child.pos.y && y < child.pos.y + child.size.y) {
-                    child.onmousedown(x, y);
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    onresize(width, height) {
-        this.size.set(width, height);
-
-        let contentSize = new Vec(1, 1).scale(this.children.length * this.margin);
-        for (let child of this.children) {
-            contentSize = contentSize.add(child.size);
-        }
-        
-        if (this.layoutHorizontal) {
-            let childX = (this.size.x - contentSize.x)/2;
-            for (let child of this.children) {
-                child.pos.x = childX;
-                child.pos.y = this.margin;
-                childX += this.margin + child.size.x;
-            }
-        } else {
-            let childY = (this.size.y - contentSize.y)/2;
-            for (let child of this.children) {
-                child.pos.x = this.margin;
-                child.pos.y = childY;
-                childY += this.margin + child.size.y;
-            }
-        }
-
-    }
-
-    ondraw() {
-        for (let child of this.children) {
-            child.ondraw();
-        }
-    }
-}
-
+// UI Components
+let tileButtonsFrame;
+let actionButtonsFrame;
 
 window.onload = async function() {
     await conf.retrieveConf(); // important to do this first
@@ -158,8 +80,10 @@ function onresize() {
 
     screenSize.set(gl.drawingBufferWidth, gl.drawingBufferHeight);
 
-    tileButtonsFrame.onresize(screenSize.x, screenSize.y);
-    actionsFrame.onresize(screenSize.x, screenSize.y);
+    tileButtonsFrame.size.set(screenSize);
+    actionButtonsFrame.size.set(screenSize);
+    tileButtonsFrame.layOut();
+    actionButtonsFrame.layOut();
 
     gl.viewport(0, 0, screenSize.x, screenSize.y);
 
@@ -225,7 +149,7 @@ function onMouseDown(event) {
         return;
     }
 
-    if (actionsFrame.onmousedown(uiPos.x, uiPos.y)) {
+    if (actionButtonsFrame.onmousedown(uiPos.x, uiPos.y)) {
         return;
     }
 
@@ -241,12 +165,13 @@ function onMouseMove(event) {
 }
 
 function initUI() {
-    tileButtonsFrame = new Frame(new Vec(), screenSize);
-    tileButtonsFrame.layoutHorizontal = true;
+    tileButtonsFrame = new UIFrame(new Vec(), screenSize);
 
-    let buttonSize = new Vec(50, 50);
+    let imageSize = new Vec(50, 50);
     for (let tileType of [Tile.EMPTY, Tile.WALL, Tile.WALL_TRIANGLE, Tile.WALL_TRIANGLE_CORNER]) {
-        const btn = new Button(buttonSize);
+        const texture = tile_textures.getAlbedoTexture(new Tile(tileType, new Vec()));
+        console.log(texture);
+        const btn = new UIButton(new UIImage(texture, imageSize));
         btn.userdata = tileType;
         btn.onmousedown = () => {
             selectedTileType = tileType;
@@ -254,18 +179,17 @@ function initUI() {
         tileButtonsFrame.addChild(btn);
     }
 
-    actionsFrame = new Frame(new Vec(), screenSize);
-    actionsFrame.layoutHorizontal = false;
-    buttonSize = new Vec(70, 40);
-    const importBtn = new Button(buttonSize);
-    importBtn.userdata = "Import";
+    actionButtonsFrame = new UIFrame(new Vec(), screenSize);
+    actionButtonsFrame.addChild(new UIText("Pan:    wasd", assets.arialFont));
+    actionButtonsFrame.addChild(new UIText("Rotate: r", assets.arialFont));
+
+    const importBtn = new UIButton(new UIText("Import", assets.arialFont));
     importBtn.onmousedown = () => {
         pickFile();
     };
-    const exportBtn = new Button(buttonSize);
-    exportBtn.userdata = "Export";
-    actionsFrame.addChild(importBtn);
-    actionsFrame.addChild(exportBtn);
+    const exportBtn = new UIButton(new UIText("Export", assets.arialFont));
+    actionButtonsFrame.addChild(importBtn);
+    actionButtonsFrame.addChild(exportBtn);
 }
 
 function pickFile() {
@@ -359,7 +283,6 @@ function update() {
     }
 }
 
-
 function render() {
     gl.clearColor(0, 0, 0, 1.0);
     renderer.setAndClearTarget(finalScreenTex);
@@ -394,49 +317,38 @@ function render() {
     renderer.drawRectLine(col * conf.TILE_SIZE, row * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE);
     renderer.render(camera);
 
-    // draw UI
+    // ========== DRAW UI ==========
     const margin = 10;
     const fontSize = 24;
     // TODO: Use UI frame + labels for these
-    renderer.drawText("Pan:    wasd", margin, screenSize.y - (margin+fontSize), assets.arialFont, fontSize);
-    renderer.drawText("Rotate: r", margin, screenSize.y - 2*(margin+fontSize), assets.arialFont, fontSize);
 
-    for (let btn of actionsFrame.children) {
-        renderer.setColor(.1, .1, .1);
-        renderer.drawRect(btn.pos.x, btn.pos.y, btn.size.x, btn.size.y);
-        const textSize = assets.arialFont.calcBounds(btn.userdata, fontSize);
-        const offset = btn.size.sub(textSize).scale(0.5);
-        renderer.drawText(btn.userdata, btn.pos.x + offset.x, btn.pos.y + offset.y, assets.arialFont, fontSize);
+    for (let child of actionButtonsFrame.children) {
+        if (child instanceof UIText) {
+            renderer.drawText(child.text, child.pos.x, child.pos.y, assets.arialFont, child.height);
+        } else if (child instanceof UIButton) {
+            renderer.setColor(.1, .1, .1);
+            renderer.drawRect(child.pos.x, child.pos.y, child.size.x, child.size.y);
+            renderer.drawText(child.content.text, child.content.pos.x, child.content.pos.y, assets.arialFont, child.content.height);
+        }
     }
 
     for (let btn of tileButtonsFrame.children) {
         const tileType = btn.userdata;
-
         renderer.setColor(0.9, 0.9, 0.9);
         if (selectedTileType === tileType) {
             renderer.setColor(.9, .9, 0);
         }
         renderer.drawRect(btn.pos.x, btn.pos.y, btn.size.x, btn.size.y);
 
-        const offset = (btn.size.x - conf.TILE_SIZE) / 2;
-        let texture;
+        const img = btn.content;
         switch (tileType) {
             case Tile.EMPTY:
                 renderer.setColor(1.0, 0, 0);
-                renderer.drawLine(btn.pos.addXY(offset, offset), btn.pos.addXY(offset + conf.TILE_SIZE, offset + conf.TILE_SIZE), 3);
-                renderer.drawLine(btn.pos.addXY(offset + conf.TILE_SIZE, offset), btn.pos.addXY(offset, offset + conf.TILE_SIZE), 3);
+                renderer.drawLine(img.pos, img.pos.add(img.size), 3);
+                renderer.drawLine(img.pos.addXY(img.size.x, 0), img.pos.addXY(0, img.size.y), 3);
                 break;
-            case Tile.WALL:
-                texture = assets.getTexture("wall");
-                renderer.drawTexture(btn.pos.x + offset, btn.pos.y + offset, conf.TILE_SIZE, conf.TILE_SIZE, texture);
-                break;
-            case Tile.WALL_TRIANGLE:
-                texture = assets.getTexture("wall_triangle0");
-                renderer.drawTexture(btn.pos.x + offset, btn.pos.y + offset, conf.TILE_SIZE, conf.TILE_SIZE, texture);
-                break;
-            case Tile.WALL_TRIANGLE_CORNER:
-                texture = assets.getTexture("wall_triangle_corner0");
-                renderer.drawTexture(btn.pos.x + offset, btn.pos.y + offset, conf.TILE_SIZE, conf.TILE_SIZE, texture);
+            default:
+                renderer.drawTexture(img.x, img.y, img.size.x, img.size.y, img.texture);
                 break;
         }
     }
