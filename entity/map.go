@@ -11,15 +11,37 @@ import (
 const (
 	TileEmpty = iota
 	TileWall
-	TileGreenJail
-	TileRedJail
-	TileGreenSpawn
-	TileRedSpawn
 	TileWallTriangle
 	TileWallTriangleCorner
-	FlagSpawn
-	GreenFlagGoal
-	RedFlagGoal
+	_
+	_
+	_
+	_
+	_
+	_
+
+	TileGreenSpawn
+	TileRedSpawn
+	TileYellowSpawn
+	TileBlueSpawn
+	TileGreenJail
+	TileRedJail
+	TileYellowJail
+	TileBlueJail
+	TileGreenFlagGoal
+	TileRedFlagGoal
+	TileYellowFlagGoal
+	TileBlueFlagGoal
+	_
+	_
+	_
+	_
+	_
+	_
+	_
+	_
+
+	TileFlagSpawn
 )
 
 type Tile struct {
@@ -127,11 +149,11 @@ func NewMap(rows [][]uint8) Map {
 				newMap.GreenSpawns = append(newMap.GreenSpawns, TileCentre(r, c))
 			case TileRedSpawn:
 				newMap.RedSpawns = append(newMap.RedSpawns, TileCentre(r, c))
-			case FlagSpawn:
+			case TileFlagSpawn:
 				newMap.FlagSpawns = append(newMap.FlagSpawns, TileCentre(r, c))
-			case GreenFlagGoal:
+			case TileGreenFlagGoal:
 				newMap.GreenFlagGoals = append(newMap.GreenFlagGoals, TileCentre(r, c))
-			case RedFlagGoal:
+			case TileRedFlagGoal:
 				newMap.RedFlagGoals = append(newMap.RedFlagGoals, TileCentre(r, c))
 			}
 

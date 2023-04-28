@@ -4,20 +4,29 @@ import { Vec } from "./math.js"
 class Tile {
     static EMPTY = 0;
     static WALL = 1;
-    static GREEN_JAIL = 2;
-    static RED_JAIL = 3;
-    static GREEN_SPAWN = 4;
-    static RED_SPAWN = 5;
     //  /\
     // /__\
-    static WALL_TRIANGLE = 6;
+    static WALL_TRIANGLE = 2;
     // |\
     // |_\
-    static WALL_TRIANGLE_CORNER = 7;
-    static FLAG_SPAWN = 8;
-    static GREEN_FLAG_GOAL = 9;
-    static RED_FLAG_GOAL = 10;
+    static WALL_TRIANGLE_CORNER = 3;
 
+    static GREEN_SPAWN = 10;
+    static RED_SPAWN = 11;
+    static YELLOW_SPAWN = 12;
+    static BLUE_SPAWN = 13;
+
+    static GREEN_JAIL = 14;
+    static RED_JAIL = 15;
+    static YELLOW_JAIL = 16;
+    static BLUE_JAIL = 17;
+
+    static GREEN_FLAG_GOAL = 18;
+    static RED_FLAG_GOAL = 19;
+    static YELLOW_FLAG_GOAL = 20;
+    static BLUE_FLAG_GOAL = 21;
+
+    static FLAG_SPAWN = 30;
 
     type = null;
     pos = null;

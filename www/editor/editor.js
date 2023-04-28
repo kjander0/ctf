@@ -80,10 +80,15 @@ function onresize() {
 
     screenSize.set(gl.drawingBufferWidth, gl.drawingBufferHeight);
 
-    tileButtonsFrame.size.set(screenSize);
-    actionButtonsFrame.size.set(screenSize);
-    tileButtonsFrame.layOut();
+    actionButtonsFrame.size.set(0, screenSize.y);
+    actionButtonsFrame.horizontalAlign = UIFrame.ALIGN_LEFT;
+    actionButtonsFrame.verticalAlign = UIFrame.ALIGN_TOP;
     actionButtonsFrame.layOut();
+
+    tileButtonsFrame.size.set(screenSize);
+    tileButtonsFrame.horizontalAlign = UIFrame.ALIGN_CENTRE;
+    tileButtonsFrame.verticalAlign = UIFrame.ALIGN_BOTTOM;
+    tileButtonsFrame.layOut();
 
     gl.viewport(0, 0, screenSize.x, screenSize.y);
 
@@ -180,14 +185,19 @@ function initUI() {
     }
 
     actionButtonsFrame = new UIFrame(new Vec(), screenSize);
-    actionButtonsFrame.addChild(new UIText("Pan:    wasd", assets.arialFont));
+    actionButtonsFrame.addChild(new UIText("Pan: wasd", assets.arialFont));
     actionButtonsFrame.addChild(new UIText("Rotate: r", assets.arialFont));
 
     const importBtn = new UIButton(new UIText("Import", assets.arialFont));
     importBtn.onmousedown = () => {
         pickFile();
     };
+
     const exportBtn = new UIButton(new UIText("Export", assets.arialFont));
+    exportBtn.onmousedown = () => {
+        saveFile();
+    };
+
     actionButtonsFrame.addChild(importBtn);
     actionButtonsFrame.addChild(exportBtn);
 }
@@ -202,32 +212,22 @@ function pickFile() {
     picker.click();
 }
 
+function saveFile() {
+    const file = marshal(rows);
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(file);
+    link.download = file.name;
+    link.click();
+}
+
 function loadMap() {
     let rawRows = [
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 5, 0, 5, 1],
-        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 2, 0, 1],
-        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
-        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 1, 4, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 5, 1],
-        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1],
-        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-        [1, 0, 0, 0, 0, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-        [1, 0, 0, 0, 4, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 1, 1, 1, 1, 0, 0, 0, 1],
-        [1, 0, 0, 0, 0, 5, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-        [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-        [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-        [1, 0, 0, 0, 0, 5, 1, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-        [1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-        [1, 0, 0, 0, 0, 5, 5, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-        [1, 0, 0, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 1],
-        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
-        [1, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 5, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1]
     ];
 
     rows = [];
@@ -348,7 +348,7 @@ function render() {
                 renderer.drawLine(img.pos.addXY(img.size.x, 0), img.pos.addXY(0, img.size.y), 3);
                 break;
             default:
-                renderer.drawTexture(img.x, img.y, img.size.x, img.size.y, img.texture);
+                renderer.drawTexture(img.pos.x, img.pos.y, img.size.x, img.size.y, img.texture);
                 break;
         }
     }
