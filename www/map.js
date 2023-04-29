@@ -3,13 +3,14 @@ import { Vec } from "./math.js"
 
 class Tile {
     static EMPTY = 0;
-    static WALL = 1;
+    static FLOOR = 1;
+    static WALL = 2;
     //  /\
     // /__\
-    static WALL_TRIANGLE = 2;
+    static WALL_TRIANGLE = 3;
     // |\
     // |_\
-    static WALL_TRIANGLE_CORNER = 3;
+    static WALL_TRIANGLE_CORNER = 4;
 
     static GREEN_SPAWN = 10;
     static RED_SPAWN = 11;

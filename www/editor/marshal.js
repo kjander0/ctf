@@ -7,11 +7,11 @@ function logBits(dec) {
 }
 
 function marshal(rows) {
+    CROP rows to eliminate empty tiles
     const arrBuf = new ArrayBuffer(1024 * 1024);
     const view = new DataView(arrBuf);
     let byteOffset = 0;
 
-    console.log("export rowSize: ", rows[0].length);
     view.setUint16(byteOffset, rows[0].length);
     byteOffset += 2;
     
@@ -22,13 +22,11 @@ function marshal(rows) {
         bits = (bits<<5) | (count-1); // subtract 1 to support tileCount starting from 1
         view.setUint16(byteOffset, bits);
         byteOffset += 2;
-        console.log("export: ", tile.type, tile.orientation, 0, tileCount);
     }
 
     let currentTile = null;
     let tileCount = 0;
     const maxTileCount = 32;
-    console.log(maxTileCount);
     for (let row of rows) {
         for (let tile of row) {
             if (currentTile === null) {
@@ -57,7 +55,6 @@ async function unmarshal(file) {
     const view =  new DataView(await file.arrayBuffer());
     let byteOffset = 0;
     const rowSize = view.getUint16(byteOffset);
-    console.log("import rowSize: ", rowSize);
     byteOffset += 2;
 
     const rowList = [[]];
@@ -72,7 +69,6 @@ async function unmarshal(file) {
         bits >>= 2;
         let tileType = bits & ~(~0 << 5);
 
-        console.log("import: ", tileType, orientation, variation, tileCount);
         for (let i = 0; i < tileCount; i++) {
             let row = rowList[rowList.length-1];
             if (row.length === rowSize) {

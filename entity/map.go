@@ -10,10 +10,10 @@ import (
 
 const (
 	TileEmpty = iota
+	TileFloor
 	TileWall
 	TileWallTriangle
 	TileWallTriangleCorner
-	_
 	_
 	_
 	_

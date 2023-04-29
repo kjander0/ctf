@@ -21,7 +21,6 @@ let uiCamera = new Camera();
 let renderer;
 let gammaShader;
 let canvas;
-let camDir = new Vec();
 let camPos = new Vec();
 let screenSize = new Vec();
 let selectedTileType = Tile.WALL;
@@ -29,6 +28,12 @@ let placingTiles = false;
 let mouseEventPos = new Vec();
 let orientation = 0;
 let finalScreenTex;
+
+// Controls
+let panLeft = false;
+let panRight = false;
+let panUp = false;
+let panDown = false;
 
 // UI Components
 let tileButtonsFrame;
@@ -106,16 +111,16 @@ function onKeyDown(event) {
     let key = event.key.toLowerCase();
     switch (key) {
         case 'w':
-            camDir.y = 1;
+            panUp = true;
             break;
         case 's':
-            camDir.y = -1;
+            panDown = true;
             break;
         case 'a':
-            camDir.x = -1;
+            panLeft = true;
             break;
         case 'd':
-            camDir.x = 1;
+            panRight = true;
             break;
     }
 }
@@ -128,23 +133,20 @@ function onKeyUp(event) {
     let key = event.key.toLowerCase();
     switch (key) {
         case 'w':
-            camDir.y = 0;
+            panUp = false;
             break;
         case 's':
-            camDir.y = 0;
+            panDown = false;
             break;
         case 'a':
-            camDir.x = 0;
+            panLeft = false;
             break;
         case 'd':
-            camDir.x = 0;
+            panRight = false;
             break;
         case 'r':
             orientation = (orientation + 1) % 4;
             break;
-    }
-    if (camDir.x !== 0 || camDir.y !== 0) {
-        camDir = camDir.resize(conf.TILE_SIZE);
     }
 }
 
@@ -173,7 +175,7 @@ function initUI() {
     tileButtonsFrame = new UIFrame(new Vec(), screenSize);
 
     let imageSize = new Vec(50, 50);
-    for (let tileType of [Tile.EMPTY, Tile.WALL, Tile.WALL_TRIANGLE, Tile.WALL_TRIANGLE_CORNER]) {
+    for (let tileType of [Tile.EMPTY, Tile.FLOOR, Tile.WALL, Tile.WALL_TRIANGLE, Tile.WALL_TRIANGLE_CORNER, Tile.GREEN_SPAWN, Tile.RED_SPAWN, Tile.RED_JAIL, Tile.GREEN_JAIL]) {
         const texture = tile_textures.getAlbedoTexture(new Tile(tileType, new Vec()));
         console.log(texture);
         const btn = new UIButton(new UIImage(texture, imageSize));
@@ -222,12 +224,18 @@ function saveFile() {
 
 function loadMap() {
     let rawRows = [
-        [1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 0, 0, 0, 0, 0, 0, 1],
-        [1, 0, 0, 0, 0, 0, 0, 1],
-        [1, 0, 0, 0, 0, 0, 0, 1],
-        [1, 0, 0, 0, 0, 0, 0, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1]
+        [2, 2, 2, 2, 2, 2, 2, 2],
+        [2, 10, 1, 1, 1, 1, 0, 2],
+        [2, 1, 1, 1, 1, 1, 0, 2],
+        [2, 1, 1, 1, 1, 1, 0, 2],
+        [2, 1, 1, 1, 1, 1, 11, 2],
+        [2, 2, 2, 2, 2, 2, 2, 2]
+    ];
+
+    rawRows = [
+        [2, 2, 2],
+        [2, 1, 2],
+        [2, 2, 2],
     ];
 
     rows = [];
@@ -266,21 +274,80 @@ function tileAtWorldPos(worldPos) {
 }
 
 function update() {
+    const camDir = new Vec();
+    if (panUp) {
+        camDir.y += 1;
+    }
+    if (panDown) {
+        camDir.y -= 1;
+    }
+    if (panLeft) {
+        camDir.x -= 1;
+    }
+    if (panRight) {
+        camDir.x += 1;
+    }
     if (camDir.x !== 0 || camDir.y !== 0) {
         camPos = camPos.add(camDir.resize(conf.TILE_SIZE));
     }
-    camera.update(camPos.x, camPos.y, screenSize.x, screenSize.y);
-    uiCamera.update(screenSize.x/2, screenSize.y/2, screenSize.x, screenSize.y);
 
     if (placingTiles) {
         const worldPos = eventToWorldPos(mouseEventPos.x, mouseEventPos.y);
-        const tile = tileAtWorldPos(worldPos);
+        let tile = tileAtWorldPos(worldPos);
         if (tile === null) {
-            return;
+            let [selectedRow, selectedCol] = worldToRowCol(worldPos);
+            tile = growMap(selectedRow, selectedCol);
+            if (selectedRow < 0) {
+                camPos.y -= selectedRow * conf.TILE_SIZE;
+            }
+            if (selectedCol < 0) {
+                camPos.x -= selectedCol * conf.TILE_SIZE;
+            }
         }
         tile.type = selectedTileType;
         tile.orientation = orientation;
     }
+
+    camera.update(camPos.x, camPos.y, screenSize.x, screenSize.y);
+    uiCamera.update(screenSize.x/2, screenSize.y/2, screenSize.x, screenSize.y);
+}
+
+function growMap(selectedRow, selectedCol) {
+    const numRows = rows.length;
+    const numCols = rows[0].length;
+
+    let extraRows = Math.abs(selectedRow);
+    let extraCols = Math.abs(selectedCol);
+    if (selectedRow > numRows-1) {
+        extraRows = selectedRow - (numRows-1);
+    }
+    if (selectedCol > numCols-1) {
+        extraCols = selectedCol - (numCols-1);
+    }
+
+    const rowOffset = Math.min(selectedRow, 0);
+    const colOffset = Math.min(selectedCol, 0);
+
+    const newRows = new Array(numRows + Math.abs(extraRows));
+    for (let r = 0; r < newRows.length; r++) {
+        newRows[r] = new Array(numCols + Math.abs(extraCols));
+
+        for (let c = 0; c < newRows[0].length; c++) {
+            const pos = new Vec(c * conf.TILE_SIZE, r * conf.TILE_SIZE)
+            const rOld = r + rowOffset;
+            const cOld = c + colOffset;
+            if (rOld < 0 || cOld < 0 || rOld >= numRows || cOld >= numCols) {
+                newRows[r][c] = new Tile(Tile.EMPTY, pos);
+            } else {
+                newRows[r][c] = rows[rOld][cOld];
+                newRows[r][c].pos.set(pos);
+            }
+        }
+    }
+
+    rows = newRows;
+
+    return newRows[selectedRow - rowOffset][selectedCol - colOffset];
 }
 
 function render() {
@@ -302,10 +369,9 @@ function render() {
             }
 
             let tileTex = tile_textures.getAlbedoTexture(tile);
-            if (tileTex === null) {
-                tileTex = assets.getTexture("floor");
+            if (tileTex !== null) {
+                renderer.drawTexture(tile.pos.x, tile.pos.y, conf.TILE_SIZE, conf.TILE_SIZE, tileTex);
             }
-            renderer.drawTexture(tile.pos.x, tile.pos.y, conf.TILE_SIZE, conf.TILE_SIZE, tileTex);
             tile.orientation = tmpOrientation;
             tile.type = tmpType;
         }
@@ -334,9 +400,9 @@ function render() {
 
     for (let btn of tileButtonsFrame.children) {
         const tileType = btn.userdata;
-        renderer.setColor(0.9, 0.9, 0.9);
+        renderer.setColor(0.6, 0.6, 0.6);
         if (selectedTileType === tileType) {
-            renderer.setColor(.9, .9, 0);
+            renderer.setColor(.6, .6, 0);
         }
         renderer.drawRect(btn.pos.x, btn.pos.y, btn.size.x, btn.size.y);
 

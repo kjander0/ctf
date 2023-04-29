@@ -34,7 +34,10 @@ const srgbImageList = [
     "wall_triangle_corner1",
     "wall_triangle_corner2",
     "wall_triangle_corner3",
+    "green_spawn",
+    "red_spawn",
     "flag",
+    "jail",
 ]
 
 const xyzImageList = [
@@ -49,6 +52,9 @@ const xyzImageList = [
     "wall_triangle_corner_normal1",
     "wall_triangle_corner_normal2",
     "wall_triangle_corner_normal3",
+    "green_spawn_normal",
+    "red_spawn_normal",
+    "jail_normal",
 ]
 
 async function loadAssets() {    

@@ -7,6 +7,7 @@ import (
 )
 
 // TODO
+// - add team mate collisions (does no damage but bullet dissapears)
 // - if you temporarily minimise tab motion prediction limit is reached. And it stays that way even once you return.
 // - handle user leaving tab (updates stop being called), maybe ignore net updates during this time and reset predicted buffers etc
 // - tune max predictions on client and server to good values
@@ -45,6 +46,7 @@ import (
 // - power crystal flag that hovers behind player
 
 // GRAPHICS IDEAS
+// - after being destroyed, particles could come together to reform tank in jail (electricity effects, etc)
 // - improve static tile rendering performance by filling vbo with all tiles once and reuse vbo
 // - reduce floor tile repeating by rendering floor tile larger (across multiple tiles)
 //   - and add some tweaked floor tiles (vents, shell crater damage)
