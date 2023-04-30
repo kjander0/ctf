@@ -7,7 +7,8 @@ function logBits(dec) {
 }
 
 function marshal(rows) {
-    CROP rows to eliminate empty tiles
+    rows = trimRows(rows);
+
     const arrBuf = new ArrayBuffer(1024 * 1024);
     const view = new DataView(arrBuf);
     let byteOffset = 0;
@@ -83,6 +84,46 @@ async function unmarshal(file) {
     }
 
     return rowList;
+}
+
+function trimRows(rows) {
+    let rowStart = rows.length-1, rowEnd = 0;
+    let colStart = rows[0].length-1, colEnd = 0;
+
+    for (let ri = 0; ri < rows.length; ri++) {
+        let rowEmpty = true;
+        for (let ci = 0; ci < rows[ri].length; ci++) {
+            if (rows[ri][ci].type !== Tile.EMPTY) {
+                rowEmpty = false;
+                if (ci < colStart) {
+                    colStart = ci;
+                }
+
+                if (ci > colEnd) {
+                    colEnd = ci;
+                }
+            }
+        }
+
+        if (!rowEmpty) {
+            if (ri < rowStart) {
+                rowStart = ri;
+            }
+            if (ri > rowEnd) {
+                rowEnd = ri;
+            }
+        }
+    }
+    
+    const numRows = rowEnd - rowStart + 1;
+    const newRows = new Array(numRows);
+    for (let r = 0; r < numRows; r++) {
+        newRows[r] = rows[r + rowStart].slice(colStart, colEnd+1);
+    }
+    
+    console.log(rowStart, rowEnd, colStart, colEnd);
+
+    return newRows;
 }
 
 export {

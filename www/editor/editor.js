@@ -175,9 +175,8 @@ function initUI() {
     tileButtonsFrame = new UIFrame(new Vec(), screenSize);
 
     let imageSize = new Vec(50, 50);
-    for (let tileType of [Tile.EMPTY, Tile.FLOOR, Tile.WALL, Tile.WALL_TRIANGLE, Tile.WALL_TRIANGLE_CORNER, Tile.GREEN_SPAWN, Tile.RED_SPAWN, Tile.RED_JAIL, Tile.GREEN_JAIL]) {
+    for (let tileType of [Tile.EMPTY, Tile.FLOOR, Tile.WALL, Tile.WALL_TRIANGLE, Tile.WALL_TRIANGLE_CORNER, Tile.GREEN_SPAWN, Tile.RED_SPAWN, Tile.GREEN_JAIL, Tile.RED_JAIL, Tile.GREEN_FLAG_GOAL, Tile.RED_FLAG_GOAL]) {
         const texture = tile_textures.getAlbedoTexture(new Tile(tileType, new Vec()));
-        console.log(texture);
         const btn = new UIButton(new UIImage(texture, imageSize));
         btn.userdata = tileType;
         btn.onmousedown = () => {
@@ -367,7 +366,6 @@ function render() {
                 tile.orientation = orientation;
                 tile.type = selectedTileType;
             }
-
             let tileTex = tile_textures.getAlbedoTexture(tile);
             if (tileTex !== null) {
                 renderer.drawTexture(tile.pos.x, tile.pos.y, conf.TILE_SIZE, conf.TILE_SIZE, tileTex);

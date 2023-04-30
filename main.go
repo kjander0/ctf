@@ -46,6 +46,8 @@ import (
 // - power crystal flag that hovers behind player
 
 // GRAPHICS IDEAS
+// - Can draw things like flag goal larger than one tile (draw on top of floor tiles)
+// - half thickness walls (would require corner and intersection variations)
 // - after being destroyed, particles could come together to reform tank in jail (electricity effects, etc)
 // - improve static tile rendering performance by filling vbo with all tiles once and reuse vbo
 // - reduce floor tile repeating by rendering floor tile larger (across multiple tiles)
