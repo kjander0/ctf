@@ -17,6 +17,7 @@ import * as net from "./net.js";
 import * as conf from "./conf.js";
 import * as asset from "./assets.js";
 import { initGL } from "./gfx/gl.js";
+import { defineTileTypes } from "./map.js";
 
 window.onload = async function() {
     await conf.retrieveConf(); // important to do this first
@@ -26,6 +27,8 @@ window.onload = async function() {
     initGL(canvas);
 
     await asset.loadAssets();
+    
+    defineTileTypes();
 
     const graphics = new Graphics(canvas);
     const input = new Input(graphics);

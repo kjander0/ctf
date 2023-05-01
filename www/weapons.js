@@ -1,7 +1,7 @@
 import { Vec, Line, Rect, Circle } from "./math.js";
 import * as conf from "./conf.js";
 import * as collision from "./collision/collision.js"
-import { Tile } from "./map.js";
+import { TileType } from "./map.js";
 
 class Laser {
     static TYPE_LASER = 0;
@@ -163,12 +163,12 @@ function checkWallHit(game, line) {
 	for (let tile of tileSample) {
 		tileRect.pos.set(tile.pos);
         let hit, normal;
-        if (tile.type === Tile.WALL) {
+        if (tile.type === TileType.WALL) {
             [hit, normal] = collision.laserRectIntersect(line, tileRect);
             if (hit === null) {
                 continue;
             }
-        } else if (tile.type === Tile.WALL_TRIANGLE || tile.type === Tile.WALL_TRIANGLE_CORNER) {
+        } else if (tile.type === TileType.WALL_TRIANGLE || tile.type === TileType.WALL_TRIANGLE_CORNER) {
             tile.setTrianglePoints(t0, t1, t2);
             [hit, normal] = collision.laserTriangleIntersect(line, t0, t1, t2);
             if (hit === null) {

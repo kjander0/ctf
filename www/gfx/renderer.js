@@ -53,6 +53,9 @@ class Renderer {
     }
     
     drawTexture(x, y, width, height, texture) {
+        if (texture === null || texture === undefined) {
+            console.error("bad texture");
+        }
         let texMesh = this.texMeshMap.get(texture);
         if (texMesh === undefined) {
             texMesh = new Mesh(VertAttrib.POS_BIT | VertAttrib.TEX_BIT);

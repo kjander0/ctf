@@ -1,6 +1,4 @@
-import * as conf from "../conf.js";
-import { Tile } from "../map.js";
-import { Vec } from "../math.js";
+import { Tile, TileType } from "../map.js";
 
 function logBits(dec) {
     console.log((dec >>> 0).toString(2));
@@ -17,7 +15,7 @@ function marshal(rows) {
     byteOffset += 2;
     
     function writeChunk(tile, count) {
-        let bits = tile.type;
+        let bits = tile.type.id;
         bits = (bits<<2) | tile.orientation;
         bits = (bits<<4); // TODO tile variation
         bits = (bits<<5) | (count-1); // subtract 1 to support tileCount starting from 1
@@ -68,7 +66,7 @@ async function unmarshal(file) {
         bits >>= 4;
         let orientation = bits & ~(~0 << 2);
         bits >>= 2;
-        let tileType = bits & ~(~0 << 5);
+        let typeId = bits & ~(~0 << 5);
 
         for (let i = 0; i < tileCount; i++) {
             let row = rowList[rowList.length-1];
@@ -76,8 +74,7 @@ async function unmarshal(file) {
                 row = [];
                 rowList.push(row);
             }
-            const pos = new Vec(row.length, rowList.length-1).scale(conf.TILE_SIZE);
-            const tile = new Tile(tileType, pos);
+            const tile = new Tile(TileType.fromId(typeId));
             tile.orientation = orientation;
             row.push(tile);
         }

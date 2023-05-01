@@ -4,7 +4,7 @@ import {Predicted} from "./predicted.js"
 import * as conf from "./conf.js"
 import * as sound from "./sound.js"
 import * as collision from "./collision/collision.js"
-import {Tile} from "./map.js";
+import {TileType} from "./map.js";
 
 class PlayerNetData {
     pos = new Vec();
@@ -185,10 +185,10 @@ function _constrainPlayerPos(game, pos) {
         const p2 = new Vec();
 
         let overlap = null;
-        if (tile.type === Tile.WALL) {
+        if (tile.type === TileType.WALL) {
             tileRect.pos.set(tile.pos);
             overlap = collision.circleRectOverlap(playerCircle, tileRect);
-        } else if (tile.type === Tile.WALL_TRIANGLE || tile.type === Tile.WALL_TRIANGLE_CORNER) {
+        } else if (tile.type === TileType.WALL_TRIANGLE || tile.type === TileType.WALL_TRIANGLE_CORNER) {
             tile.setTrianglePoints(p0, p1, p2);
             overlap = collision.circleTriangleOverlap(playerCircle, p0, p1,p2);
         }

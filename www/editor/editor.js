@@ -5,9 +5,8 @@ import {Camera} from "../gfx/camera.js";
 import { Shader } from "../gfx/shader.js";
 import { Texture } from "../gfx/texture.js";
 import { Mesh, Model, VertAttrib } from "../gfx/mesh.js";
-import * as tile_textures from "../gfx/tile_textures.js";
 import {Vec} from "../math.js";
-import {Tile} from "../map.js";
+import {Tile, TileType, defineTileTypes, posFromRowCol} from "../map.js";
 import {gl, initGL} from "../gfx/gl.js";
 import { UIFrame, UIButton, UIImage, UIText } from "../ui.js";
 import { marshal, unmarshal } from "./marshal.js";
@@ -15,18 +14,16 @@ import { marshal, unmarshal } from "./marshal.js";
 // TODO
 // - show error if badly formatted map file
 
-let rows;
+let tileRows;
+
+// Render
+let canvas;
 let camera = new Camera();
 let uiCamera = new Camera();
+let camPos = new Vec();
 let renderer;
 let gammaShader;
-let canvas;
-let camPos = new Vec();
 let screenSize = new Vec();
-let selectedTileType = Tile.WALL;
-let placingTiles = false;
-let mouseEventPos = new Vec();
-let orientation = 0;
 let finalScreenTex;
 
 // Controls
@@ -34,6 +31,10 @@ let panLeft = false;
 let panRight = false;
 let panUp = false;
 let panDown = false;
+let selectedTileType;
+let placingTiles = false;
+let mouseEventPos = new Vec();
+let orientation = 0;
 
 // UI Components
 let tileButtonsFrame;
@@ -45,7 +46,12 @@ window.onload = async function() {
     canvas = document.getElementById("glcanvas");
     initGL(canvas);
 
-    await assets.loadAssets(gl);
+    await assets.loadAssets();
+
+    defineTileTypes();
+
+    tileRows = [[new Tile(TileType.FLOOR)]];
+    selectedTileType = TileType.FLOOR;
 
     gammaShader = new Shader(gl, assets.texVertSrc, assets.gammaFragSrc)
 
@@ -56,7 +62,6 @@ window.onload = async function() {
 
     renderer = new Renderer(gl);
     initUI();
-    loadMap();
 
     document.addEventListener("keydown", (event) => onKeyDown(event));
     document.addEventListener("keyup", (event) => onKeyUp(event));
@@ -175,8 +180,8 @@ function initUI() {
     tileButtonsFrame = new UIFrame(new Vec(), screenSize);
 
     let imageSize = new Vec(50, 50);
-    for (let tileType of [Tile.EMPTY, Tile.FLOOR, Tile.WALL, Tile.WALL_TRIANGLE, Tile.WALL_TRIANGLE_CORNER, Tile.GREEN_SPAWN, Tile.RED_SPAWN, Tile.GREEN_JAIL, Tile.RED_JAIL, Tile.GREEN_FLAG_GOAL, Tile.RED_FLAG_GOAL]) {
-        const texture = tile_textures.getAlbedoTexture(new Tile(tileType, new Vec()));
+    for (let tileType of [TileType.EMPTY, TileType.FLOOR, TileType.WALL, TileType.WALL_TRIANGLE, TileType.WALL_TRIANGLE_CORNER, TileType.GREEN_SPAWN, TileType.RED_SPAWN, TileType.GREEN_JAIL, TileType.RED_JAIL, TileType.GREEN_FLAG_GOAL, TileType.RED_FLAG_GOAL]) {
+        let texture = new Tile(tileType).getAlbedoTexture();
         const btn = new UIButton(new UIImage(texture, imageSize));
         btn.userdata = tileType;
         btn.onmousedown = () => {
@@ -207,43 +212,18 @@ function pickFile() {
     const picker = document.getElementById("filePicker");
     picker.onchange = async () => {
         if (picker.files.length > 0) {
-            rows = await unmarshal(picker.files[0]);
+            tileRows = await unmarshal(picker.files[0]);
         }
     };
     picker.click();
 }
 
 function saveFile() {
-    const file = marshal(rows);
+    const file = marshal(tileRows);
     const link = document.createElement('a');
     link.href = URL.createObjectURL(file);
     link.download = file.name;
     link.click();
-}
-
-function loadMap() {
-    let rawRows = [
-        [2, 2, 2, 2, 2, 2, 2, 2],
-        [2, 10, 1, 1, 1, 1, 0, 2],
-        [2, 1, 1, 1, 1, 1, 0, 2],
-        [2, 1, 1, 1, 1, 1, 0, 2],
-        [2, 1, 1, 1, 1, 1, 11, 2],
-        [2, 2, 2, 2, 2, 2, 2, 2]
-    ];
-
-    rawRows = [
-        [2, 2, 2],
-        [2, 1, 2],
-        [2, 2, 2],
-    ];
-
-    rows = [];
-    for (let r = 0; r < rawRows.length; r++) {
-        rows.push([]);
-        for (let c = 0; c < rawRows[r].length; c++) {
-            rows[r].push(new Tile(rawRows[r][c], new Vec(c, r).scale(conf.TILE_SIZE)));
-        }
-    }
 }
 
 function eventToWorldPos(clientX, clientY) {
@@ -266,10 +246,10 @@ function worldToRowCol(worldPos) {
 
 function tileAtWorldPos(worldPos) {
     const [row, col] = worldToRowCol(worldPos);
-    if (row < 0 || row >= rows.length || col < 0 || col >= rows[row].length) {
+    if (row < 0 || row >= tileRows.length || col < 0 || col >= tileRows[row].length) {
         return null;
     }
-    return rows[row][col];
+    return tileRows[row][col];
 }
 
 function update() {
@@ -312,8 +292,8 @@ function update() {
 }
 
 function growMap(selectedRow, selectedCol) {
-    const numRows = rows.length;
-    const numCols = rows[0].length;
+    const numRows = tileRows.length;
+    const numCols = tileRows[0].length;
 
     let extraRows = Math.abs(selectedRow);
     let extraCols = Math.abs(selectedCol);
@@ -332,19 +312,17 @@ function growMap(selectedRow, selectedCol) {
         newRows[r] = new Array(numCols + Math.abs(extraCols));
 
         for (let c = 0; c < newRows[0].length; c++) {
-            const pos = new Vec(c * conf.TILE_SIZE, r * conf.TILE_SIZE)
             const rOld = r + rowOffset;
             const cOld = c + colOffset;
             if (rOld < 0 || cOld < 0 || rOld >= numRows || cOld >= numCols) {
-                newRows[r][c] = new Tile(Tile.EMPTY, pos);
+                newRows[r][c] = new Tile(TileType.EMPTY);
             } else {
-                newRows[r][c] = rows[rOld][cOld];
-                newRows[r][c].pos.set(pos);
+                newRows[r][c] = tileRows[rOld][cOld];
             }
         }
     }
 
-    rows = newRows;
+    tileRows = newRows;
 
     return newRows[selectedRow - rowOffset][selectedCol - colOffset];
 }
@@ -356,9 +334,13 @@ function render() {
     const worldPos = eventToWorldPos(mouseEventPos.x, mouseEventPos.y);
     const [row, col] = worldToRowCol(worldPos);
 
-    for (let r = 0; r < rows.length; r++) {
-        for (let c = 0; c < rows[r].length; c++) {
-            const tile = rows[r][c];
+    for (let r = 0; r < tileRows.length; r++) {
+        for (let c = 0; c < tileRows[r].length; c++) {
+            const tile = tileRows[r][c];
+            if (tile.type === undefined) {
+                console.log("ooops");
+            }
+            const pos = posFromRowCol(r, c);
             const tmpOrientation = tile.orientation;
             const tmpType = tile.type;
 
@@ -366,9 +348,12 @@ function render() {
                 tile.orientation = orientation;
                 tile.type = selectedTileType;
             }
-            let tileTex = tile_textures.getAlbedoTexture(tile);
+            if (tile.type.onFloor) {
+                renderer.drawTexture(pos.x, pos.y, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("floor_0_0"));
+            }
+            let tileTex = tile.getAlbedoTexture();
             if (tileTex !== null) {
-                renderer.drawTexture(tile.pos.x, tile.pos.y, conf.TILE_SIZE, conf.TILE_SIZE, tileTex);
+                renderer.drawTexture(pos.x, pos.y, conf.TILE_SIZE, conf.TILE_SIZE, tileTex);
             }
             tile.orientation = tmpOrientation;
             tile.type = tmpType;
@@ -405,15 +390,15 @@ function render() {
         renderer.drawRect(btn.pos.x, btn.pos.y, btn.size.x, btn.size.y);
 
         const img = btn.content;
-        switch (tileType) {
-            case Tile.EMPTY:
+        if (tileType === TileType.EMPTY) {
                 renderer.setColor(1.0, 0, 0);
                 renderer.drawLine(img.pos, img.pos.add(img.size), 3);
                 renderer.drawLine(img.pos.addXY(img.size.x, 0), img.pos.addXY(0, img.size.y), 3);
-                break;
-            default:
-                renderer.drawTexture(img.pos.x, img.pos.y, img.size.x, img.size.y, img.texture);
-                break;
+        } else {
+            if (img.texture === null || img.texture === undefined) {
+                console.log("oops");
+            }
+            renderer.drawTexture(img.pos.x, img.pos.y, img.size.x, img.size.y, img.texture);
         }
     }
 

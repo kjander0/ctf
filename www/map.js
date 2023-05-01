@@ -1,50 +1,168 @@
 import * as conf from "./conf.js"
+import * as assets from "./assets.js"
 import { Vec } from "./math.js"
 
-class Tile {
-    static EMPTY = 0;
-    static FLOOR = 1;
-    static WALL = 2;
+class TileType {
+    static EMPTY;
+    static FLOOR;
+    static WALL;
     //  /\
     // /__\
-    static WALL_TRIANGLE = 3;
+    static WALL_TRIANGLE;
     // |\
     // |_\
-    static WALL_TRIANGLE_CORNER = 4;
+    static WALL_TRIANGLE_CORNER;
 
-    static GREEN_SPAWN = 10;
-    static RED_SPAWN = 11;
-    static YELLOW_SPAWN = 12;
-    static BLUE_SPAWN = 13;
+    static GREEN_SPAWN;
+    static RED_SPAWN;
+    static YELLOW_SPAWN;
+    static BLUE_SPAWN;
 
-    static GREEN_JAIL = 14;
-    static RED_JAIL = 15;
-    static YELLOW_JAIL = 16;
-    static BLUE_JAIL = 17;
+    static GREEN_JAIL;
+    static RED_JAIL;
+    static YELLOW_JAIL;
+    static BLUE_JAIL;
 
-    static GREEN_FLAG_GOAL = 18;
-    static RED_FLAG_GOAL = 19;
-    static YELLOW_FLAG_GOAL = 20;
-    static BLUE_FLAG_GOAL = 21;
+    static GREEN_FLAG_GOAL;
+    static RED_FLAG_GOAL;
+    static YELLOW_FLAG_GOAL;
+    static BLUE_FLAG_GOAL;
 
-    static FLAG_SPAWN = 30;
+    static FLAG_SPAWN;
 
+    static nextId = 0;
+    static typeList = [];
+
+    id; // corresponds to tile id in map files
+
+    // Collision Info
+    collisionShape = null;
+
+    // Render info
+    albedoTextures = null; // [orientation][variation]
+    normalTextures = null; // [orientation][variation]
+    drawSize = new Vec(conf.TILE_SIZE, conf.TILE_SIZE);
+    onFloor = true;
+
+    constructor() {
+        this.id = TileType.nextId++;
+        TileType.typeList.push(this);
+    }
+
+    static fromId(id) {
+        return TileType.typeList[id];
+    }
+}
+
+// ========== BEGIN TILE TYPE DEFINITIONS ==========
+// NOTE: this needs to be called after texture assets have been loaded
+function defineTileTypes() {
+    TileType.EMPTY = new TileType();
+    TileType.EMPTY.onFloor = false;
+
+    TileType.FLOOR = new TileType();
+    TileType.FLOOR.onFloor = false;
+    TileType.FLOOR.albedoTextures = _mapTextures("floor");
+    TileType.FLOOR.normalTextures = _mapTextures("floor_normal");
+    
+    TileType.WALL = new TileType();
+    TileType.WALL.albedoTextures = _mapTextures("wall");
+    TileType.WALL.normalTextures = _mapTextures("wall_normal");
+    
+    TileType.WALL_TRIANGLE = new TileType();
+    TileType.WALL_TRIANGLE.albedoTextures = _mapTextures("wall_triangle", 4);
+    TileType.WALL_TRIANGLE.normalTextures = _mapTextures("wall_triangle_normal", 4);
+    
+    TileType.WALL_TRIANGLE_CORNER = new TileType();
+    TileType.WALL_TRIANGLE_CORNER.albedoTextures = _mapTextures("wall_triangle_corner", 4);
+    TileType.WALL_TRIANGLE_CORNER.normalTextures = _mapTextures("wall_triangle_corner_normal", 4);
+    
+    TileType.GREEN_SPAWN = new TileType();
+    TileType.GREEN_SPAWN.albedoTextures = _mapTextures("green_spawn");
+    TileType.GREEN_SPAWN.normalTextures = _mapTextures("spawn_normal");
+    
+    TileType.RED_SPAWN = new TileType();
+    TileType.RED_SPAWN.albedoTextures = _mapTextures("red_spawn");
+    TileType.RED_SPAWN.normalTextures = _mapTextures("spawn_normal");
+    
+    TileType.YELLOW_SPAWN = new TileType();
+    //TileType.YELLOW_SPAWN.albedoTextures = _mapTextures("yellow_spawn");
+    //TileType.YELLOW_SPAWN.normalTextures = _mapTextures("spawn_normal");
+    
+    TileType.BLUE_SPAWN = new TileType();
+    //TileType.BLUE_SPAWN.albedoTextures = _mapTextures("blue_spawn");
+    //TileType.BLUE_SPAWN.normalTextures = _mapTextures("spawn_normal");
+    
+    TileType.GREEN_JAIL = new TileType();
+    TileType.GREEN_JAIL.onFloor = false;
+    TileType.GREEN_JAIL.albedoTextures = _mapTextures("jail");
+    TileType.GREEN_JAIL.normalTextures = _mapTextures("jail_normal");
+    
+    TileType.RED_JAIL = new TileType();
+    TileType.RED_JAIL.onFloor = false;
+    TileType.RED_JAIL.albedoTextures = _mapTextures("jail");
+    TileType.RED_JAIL.normalTextures = _mapTextures("jail_normal");
+    
+    TileType.YELLOW_JAIL = new TileType();
+    TileType.YELLOW_JAIL.onFloor = false;
+    //TileType.YELLOW_JAIL.albedoTextures = _mapTextures("jail");
+    //TileType.YELLOW_JAIL.normalTextures = _mapTextures("jail_normal");
+    
+    TileType.BLUE_JAIL = new TileType();
+    TileType.BLUE_JAIL.onFloor = false;
+    //TileType.BLUE_JAIL.albedoTextures = _mapTextures("jail");
+    //TileType.BLUE_JAIL.normalTextures = _mapTextures("jail_normal");
+    
+    TileType.GREEN_FLAG_GOAL = new TileType();
+    TileType.GREEN_FLAG_GOAL.albedoTextures = _mapTextures("green_flag_goal");
+    TileType.GREEN_FLAG_GOAL.normalTextures = _mapTextures("flag_goal_normal");
+    
+    TileType.RED_FLAG_GOAL = new TileType();
+    TileType.RED_FLAG_GOAL.albedoTextures = _mapTextures("red_flag_goal");
+    TileType.RED_FLAG_GOAL.normalTextures = _mapTextures("flag_goal_normal");
+    
+    TileType.YELLOW_FLAG_GOAL = new TileType();
+    //TileType.YELLOW_FLAG_GOAL.albedoTextures = _mapTextures("yellow_flag_goal");
+    //TileType.YELLOW_FLAG_GOAL.normalTextures = _mapTextures("flag_goal_normal");
+    
+    TileType.BLUE_FLAG_GOAL = new TileType();
+    //TileType.BLUE_FLAG_GOAL.albedoTextures = _mapTextures("blue_flag_goal");
+    //TileType.BLUE_FLAG_GOAL.normalTextures = _mapTextures("flag_goal_normal");
+    
+    
+    TileType.FLAG_SPAWN = new TileType();
+    TileType.FLAG_SPAWN.albedoTextures = _mapTextures("flag_spawn");
+    TileType.FLAG_SPAWN.normalTextures = _mapTextures("flag_goal_normal");
+}
+
+function _mapTextures(name, orientations=1, variations=1) {
+    const mapping = [];
+    for (let o = 0; o < orientations; o++) {
+        mapping.push([]);
+        for (let v = 0; v < variations; v++) {
+            const texName = name + '_' + o + '_' + v;
+            mapping[o].push(assets.getTexture(texName));
+        }
+    }
+    return mapping;
+}
+// ========== END TILE TYPE DEFINITIONS ==========
+
+class Tile {
     type = null;
-    pos = null;
 
-    // CCW orientation of base of triangle tiles
+    // CCW orientation. e.g. for base of triangle tiles
 	//   2
 	// 3 /\ 1
 	//   0
     orientation = 0;
 
-    constructor(type, pos) {
+    constructor(type) {
         this.type = type;
-        this.pos = pos;
     }
 
     setTrianglePoints(p0, p1, p2) {
-        if (this.type === Tile.WALL_TRIANGLE) {
+        if (this.type === TileType.WALL_TRIANGLE) {
             switch (this.orientation) {
                 case 0:
                     p0.set(this.pos);
@@ -67,7 +185,7 @@ class Tile {
                     p2.set(this.pos.addXY(conf.TILE_SIZE/2, conf.TILE_SIZE/2));
                     break;
             }
-        } else if (this.type === Tile.WALL_TRIANGLE_CORNER) {
+        } else if (this.type === TileType.WALL_TRIANGLE_CORNER) {
             switch (this.orientation) {
                 case 0:
                     p0.set(this.pos);
@@ -94,10 +212,28 @@ class Tile {
             throw "not a triangle tile";
         }
     }
+
+    getAlbedoTexture() {
+        if (this.type.albedoTextures === null) {
+            return null;
+        }
+        return this.type.albedoTextures[this.orientation][0];
+    }
+
+    getNormalTexture() {
+        if (this.type.normalTextures === null) {
+            return null;
+        }
+        return this.type.normalTextures[this.orientation][0];
+    }
 }
 
-function isSolidType(type) {
-    return type === Tile.WALL || type === Tile.WALL_TRIANGLE || type === Tile.WALL_TRIANGLE_CORNER;
+function _isSolidType(type) {
+    return type === TileType.WALL || type === TileType.WALL_TRIANGLE || type === TileType.WALL_TRIANGLE_CORNER;
+}
+
+function posFromRowCol(row, col) {
+    return new Vec(col * conf.TILE_SIZE, row * conf.TILE_SIZE);
 }
 
 class Map {
@@ -108,13 +244,16 @@ class Map {
         for (let r = 0; r < rows.length; r++) {
             this.tileRows.push([]);
             for (let c = 0; c < rows[r].length; c++) {
-                const tile = new Tile(rows[r][c], new Vec(c, r).scale(conf.TILE_SIZE));
-                switch (tile.type) {
-                    case Tile.WALL_TRIANGLE:
-                    case Tile.WALL_TRIANGLE_CORNER:
+                const typeId = rows[r][c];
+                const tileType = TileType.fromId(typeId);
+                console.log("tile type: ", tileType);
+                const tile = new Tile(tileType);
+                switch (tileType) {
+                    case TileType.WALL_TRIANGLE:
+                    case TileType.WALL_TRIANGLE_CORNER:
                         tile.orientation = 0;
                         break;
-                    case Tile.FLAG_SPAWN:
+                    case TileType.FLAG_SPAWN:
                         this.numFlags++;
                         break;
                 }
@@ -135,7 +274,7 @@ class Map {
                     continue;
                 }
                 const tile = this.tileRows[r][c];
-                if (!isSolidType(tile.type)) {
+                if (!_isSolidType(tile.type)) {
                     continue;
                 }
                 samples.push(tile);
@@ -145,4 +284,4 @@ class Map {
     }
 }
 
-export{Tile, Map};
+export{Tile, TileType, Map, defineTileTypes, posFromRowCol};

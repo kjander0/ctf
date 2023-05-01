@@ -24,39 +24,40 @@ const shipPixelRatio = 406/512;
 
 const srgbImageList = [
     "ship",
-    "floor",
-    "wall",
-    "wall_triangle0",
-    "wall_triangle1",
-    "wall_triangle2",
-    "wall_triangle3",
-    "wall_triangle_corner0",
-    "wall_triangle_corner1",
-    "wall_triangle_corner2",
-    "wall_triangle_corner3",
-    "green_spawn",
-    "red_spawn",
+    "floor_0_0",
+    "wall_0_0",
+    "wall_triangle_0_0",
+    "wall_triangle_1_0",
+    "wall_triangle_2_0",
+    "wall_triangle_3_0",
+    "wall_triangle_corner_0_0",
+    "wall_triangle_corner_1_0",
+    "wall_triangle_corner_2_0",
+    "wall_triangle_corner_3_0",
+    "green_spawn_0_0",
+    "red_spawn_0_0",
     "flag",
-    "jail",
-    "green_goal",
-    "red_goal",
+    "jail_0_0",
+    "green_flag_goal_0_0",
+    "red_flag_goal_0_0",
+    "flag_spawn_0_0",
 ]
 
 const xyzImageList = [
     "ship_normal",
-    "floor_normal",
-    "wall_normal",
-    "wall_triangle_normal0",
-    "wall_triangle_normal1",
-    "wall_triangle_normal2",
-    "wall_triangle_normal3",
-    "wall_triangle_corner_normal0",
-    "wall_triangle_corner_normal1",
-    "wall_triangle_corner_normal2",
-    "wall_triangle_corner_normal3",
-    "spawn_normal",
-    "jail_normal",
-    "goal_normal",
+    "floor_normal_0_0",
+    "wall_normal_0_0",
+    "wall_triangle_normal_0_0",
+    "wall_triangle_normal_1_0",
+    "wall_triangle_normal_2_0",
+    "wall_triangle_normal_3_0",
+    "wall_triangle_corner_normal_0_0",
+    "wall_triangle_corner_normal_1_0",
+    "wall_triangle_corner_normal_2_0",
+    "wall_triangle_corner_normal_3_0",
+    "spawn_normal_0_0",
+    "jail_normal_0_0",
+    "flag_goal_normal_0_0",
 ]
 
 async function loadAssets() {    
@@ -129,7 +130,11 @@ async function requestImage(urlPath) {
 }
 
 function getTexture(name) {
-    return textures[name];
+    const tex = textures[name];
+    if (tex === undefined) {
+        throw "could not get undefined texture: " + name;
+    }
+    return tex;
 }
 
 export {

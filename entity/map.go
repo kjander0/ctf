@@ -14,32 +14,21 @@ const (
 	TileWall
 	TileWallTriangle
 	TileWallTriangleCorner
-	_
-	_
-	_
-	_
-	_
 
 	TileGreenSpawn
 	TileRedSpawn
 	TileYellowSpawn
 	TileBlueSpawn
+
 	TileGreenJail
 	TileRedJail
 	TileYellowJail
 	TileBlueJail
+
 	TileGreenFlagGoal
 	TileRedFlagGoal
 	TileYellowFlagGoal
 	TileBlueFlagGoal
-	_
-	_
-	_
-	_
-	_
-	_
-	_
-	_
 
 	TileFlagSpawn
 )
