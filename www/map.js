@@ -157,8 +157,11 @@ class Tile {
 	//   0
     orientation = 0;
 
-    constructor(type) {
+    pos;
+
+    constructor(type, row, col) {
         this.type = type;
+        this.pos = posFromRowCol(row, col);
     }
 
     setTrianglePoints(p0, p1, p2) {
@@ -217,12 +220,18 @@ class Tile {
         if (this.type.albedoTextures === null) {
             return null;
         }
+        if (this.type.albedoTextures.length === 1) {
+            return this.type.albedoTextures[0][0];
+        }
         return this.type.albedoTextures[this.orientation][0];
     }
 
     getNormalTexture() {
         if (this.type.normalTextures === null) {
             return null;
+        }
+        if (this.type.normalTextures.length === 1) {
+            return this.type.normalTextures[0][0];
         }
         return this.type.normalTextures[this.orientation][0];
     }
@@ -247,7 +256,7 @@ class Map {
                 const typeId = rows[r][c];
                 const tileType = TileType.fromId(typeId);
                 console.log("tile type: ", tileType);
-                const tile = new Tile(tileType);
+                const tile = new Tile(tileType, r, c);
                 switch (tileType) {
                     case TileType.WALL_TRIANGLE:
                     case TileType.WALL_TRIANGLE_CORNER:
