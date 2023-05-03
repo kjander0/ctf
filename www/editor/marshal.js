@@ -6,6 +6,7 @@ function logBits(dec) {
 
 function marshal(rows) {
     rows = trimRows(rows);
+    console.log(rows.length, rows[0].length)
 
     const arrBuf = new ArrayBuffer(1024 * 1024);
     const view = new DataView(arrBuf);
@@ -90,7 +91,7 @@ function trimRows(rows) {
     for (let ri = 0; ri < rows.length; ri++) {
         let rowEmpty = true;
         for (let ci = 0; ci < rows[ri].length; ci++) {
-            if (rows[ri][ci].type !== Tile.EMPTY) {
+            if (rows[ri][ci].type !== TileType.EMPTY) {
                 rowEmpty = false;
                 if (ci < colStart) {
                     colStart = ci;
@@ -118,7 +119,7 @@ function trimRows(rows) {
         newRows[r] = rows[r + rowStart].slice(colStart, colEnd+1);
     }
     
-    console.log(rowStart, rowEnd, colStart, colEnd);
+    console.log("trim to: ", rowStart, rowEnd, colStart, colEnd);
 
     return newRows;
 }

@@ -1,7 +1,10 @@
 package entity
 
 import (
+	"encoding/binary"
+	"io"
 	"math/rand"
+	"os"
 
 	"github.com/kjander0/ctf/conf"
 	"github.com/kjander0/ctf/logger"
@@ -33,8 +36,12 @@ const (
 	TileFlagSpawn
 )
 
+type TileType struct {
+	TODO
+}
+
 type Tile struct {
-	Type uint8
+	Type *TileType
 	Pos  mymath.Vec
 
 	// CCW orientation of base of triangle tiles
@@ -57,55 +64,57 @@ type Map struct {
 	RedFlagGoals   []mymath.Vec
 }
 
-func (t Tile) CalcTrianglePoints() (mymath.Vec, mymath.Vec, mymath.Vec) {
-	var p0, p1, p2 mymath.Vec
-	tileSize := float64(conf.Shared.TileSize)
-	if t.Type == TileWallTriangle {
-		switch t.Orientation {
-		case 0:
-			p0 = t.Pos
-			p1 = t.Pos.AddXY(tileSize, 0)
-			p2 = t.Pos.AddXY(tileSize/2, tileSize/2)
-		case 1:
-			p0 = t.Pos.AddXY(tileSize, 0)
-			p1 = t.Pos.AddXY(tileSize, tileSize)
-			p2 = t.Pos.AddXY(tileSize/2, tileSize/2)
-		case 2:
-			p0 = t.Pos.AddXY(tileSize, tileSize)
-			p1 = t.Pos.AddXY(0, tileSize)
-			p2 = t.Pos.AddXY(tileSize/2, tileSize/2)
-		case 3:
-			p0 = t.Pos.AddXY(0, tileSize)
-			p1 = t.Pos
-			p2 = t.Pos.AddXY(tileSize/2, tileSize/2)
-		}
-	} else if t.Type == TileWallTriangleCorner {
-		switch t.Orientation {
-		case 0:
-			p0 = t.Pos
-			p1 = t.Pos.AddXY(tileSize, 0)
-			p2 = t.Pos.AddXY(0, tileSize)
-		case 1:
-			p0 = t.Pos.AddXY(tileSize, 0)
-			p1 = t.Pos.AddXY(tileSize, tileSize)
-			p2 = t.Pos
-		case 2:
-			p0 = t.Pos.AddXY(tileSize, tileSize)
-			p1 = t.Pos.AddXY(0, tileSize)
-			p2 = t.Pos.AddXY(tileSize, 0)
-		case 3:
-			p0 = t.Pos.AddXY(0, tileSize)
-			p1 = t.Pos
-			p2 = t.Pos.AddXY(tileSize, tileSize)
-		}
-	} else {
-		logger.Panic("triangle tile was expected")
+func LoadMap(filename string) Map {
+	file, err := os.Open(filename)
+	if err != nil {
+		// TODO: test this error
+		logger.Panic("File not found: ", filename)
 	}
-	return p0, p1, p2
-}
+	defer file.Close()
 
-func IsSolidType(t uint8) bool {
-	return t == TileWall || t == TileWallTriangle || t == TileWallTriangleCorner
+	var rowSize uint16
+	err = binary.Read(file, binary.BigEndian, &rowSize)
+	if err != nil {
+		logger.Panic("Failed to read rowSize from file: ", filename)
+	}
+	logger.Debug("row size: ", rowSize)
+
+	var newMap Map
+	newMap.Rows = append(newMap.Rows, []Tile{})
+	for {
+		var bits uint16
+		err = binary.Read(file, binary.BigEndian, &bits)
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			logger.Panic("Failed to read from file: ", filename)
+		}
+
+		tileCount := (bits & ^(^0 << 5)) + 1
+		bits >>= 5
+		variation := bits & ^(^0 << 4)
+		bits >>= 4
+		orientation := bits & ^(^0 << 2)
+		bits >>= 2
+		typeId := bits & ^(^0 << 5)
+
+		logger.Debugf("tile count: %v variation: %v orientation: %v typeId: %v", tileCount, variation, orientation, typeId)
+
+		for i := uint16(0); i < tileCount; i++ {
+			row := newMap.Rows[len(newMap.Rows)-1]
+			if len(row) == int(rowSize) {
+				row = []Tile{}
+				newMap.Rows = append(newMap.Rows, row)
+			}
+			tile := Tile{}
+			row = append(row, tile)
+		}
+
+	}
+
+	//rows := make([][]Tile, 100)
+
+	return Map{}
 }
 
 func NewMap(rows [][]uint8) Map {
@@ -176,6 +185,57 @@ func (m *Map) SampleSolidTiles(pos mymath.Vec, radius float64) []Tile {
 		}
 	}
 	return samples
+}
+
+func (t Tile) CalcTrianglePoints() (mymath.Vec, mymath.Vec, mymath.Vec) {
+	var p0, p1, p2 mymath.Vec
+	tileSize := float64(conf.Shared.TileSize)
+	if t.Type == TileWallTriangle {
+		switch t.Orientation {
+		case 0:
+			p0 = t.Pos
+			p1 = t.Pos.AddXY(tileSize, 0)
+			p2 = t.Pos.AddXY(tileSize/2, tileSize/2)
+		case 1:
+			p0 = t.Pos.AddXY(tileSize, 0)
+			p1 = t.Pos.AddXY(tileSize, tileSize)
+			p2 = t.Pos.AddXY(tileSize/2, tileSize/2)
+		case 2:
+			p0 = t.Pos.AddXY(tileSize, tileSize)
+			p1 = t.Pos.AddXY(0, tileSize)
+			p2 = t.Pos.AddXY(tileSize/2, tileSize/2)
+		case 3:
+			p0 = t.Pos.AddXY(0, tileSize)
+			p1 = t.Pos
+			p2 = t.Pos.AddXY(tileSize/2, tileSize/2)
+		}
+	} else if t.Type == TileWallTriangleCorner {
+		switch t.Orientation {
+		case 0:
+			p0 = t.Pos
+			p1 = t.Pos.AddXY(tileSize, 0)
+			p2 = t.Pos.AddXY(0, tileSize)
+		case 1:
+			p0 = t.Pos.AddXY(tileSize, 0)
+			p1 = t.Pos.AddXY(tileSize, tileSize)
+			p2 = t.Pos
+		case 2:
+			p0 = t.Pos.AddXY(tileSize, tileSize)
+			p1 = t.Pos.AddXY(0, tileSize)
+			p2 = t.Pos.AddXY(tileSize, 0)
+		case 3:
+			p0 = t.Pos.AddXY(0, tileSize)
+			p1 = t.Pos
+			p2 = t.Pos.AddXY(tileSize, tileSize)
+		}
+	} else {
+		logger.Panic("triangle tile was expected")
+	}
+	return p0, p1, p2
+}
+
+func IsSolidType(t uint8) bool {
+	return t == TileWall || t == TileWallTriangle || t == TileWallTriangleCorner
 }
 
 func isWall(rows [][]uint8, ri int, ci int) bool {
