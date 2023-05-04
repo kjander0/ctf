@@ -11,33 +11,95 @@ import (
 	"github.com/kjander0/ctf/mymath"
 )
 
-const (
-	TileEmpty = iota
-	TileFloor
-	TileWall
-	TileWallTriangle
-	TileWallTriangleCorner
-
-	TileGreenSpawn
-	TileRedSpawn
-	TileYellowSpawn
-	TileBlueSpawn
-
-	TileGreenJail
-	TileRedJail
-	TileYellowJail
-	TileBlueJail
-
-	TileGreenFlagGoal
-	TileRedFlagGoal
-	TileYellowFlagGoal
-	TileBlueFlagGoal
-
-	TileFlagSpawn
-)
-
 type TileType struct {
-	TODO
+	Id               int
+	Team             int
+	PlayerCollidable bool
+	LaserCollidable  bool
+	// Shape CollisionShape
+}
+
+var typeList []*TileType
+var nextTileTypeId = 0
+
+func NewTileType() *TileType {
+	tt := &TileType{
+		Id:               nextTileTypeId,
+		Team:             -1,
+		PlayerCollidable: true,
+		LaserCollidable:  true,
+	}
+	nextTileTypeId += 1
+	typeList = append(typeList, tt)
+	return tt
+}
+
+var TileTypeEmpty = NewTileType()
+var TileTypeFloor = NewTileType()
+var TileTypeWall = NewTileType()
+var TileTypeWallTriangle = NewTileType()
+var TileTypeWallTriangleCorner = NewTileType()
+
+var TileTypeGreenSpawn = NewTileType()
+var TileTypeRedSpawn = NewTileType()
+var TileTypeBlueSpawn = NewTileType()
+var TileTypeYellowSpawn = NewTileType()
+
+var TileTypeGreenJail = NewTileType()
+var TileTypeRedJail = NewTileType()
+var TileTypeBlueJail = NewTileType()
+var TileTypeYellowJail = NewTileType()
+
+var TileTypeGreenFlagGoal = NewTileType()
+var TileTypeRedFlagGoal = NewTileType()
+var TileTypeBlueFlagGoal = NewTileType()
+var TileTypeYellowFlagGoal = NewTileType()
+
+var TileTypeFlagSpawn = NewTileType()
+
+func DefineTileTypes() {
+	if len(typeList) > 0 {
+		logger.Panic("Tiles types have already been defined")
+	}
+
+	TileTypeGreenSpawn.Team = TeamGreen
+	TileTypeGreenSpawn.PlayerCollidable = false
+	TileTypeGreenSpawn.LaserCollidable = false
+	TileTypeRedSpawn.Team = TeamRed
+	TileTypeRedSpawn.PlayerCollidable = false
+	TileTypeRedSpawn.LaserCollidable = false
+	TileTypeBlueSpawn.Team = TeamBlue
+	TileTypeBlueSpawn.PlayerCollidable = false
+	TileTypeBlueSpawn.LaserCollidable = false
+	TileTypeYellowSpawn.Team = TeamYellow
+	TileTypeYellowSpawn.PlayerCollidable = false
+	TileTypeYellowSpawn.LaserCollidable = false
+
+	TileTypeGreenJail.Team = TeamGreen
+	TileTypeGreenSpawn.PlayerCollidable = false
+	TileTypeGreenSpawn.LaserCollidable = false
+	TileTypeRedJail.Team = TeamRed
+	TileTypeRedJail.PlayerCollidable = false
+	TileTypeRedJail.LaserCollidable = false
+	TileTypeBlueJail.Team = TeamBlue
+	TileTypeBlueJail.PlayerCollidable = false
+	TileTypeBlueJail.LaserCollidable = false
+	TileTypeYellowJail.Team = TeamYellow
+	TileTypeYellowJail.PlayerCollidable = false
+	TileTypeYellowJail.LaserCollidable = false
+
+	TileTypeGreenFlagGoal.Team = TeamGreen
+	TileTypeGreenFlagGoal.PlayerCollidable = false
+	TileTypeGreenFlagGoal.LaserCollidable = false
+	TileTypeRedFlagGoal.Team = TeamRed
+	TileTypeRedFlagGoal.PlayerCollidable = false
+	TileTypeRedFlagGoal.LaserCollidable = false
+	TileTypeBlueFlagGoal.Team = TeamBlue
+	TileTypeBlueFlagGoal.PlayerCollidable = false
+	TileTypeBlueFlagGoal.LaserCollidable = false
+	TileTypeYellowFlagGoal.Team = TeamYellow
+	TileTypeYellowFlagGoal.PlayerCollidable = false
+	TileTypeYellowFlagGoal.LaserCollidable = false
 }
 
 type Tile struct {
@@ -49,8 +111,6 @@ type Tile struct {
 	// 3 /\ 1
 	//   0
 	Orientation uint8
-
-	Solid bool
 }
 
 type Map struct {
@@ -64,7 +124,7 @@ type Map struct {
 	RedFlagGoals   []mymath.Vec
 }
 
-func LoadMap(filename string) Map {
+func LoadMap(filename string) *Map {
 	file, err := os.Open(filename)
 	if err != nil {
 		// TODO: test this error
@@ -79,7 +139,7 @@ func LoadMap(filename string) Map {
 	}
 	logger.Debug("row size: ", rowSize)
 
-	var newMap Map
+	newMap := &Map{}
 	newMap.Rows = append(newMap.Rows, []Tile{})
 	for {
 		var bits uint16
@@ -106,56 +166,31 @@ func LoadMap(filename string) Map {
 				row = []Tile{}
 				newMap.Rows = append(newMap.Rows, row)
 			}
-			tile := Tile{}
-			row = append(row, tile)
-		}
+			rowIndex := len(newMap.Rows) - 1
+			colIndex := len(row)
+			tileType := typeList[typeId]
+			row = append(row, Tile{
+				Type:        tileType,
+				Pos:         TileBottomLeft(rowIndex, colIndex),
+				Orientation: uint8(orientation),
+			})
 
-	}
-
-	//rows := make([][]Tile, 100)
-
-	return Map{}
-}
-
-func NewMap(rows [][]uint8) Map {
-	var newMap Map
-
-	for r := range rows {
-		newMap.Rows = append(newMap.Rows, []Tile{})
-		for c := range rows[r] {
-			tile := Tile{
-				Pos:  TileBottomLeft(r, c),
-				Type: rows[r][c],
+			switch tileType {
+			case TileTypeGreenJail:
+				newMap.GreenJails = append(newMap.GreenJails, TileCentre(rowIndex, colIndex))
+			case TileTypeRedJail:
+				newMap.RedJails = append(newMap.RedJails, TileCentre(rowIndex, colIndex))
+			case TileTypeGreenSpawn:
+				newMap.GreenSpawns = append(newMap.GreenSpawns, TileCentre(rowIndex, colIndex))
+			case TileTypeRedSpawn:
+				newMap.RedSpawns = append(newMap.RedSpawns, TileCentre(rowIndex, colIndex))
+			case TileTypeFlagSpawn:
+				newMap.FlagSpawns = append(newMap.FlagSpawns, TileCentre(rowIndex, colIndex))
+			case TileTypeGreenFlagGoal:
+				newMap.GreenFlagGoals = append(newMap.GreenFlagGoals, TileCentre(rowIndex, colIndex))
+			case TileTypeRedFlagGoal:
+				newMap.RedFlagGoals = append(newMap.RedFlagGoals, TileCentre(rowIndex, colIndex))
 			}
-
-			if tile.Type == TileWallTriangle || tile.Type == TileWallTriangleCorner {
-				tile.Orientation = 0
-			}
-
-			switch tile.Type {
-			case TileWall:
-				tile.Solid = true
-			case TileWallTriangle:
-				tile.Solid = true
-			case TileWallTriangleCorner:
-				tile.Solid = true
-			case TileGreenJail:
-				newMap.GreenJails = append(newMap.GreenJails, TileCentre(r, c))
-			case TileRedJail:
-				newMap.RedJails = append(newMap.RedJails, TileCentre(r, c))
-			case TileGreenSpawn:
-				newMap.GreenSpawns = append(newMap.GreenSpawns, TileCentre(r, c))
-			case TileRedSpawn:
-				newMap.RedSpawns = append(newMap.RedSpawns, TileCentre(r, c))
-			case TileFlagSpawn:
-				newMap.FlagSpawns = append(newMap.FlagSpawns, TileCentre(r, c))
-			case TileGreenFlagGoal:
-				newMap.GreenFlagGoals = append(newMap.GreenFlagGoals, TileCentre(r, c))
-			case TileRedFlagGoal:
-				newMap.RedFlagGoals = append(newMap.RedFlagGoals, TileCentre(r, c))
-			}
-
-			newMap.Rows[r] = append(newMap.Rows[r], tile)
 		}
 	}
 

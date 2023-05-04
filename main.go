@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/kjander0/ctf/conf"
+	"github.com/kjander0/ctf/entity"
 	"github.com/kjander0/ctf/logger"
 	"github.com/kjander0/ctf/web"
 )
@@ -59,6 +60,7 @@ import (
 
 func main() {
 	conf.WriteSharedParams("www/shared.json")
+	entity.DefineTileTypes()
 	webserver := web.NewWebServer()
 	game := NewGame(webserver.ClientC)
 	go game.Run()

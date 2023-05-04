@@ -24,6 +24,8 @@ const (
 const (
 	TeamGreen = iota
 	TeamRed
+	TeamBlue
+	TeamYellow
 )
 
 const (

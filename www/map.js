@@ -57,6 +57,10 @@ class TileType {
 // ========== BEGIN TILE TYPE DEFINITIONS ==========
 // NOTE: this needs to be called after texture assets have been loaded
 function defineTileTypes() {
+    if (TileType.typeList.length > 0) {
+        throw "Tile types already defined";
+    }
+
     TileType.EMPTY = new TileType();
     TileType.EMPTY.onFloor = false;
 
@@ -84,14 +88,14 @@ function defineTileTypes() {
     TileType.RED_SPAWN = new TileType();
     TileType.RED_SPAWN.albedoTextures = _mapTextures("red_spawn");
     TileType.RED_SPAWN.normalTextures = _mapTextures("spawn_normal");
+
+    TileType.BLUE_SPAWN = new TileType();
+    //TileType.BLUE_SPAWN.albedoTextures = _mapTextures("blue_spawn");
+    //TileType.BLUE_SPAWN.normalTextures = _mapTextures("spawn_normal");
     
     TileType.YELLOW_SPAWN = new TileType();
     //TileType.YELLOW_SPAWN.albedoTextures = _mapTextures("yellow_spawn");
     //TileType.YELLOW_SPAWN.normalTextures = _mapTextures("spawn_normal");
-    
-    TileType.BLUE_SPAWN = new TileType();
-    //TileType.BLUE_SPAWN.albedoTextures = _mapTextures("blue_spawn");
-    //TileType.BLUE_SPAWN.normalTextures = _mapTextures("spawn_normal");
     
     TileType.GREEN_JAIL = new TileType();
     TileType.GREEN_JAIL.onFloor = false;
@@ -102,16 +106,16 @@ function defineTileTypes() {
     TileType.RED_JAIL.onFloor = false;
     TileType.RED_JAIL.albedoTextures = _mapTextures("jail");
     TileType.RED_JAIL.normalTextures = _mapTextures("jail_normal");
+
+    TileType.BLUE_JAIL = new TileType();
+    TileType.BLUE_JAIL.onFloor = false;
+    //TileType.BLUE_JAIL.albedoTextures = _mapTextures("jail");
+    //TileType.BLUE_JAIL.normalTextures = _mapTextures("jail_normal");
     
     TileType.YELLOW_JAIL = new TileType();
     TileType.YELLOW_JAIL.onFloor = false;
     //TileType.YELLOW_JAIL.albedoTextures = _mapTextures("jail");
     //TileType.YELLOW_JAIL.normalTextures = _mapTextures("jail_normal");
-    
-    TileType.BLUE_JAIL = new TileType();
-    TileType.BLUE_JAIL.onFloor = false;
-    //TileType.BLUE_JAIL.albedoTextures = _mapTextures("jail");
-    //TileType.BLUE_JAIL.normalTextures = _mapTextures("jail_normal");
     
     TileType.GREEN_FLAG_GOAL = new TileType();
     TileType.GREEN_FLAG_GOAL.albedoTextures = _mapTextures("green_flag_goal");
@@ -120,15 +124,14 @@ function defineTileTypes() {
     TileType.RED_FLAG_GOAL = new TileType();
     TileType.RED_FLAG_GOAL.albedoTextures = _mapTextures("red_flag_goal");
     TileType.RED_FLAG_GOAL.normalTextures = _mapTextures("flag_goal_normal");
-    
-    TileType.YELLOW_FLAG_GOAL = new TileType();
-    //TileType.YELLOW_FLAG_GOAL.albedoTextures = _mapTextures("yellow_flag_goal");
-    //TileType.YELLOW_FLAG_GOAL.normalTextures = _mapTextures("flag_goal_normal");
-    
+
     TileType.BLUE_FLAG_GOAL = new TileType();
     //TileType.BLUE_FLAG_GOAL.albedoTextures = _mapTextures("blue_flag_goal");
     //TileType.BLUE_FLAG_GOAL.normalTextures = _mapTextures("flag_goal_normal");
     
+    TileType.YELLOW_FLAG_GOAL = new TileType();
+    //TileType.YELLOW_FLAG_GOAL.albedoTextures = _mapTextures("yellow_flag_goal");
+    //TileType.YELLOW_FLAG_GOAL.normalTextures = _mapTextures("flag_goal_normal");
     
     TileType.FLAG_SPAWN = new TileType();
     TileType.FLAG_SPAWN.albedoTextures = _mapTextures("flag_spawn");
