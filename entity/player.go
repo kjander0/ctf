@@ -218,7 +218,7 @@ func processPredictedInputs(world *World, player *Player) {
 
 func constrainPlayerPos(world *World, pos mymath.Vec) mymath.Vec {
 	// TODO: if pass in prev pos, can eliminate some collision checks
-	tileSample := world.Map.SampleSolidTiles(pos, conf.Shared.PlayerRadius)
+	tileSample := world.Map.SampleTiles(pos, conf.Shared.PlayerRadius, PlayerCollisionGroup)
 	tileSize := float64(conf.Shared.TileSize)
 	tileRect := mymath.Rect{Size: mymath.Vec{tileSize, tileSize}}
 	playerCircle := mymath.Circle{Radius: conf.Shared.PlayerRadius}
@@ -226,10 +226,10 @@ func constrainPlayerPos(world *World, pos mymath.Vec) mymath.Vec {
 		playerCircle.Pos = pos
 		var overlaps bool
 		var overlap mymath.Vec
-		if tile.Type == TileWall {
+		if tile.Type == TileTypeWall {
 			tileRect.Pos = tile.Pos
 			overlaps, overlap = mymath.CircleRectOverlap(playerCircle, tileRect)
-		} else if tile.Type == TileWallTriangle || tile.Type == TileWallTriangleCorner {
+		} else if tile.Type == TileTypeWallTriangle || tile.Type == TileTypeWallTriangleCorner {
 			t0, t1, t2 := tile.CalcTrianglePoints()
 			overlaps, overlap = mymath.CircleTriangleOverlap(playerCircle, t0, t1, t2)
 		}

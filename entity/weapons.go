@@ -108,7 +108,7 @@ func checkWallHit(world *World, line mymath.Line) (float64, mymath.Vec, mymath.V
 	tileSize := float64(conf.Shared.TileSize)
 	tileRect := mymath.Rect{Size: mymath.Vec{tileSize, tileSize}}
 	lineLen := line.Length()
-	tileSample := world.Map.SampleSolidTiles(line.End, lineLen)
+	tileSample := world.Map.SampleTiles(line.End, lineLen, LaserCollisionGroup)
 	var hitPos, hitNormal mymath.Vec
 	hitDist := -1.0
 	for _, tile := range tileSample {
@@ -117,12 +117,12 @@ func checkWallHit(world *World, line mymath.Line) (float64, mymath.Vec, mymath.V
 		var intersected bool
 		var hit, normal mymath.Vec
 
-		if tile.Type == TileWall {
+		if tile.Type == TileTypeWall {
 			intersected, hit, normal = mymath.LaserRectIntersect(line, tileRect)
 			if !intersected {
 				continue
 			}
-		} else if tile.Type == TileWallTriangle || tile.Type == TileWallTriangleCorner {
+		} else if tile.Type == TileTypeWallTriangle || tile.Type == TileTypeWallTriangleCorner {
 			t0, t1, t2 := tile.CalcTrianglePoints()
 			intersected, hit, normal = mymath.LaserTriangleIntersect(line, t0, t1, t2)
 			if !intersected {

@@ -4,7 +4,7 @@ import "github.com/kjander0/ctf/mymath"
 
 type World struct {
 	Tick          uint8
-	Map           Map
+	Map           *Map
 	PlayerList    []Player
 	LaserList     []Laser
 	NewLasers     []Laser

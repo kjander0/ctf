@@ -108,14 +108,6 @@ function consumeMessage(msg, game) {
 
 function _processInitMsg(game, decoder) {
     game.player.id = decoder.readUint8();
-    let numRows = decoder.readUint16();
-    let rows = [];
-    for (let i = 0; i < numRows; i++) {
-        let numTiles = decoder.readUint16();
-        let arr = decoder.uint8Array(numTiles);
-        rows.push(Array.from(arr));
-    }
-    game.map = new Map(rows);
 }
 
 function _processUpdateMsg(game, decoder) {

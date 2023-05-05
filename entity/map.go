@@ -11,11 +11,13 @@ import (
 	"github.com/kjander0/ctf/mymath"
 )
 
+var PlayerCollisionGroup = 1
+var LaserCollisionGroup = 2
+
 type TileType struct {
-	Id               int
-	Team             int
-	PlayerCollidable bool
-	LaserCollidable  bool
+	Id             int
+	Team           int
+	CollisionGroup int
 	// Shape CollisionShape
 }
 
@@ -24,10 +26,9 @@ var nextTileTypeId = 0
 
 func NewTileType() *TileType {
 	tt := &TileType{
-		Id:               nextTileTypeId,
-		Team:             -1,
-		PlayerCollidable: true,
-		LaserCollidable:  true,
+		Id:             nextTileTypeId,
+		Team:           -1,
+		CollisionGroup: PlayerCollisionGroup | LaserCollisionGroup,
 	}
 	nextTileTypeId += 1
 	typeList = append(typeList, tt)
@@ -63,43 +64,31 @@ func DefineTileTypes() {
 	}
 
 	TileTypeGreenSpawn.Team = TeamGreen
-	TileTypeGreenSpawn.PlayerCollidable = false
-	TileTypeGreenSpawn.LaserCollidable = false
+	TileTypeGreenSpawn.CollisionGroup = 0
 	TileTypeRedSpawn.Team = TeamRed
-	TileTypeRedSpawn.PlayerCollidable = false
-	TileTypeRedSpawn.LaserCollidable = false
+	TileTypeRedSpawn.CollisionGroup = 0
 	TileTypeBlueSpawn.Team = TeamBlue
-	TileTypeBlueSpawn.PlayerCollidable = false
-	TileTypeBlueSpawn.LaserCollidable = false
+	TileTypeBlueSpawn.CollisionGroup = 0
 	TileTypeYellowSpawn.Team = TeamYellow
-	TileTypeYellowSpawn.PlayerCollidable = false
-	TileTypeYellowSpawn.LaserCollidable = false
+	TileTypeYellowSpawn.CollisionGroup = 0
 
 	TileTypeGreenJail.Team = TeamGreen
-	TileTypeGreenSpawn.PlayerCollidable = false
-	TileTypeGreenSpawn.LaserCollidable = false
+	TileTypeGreenSpawn.CollisionGroup = 0
 	TileTypeRedJail.Team = TeamRed
-	TileTypeRedJail.PlayerCollidable = false
-	TileTypeRedJail.LaserCollidable = false
+	TileTypeRedJail.CollisionGroup = 0
 	TileTypeBlueJail.Team = TeamBlue
-	TileTypeBlueJail.PlayerCollidable = false
-	TileTypeBlueJail.LaserCollidable = false
+	TileTypeBlueJail.CollisionGroup = 0
 	TileTypeYellowJail.Team = TeamYellow
-	TileTypeYellowJail.PlayerCollidable = false
-	TileTypeYellowJail.LaserCollidable = false
+	TileTypeYellowJail.CollisionGroup = 0
 
 	TileTypeGreenFlagGoal.Team = TeamGreen
-	TileTypeGreenFlagGoal.PlayerCollidable = false
-	TileTypeGreenFlagGoal.LaserCollidable = false
+	TileTypeGreenFlagGoal.CollisionGroup = 0
 	TileTypeRedFlagGoal.Team = TeamRed
-	TileTypeRedFlagGoal.PlayerCollidable = false
-	TileTypeRedFlagGoal.LaserCollidable = false
+	TileTypeRedFlagGoal.CollisionGroup = 0
 	TileTypeBlueFlagGoal.Team = TeamBlue
-	TileTypeBlueFlagGoal.PlayerCollidable = false
-	TileTypeBlueFlagGoal.LaserCollidable = false
+	TileTypeBlueFlagGoal.CollisionGroup = 0
 	TileTypeYellowFlagGoal.Team = TeamYellow
-	TileTypeYellowFlagGoal.PlayerCollidable = false
-	TileTypeYellowFlagGoal.LaserCollidable = false
+	TileTypeYellowFlagGoal.CollisionGroup = 0
 }
 
 type Tile struct {
@@ -201,7 +190,7 @@ func (m *Map) RandomLocation(locations []mymath.Vec) mymath.Vec {
 	return locations[rand.Intn(len(locations))]
 }
 
-func (m *Map) SampleSolidTiles(pos mymath.Vec, radius float64) []Tile {
+func (m *Map) SampleTiles(pos mymath.Vec, radius float64, collisionGroup int) []Tile {
 	tileSize := float64(conf.Shared.TileSize)
 	col := int(pos.X / tileSize)
 	row := int(pos.Y / tileSize)
@@ -213,7 +202,7 @@ func (m *Map) SampleSolidTiles(pos mymath.Vec, radius float64) []Tile {
 				continue
 			}
 			tile := m.Rows[r][c]
-			if !IsSolidType(tile.Type) {
+			if collisionGroup&tile.Type.CollisionGroup == 0 {
 				continue
 			}
 			samples = append(samples, tile)
@@ -225,7 +214,7 @@ func (m *Map) SampleSolidTiles(pos mymath.Vec, radius float64) []Tile {
 func (t Tile) CalcTrianglePoints() (mymath.Vec, mymath.Vec, mymath.Vec) {
 	var p0, p1, p2 mymath.Vec
 	tileSize := float64(conf.Shared.TileSize)
-	if t.Type == TileWallTriangle {
+	if t.Type == TileTypeWallTriangle {
 		switch t.Orientation {
 		case 0:
 			p0 = t.Pos
@@ -244,7 +233,7 @@ func (t Tile) CalcTrianglePoints() (mymath.Vec, mymath.Vec, mymath.Vec) {
 			p1 = t.Pos
 			p2 = t.Pos.AddXY(tileSize/2, tileSize/2)
 		}
-	} else if t.Type == TileWallTriangleCorner {
+	} else if t.Type == TileTypeWallTriangleCorner {
 		switch t.Orientation {
 		case 0:
 			p0 = t.Pos
@@ -267,20 +256,6 @@ func (t Tile) CalcTrianglePoints() (mymath.Vec, mymath.Vec, mymath.Vec) {
 		logger.Panic("triangle tile was expected")
 	}
 	return p0, p1, p2
-}
-
-func IsSolidType(t uint8) bool {
-	return t == TileWall || t == TileWallTriangle || t == TileWallTriangleCorner
-}
-
-func isWall(rows [][]uint8, ri int, ci int) bool {
-	if ri < 0 || ri >= len(rows) {
-		return false
-	}
-	if ci < 0 || ci >= len(rows[ri]) {
-		return false
-	}
-	return IsSolidType(rows[ri][ci])
 }
 
 func TileCentre(row int, col int) mymath.Vec {

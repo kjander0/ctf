@@ -35,6 +35,8 @@ window.onload = async function() {
 
     const game = new Game(graphics, input);
 
+    TODO, LOAD MAP!
+
     await net.connect(game);
 
     let prevTime = window.performance.now();
