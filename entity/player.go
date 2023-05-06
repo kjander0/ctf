@@ -130,14 +130,20 @@ func UpdatePlayers(world *World) {
 		}
 
 		player.TicksSinceLastInput++ // increment once per tick, decrement for each input received
+
+		if player.Health <= 0 {
+			SendToJail(world, player)
+		}
+
 		if player.State == PlayerStateJailed {
 			player.JailTimeTicks -= 1
 			if player.JailTimeTicks <= 0 {
 				player.State = PlayerStateAlive
-				if player.Team == TeamGreen {
-					player.Acked.Pos = world.Map.RandomLocation(world.Map.GreenJails)
-				} else {
-					player.Acked.Pos = world.Map.RandomLocation(world.Map.RedJails)
+				switch player.Team {
+				case TeamGreen:
+					player.Acked.Pos = world.Map.RandomLocation(world.Map.GreenSpawns)
+				case TeamRed:
+					player.Acked.Pos = world.Map.RandomLocation(world.Map.RedSpawns)
 				}
 			}
 		}
@@ -145,6 +151,19 @@ func UpdatePlayers(world *World) {
 		processReceivedInputs(world, player)
 		processPredictedInputs(world, player)
 	}
+}
+
+func SendToJail(world *World, player *Player) {
+	switch player.Team {
+	case TeamGreen:
+		player.Acked.Pos = world.Map.RandomLocation(world.Map.GreenJails)
+	case TeamRed:
+		player.Acked.Pos = world.Map.RandomLocation(world.Map.RedJails)
+	}
+
+	player.Health = conf.Shared.PlayerHealth
+	player.JailTimeTicks = conf.Shared.JailTimeTicks
+	player.State = PlayerStateJailed
 }
 
 func processReceivedInputs(world *World, player *Player) {

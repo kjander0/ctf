@@ -250,27 +250,19 @@ function posFromRowCol(row, col) {
 }
 
 class Map {
-    tileRows = [];
+    tileRows;
     numFlags = 0;
 
     constructor(rows) {
+        this.tileRows = rows;
         for (let r = 0; r < rows.length; r++) {
-            this.tileRows.push([]);
             for (let c = 0; c < rows[r].length; c++) {
-                const typeId = rows[r][c];
-                const tileType = TileType.fromId(typeId);
-                console.log("tile type: ", tileType);
-                const tile = new Tile(tileType, r, c);
-                switch (tileType) {
-                    case TileType.WALL_TRIANGLE:
-                    case TileType.WALL_TRIANGLE_CORNER:
-                        tile.orientation = 0;
-                        break;
+                const tile = this.tileRows[r][c];
+                switch (tile.type) {
                     case TileType.FLAG_SPAWN:
                         this.numFlags++;
                         break;
                 }
-                this.tileRows[r].push(tile);
             }
         }
     }

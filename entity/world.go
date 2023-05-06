@@ -14,9 +14,9 @@ type World struct {
 	FlagList      []Flag
 }
 
-func NewWorld() World {
+func NewWorld(gameMap *Map) World {
 	return World{
-		Map: LoadMap("www/assets/maps/test.bin"),
+		Map: gameMap,
 	}
 }
 

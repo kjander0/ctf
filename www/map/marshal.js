@@ -75,7 +75,9 @@ async function unmarshal(arrayBuffer) {
                 row = [];
                 rowList.push(row);
             }
-            const tile = new Tile(TileType.fromId(typeId));
+            const rowIndex = rowList.length-1;
+            const colIndex = row.length;
+            const tile = new Tile(TileType.fromId(typeId), rowIndex, colIndex);
             tile.orientation = orientation;
             row.push(tile);
         }

@@ -3,7 +3,6 @@ package net
 import (
 	"bytes"
 
-	"github.com/kjander0/ctf/conf"
 	"github.com/kjander0/ctf/entity"
 	"github.com/kjander0/ctf/logger"
 )
@@ -76,14 +75,8 @@ outer:
 				return
 			}
 			if player.NetState == entity.PlayerNetStateWaitingForInput {
-				player.State = entity.PlayerStateJailed
-				if player.Team == entity.TeamGreen {
-					player.Acked.Pos = world.Map.RandomLocation(world.Map.GreenJails)
-				} else {
-					player.Acked.Pos = world.Map.RandomLocation(world.Map.RedJails)
-				}
 				player.NetState = entity.PlayerNetStateReady
-				player.JailTimeTicks = conf.Shared.JailTimeTicks
+				entity.SendToJail(world, player)
 			}
 		default:
 			logger.Error("ReceiveInputs: bad msg type: ", msgType)
@@ -140,7 +133,7 @@ func processInputMsg(player *entity.Player, decoder Decoder) {
 }
 
 // Sends world state to all players
-func SendMessages(world *entity.World) error {
+func SendMessages(world *entity.World) {
 	// TODO: Encode snap shot of entities once. Store unacked snapshots for each entity. Send only delta between
 	// latest snapshot and last acked snapshot. Could delta per-byte and use bitflag to tell which bytes changed
 	for i := range world.PlayerList {
@@ -154,7 +147,6 @@ func SendMessages(world *entity.World) error {
 		case entity.PlayerNetStateReady:
 			msgBytes = prepareWorldUpdate(world, i)
 		}
-
 		select {
 		case world.PlayerList[i].Client.WriteC <- msgBytes:
 		default:
@@ -163,8 +155,6 @@ func SendMessages(world *entity.World) error {
 			continue
 		}
 	}
-
-	return nil
 }
 
 func prepareInitMsg(world *entity.World, playerIndex int) []byte {
@@ -208,7 +198,6 @@ func prepareWorldUpdate(world *entity.World, playerIndex int) []byte {
 	player.ReceivedInputs = player.ReceivedInputs[:0]
 
 	encoder.WriteUint8(uint8(player.State))
-	logger.Debug("flag index: ", player.FlagIndex)
 	encoder.WriteInt8(int8(player.FlagIndex))
 	encoder.WriteVec(player.Acked.Pos)
 	encoder.WriteUint16(uint16(player.Acked.Energy))

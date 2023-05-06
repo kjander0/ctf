@@ -6,10 +6,10 @@ import { Shader } from "../gfx/shader.js";
 import { Texture } from "../gfx/texture.js";
 import { Mesh, Model, VertAttrib } from "../gfx/mesh.js";
 import {Vec} from "../math.js";
-import {Tile, TileType, defineTileTypes, posFromRowCol} from "../map.js";
+import {Tile, TileType, defineTileTypes, posFromRowCol} from "../map/map.js";
 import {gl, initGL} from "../gfx/gl.js";
 import { UIFrame, UIButton, UIImage, UIText } from "../ui.js";
-import { marshal, unmarshal } from "./marshal.js";
+import { marshal, unmarshal } from "../map/marshal.js";
 
 // TODO
 // - show error if badly formatted map file
@@ -180,7 +180,7 @@ function initUI() {
     tileButtonsFrame = new UIFrame(new Vec(), screenSize);
 
     let imageSize = new Vec(50, 50);
-    for (let tileType of [TileType.EMPTY, TileType.FLOOR, TileType.WALL, TileType.WALL_TRIANGLE, TileType.WALL_TRIANGLE_CORNER, TileType.GREEN_SPAWN, TileType.RED_SPAWN, TileType.GREEN_JAIL, TileType.RED_JAIL, TileType.GREEN_FLAG_GOAL, TileType.RED_FLAG_GOAL]) {
+    for (let tileType of TileType.typeList) {
         let texture = new Tile(tileType).getAlbedoTexture();
         const btn = new UIButton(new UIImage(texture, imageSize));
         btn.userdata = tileType;
@@ -396,10 +396,11 @@ function render() {
                 renderer.drawLine(img.pos, img.pos.add(img.size), 3);
                 renderer.drawLine(img.pos.addXY(img.size.x, 0), img.pos.addXY(0, img.size.y), 3);
         } else {
-            if (img.texture === null || img.texture === undefined) {
-                console.log("oops");
+            if (img.texture === null) {
+                renderer.drawText("null", img.pos.x, img.pos.y, assets.arialFont);
+            } else {
+                renderer.drawTexture(img.pos.x, img.pos.y, img.size.x, img.size.y, img.texture);
             }
-            renderer.drawTexture(img.pos.x, img.pos.y, img.size.x, img.size.y, img.texture);
         }
     }
 

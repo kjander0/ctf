@@ -80,17 +80,6 @@ func processCollisions(world *World, laserIndex int) bool {
 
 		if player != nil {
 			player.Health -= 1
-			if player.Health <= 0 {
-				if player.Team == TeamGreen {
-					player.Acked.Pos = world.Map.RandomLocation(world.Map.GreenJails)
-				} else {
-					player.Acked.Pos = world.Map.RandomLocation(world.Map.RedJails)
-				}
-
-				player.Health = conf.Shared.PlayerHealth
-				player.JailTimeTicks = conf.Shared.JailTimeTicks
-				player.State = PlayerStateJailed
-			}
 			hitPos = playerHitPos
 			world.NewHits = append(world.NewHits, hitPos)
 			return true

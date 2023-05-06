@@ -59,6 +59,9 @@ var TileTypeYellowFlagGoal = NewTileType()
 var TileTypeFlagSpawn = NewTileType()
 
 func init() {
+	TileTypeEmpty.CollisionGroup = 0
+	TileTypeFloor.CollisionGroup = 0
+
 	TileTypeGreenSpawn.Team = TeamGreen
 	TileTypeGreenSpawn.CollisionGroup = 0
 	TileTypeRedSpawn.Team = TeamRed
@@ -122,7 +125,6 @@ func LoadMap(filename string) *Map {
 	if err != nil {
 		logger.Panic("Failed to read rowSize from file: ", filename)
 	}
-	logger.Debug("row size: ", rowSize)
 
 	newMap := &Map{}
 	newMap.Rows = append(newMap.Rows, []Tile{})
@@ -137,13 +139,13 @@ func LoadMap(filename string) *Map {
 
 		tileCount := (bits & ^(^0 << 5)) + 1
 		bits >>= 5
-		variation := bits & ^(^0 << 4)
+		//variation := bits & ^(^0 << 4)
 		bits >>= 4
 		orientation := bits & ^(^0 << 2)
 		bits >>= 2
 		typeId := bits & ^(^0 << 5)
 
-		logger.Debugf("tile count: %v variation: %v orientation: %v typeId: %v", tileCount, variation, orientation, typeId)
+		//logger.Debugf("tile count: %v variation: %v orientation: %v typeId: %v", tileCount, variation, orientation, typeId)
 
 		for i := uint16(0); i < tileCount; i++ {
 			row := newMap.Rows[len(newMap.Rows)-1]
@@ -154,7 +156,7 @@ func LoadMap(filename string) *Map {
 			rowIndex := len(newMap.Rows) - 1
 			colIndex := len(row)
 			tileType := typeList[typeId]
-			row = append(row, Tile{
+			newMap.Rows[rowIndex] = append(row, Tile{
 				Type:        tileType,
 				Pos:         TileBottomLeft(rowIndex, colIndex),
 				Orientation: uint8(orientation),

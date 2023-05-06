@@ -114,7 +114,7 @@ class Graphics {
         for (let r = 0; r < rows.length; r++) {
             for (let c = 0; c < rows[r].length; c++) {
                 const tile = rows[r][c];
-                if (tile.onFloor) {
+                if (tile.type.onFloor) {
                     this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("floor_normal_0_0"));
                 }
                 const normTex = tile.getNormalTexture();
@@ -138,6 +138,9 @@ class Graphics {
         for (let r = 0; r < rows.length; r++) {
             for (let c = 0; c < rows[r].length; c++) {
                 const tile = rows[r][c];
+                if (tile.type.onFloor) {
+                    this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("floor_0_0"));
+                }
                 const tex = tile.getAlbedoTexture();
                 if (tex === null) {
                     continue;

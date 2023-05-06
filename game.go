@@ -16,10 +16,10 @@ type Game struct {
 	World   entity.World
 }
 
-func NewGame(clientC chan web.Client) Game {
+func NewGame(clientC chan web.Client, gameMap *entity.Map) Game {
 	return Game{
 		ClientC: clientC,
-		World:   entity.NewWorld(),
+		World:   entity.NewWorld(gameMap),
 	}
 }
 
@@ -57,9 +57,11 @@ func (g *Game) Run() {
 }
 
 func reset(g *Game) {
-	g.World.FlagList = make([]entity.Flag, len(g.World.Map.FlagSpawns))
-	for i := range g.World.Map.FlagSpawns {
-		g.World.FlagList[i] = entity.NewFlag(g.World.Map.FlagSpawns[i])
+	g.World.FlagList = []entity.Flag{}
+	for _, pos := range g.World.Map.FlagSpawns {
+		g.World.FlagList = append(g.World.FlagList, entity.Flag{
+			Pos: pos,
+		})
 	}
 }
 
