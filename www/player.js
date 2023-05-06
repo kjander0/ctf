@@ -4,7 +4,7 @@ import {Predicted} from "./predicted.js"
 import * as conf from "./conf.js"
 import * as sound from "./sound.js"
 import * as collision from "./collision/collision.js"
-import {TileType} from "./map.js";
+import {TileType} from "./map/map.js";
 
 class PlayerNetData {
     pos = new Vec();

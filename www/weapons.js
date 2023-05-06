@@ -1,7 +1,7 @@
 import { Vec, Line, Rect, Circle } from "./math.js";
 import * as conf from "./conf.js";
 import * as collision from "./collision/collision.js"
-import { TileType, posFromRowCol } from "./map.js";
+import { TileType, posFromRowCol } from "./map/map.js";
 
 class Laser {
     static TYPE_LASER = 0;

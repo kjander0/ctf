@@ -1,4 +1,4 @@
-import { Tile } from "../map.js";
+import { Tile } from "../map/map.js";
 import * as assets from "../assets.js";
 
 function getAlbedoTexture(tile) {

@@ -100,12 +100,17 @@ async function loadAssets() {
 
 // TODO: reuse this function for conf.js
 async function requestText(urlPath) {
+    return (await request(urlPath)).responseText;
+}
+
+async function request(urlPath, responseType="") {
     let url = window.location.origin + '/' + urlPath
     return new Promise(function(resolve, reject) {
         var xmlHttp = new XMLHttpRequest();
+        xmlHttp.responseType = responseType;
         xmlHttp.onload = function() { 
             if (xmlHttp.status == 200) {
-                resolve(xmlHttp.responseText);
+                resolve(xmlHttp);
                 return;
             }
             reject("failed to retrieve: " + url);
@@ -141,6 +146,7 @@ export {
     loadAssets,
     requestText,
     requestImage,
+    request,
     getTexture,
 
     shapeVertSrc,

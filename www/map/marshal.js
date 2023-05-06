@@ -1,4 +1,4 @@
-import { Tile, TileType } from "../map.js";
+import { Tile, TileType } from "./map.js";
 
 function logBits(dec) {
     console.log((dec >>> 0).toString(2));
@@ -51,8 +51,8 @@ function marshal(rows) {
     return new File([new DataView(arrBuf, 0, byteOffset)], "map.bin");
 }
 
-async function unmarshal(file) {
-    const view =  new DataView(await file.arrayBuffer());
+async function unmarshal(arrayBuffer) {
+    const view =  new DataView(arrayBuffer);
     let byteOffset = 0;
     const rowSize = view.getUint16(byteOffset);
     byteOffset += 2;

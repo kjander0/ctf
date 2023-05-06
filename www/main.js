@@ -15,9 +15,9 @@ import { Input } from "./input.js";
 import { Graphics } from "./gfx/graphics.js";
 import * as net from "./net.js";
 import * as conf from "./conf.js";
-import * as asset from "./assets.js";
+import * as assets from "./assets.js";
 import { initGL } from "./gfx/gl.js";
-import { defineTileTypes } from "./map.js";
+import * as map from "./map/map.js";
 
 window.onload = async function() {
     await conf.retrieveConf(); // important to do this first
@@ -26,16 +26,16 @@ window.onload = async function() {
 
     initGL(canvas);
 
-    await asset.loadAssets();
-    
-    defineTileTypes();
+    await assets.loadAssets();
+
+    map.defineTileTypes();
 
     const graphics = new Graphics(canvas);
     const input = new Input(graphics);
 
+    const testMap = await map.fromFile("assets/maps/test.bin");
     const game = new Game(graphics, input);
-
-    TODO, LOAD MAP!
+    game.map = testMap;
 
     await net.connect(game);
 

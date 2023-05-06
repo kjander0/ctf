@@ -58,11 +58,7 @@ var TileTypeYellowFlagGoal = NewTileType()
 
 var TileTypeFlagSpawn = NewTileType()
 
-func DefineTileTypes() {
-	if len(typeList) > 0 {
-		logger.Panic("Tiles types have already been defined")
-	}
-
+func init() {
 	TileTypeGreenSpawn.Team = TeamGreen
 	TileTypeGreenSpawn.CollisionGroup = 0
 	TileTypeRedSpawn.Team = TeamRed

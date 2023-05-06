@@ -212,7 +212,8 @@ function pickFile() {
     const picker = document.getElementById("filePicker");
     picker.onchange = async () => {
         if (picker.files.length > 0) {
-            tileRows = await unmarshal(picker.files[0]);
+            const buf = await picker.files[0].arrayBuffer();
+            tileRows = await unmarshal(buf);
         }
     };
     picker.click();

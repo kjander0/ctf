@@ -1,6 +1,6 @@
 import {lerpVec, extrapolateVec} from "../interpolate.js";
 import { Vec, Transform } from "../math.js";
-import {Tile} from "../map.js";
+import {Tile} from "../map/map.js";
 import {Laser} from "../weapons.js";
 import * as conf from "../conf.js";
 import { Renderer } from "./renderer.js";

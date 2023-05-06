@@ -1,6 +1,7 @@
 package web
 
 import (
+	"mime"
 	"net/http"
 	"time"
 
@@ -37,6 +38,8 @@ func NewWebServer() WebServer {
 }
 
 func (ws *WebServer) Run() error {
+	logger.Debug("txt type", mime.TypeByExtension(".txt"))
+	logger.Debug("bin type", mime.TypeByExtension(".bin"))
 	http.Handle("/", http.FileServer(http.Dir("www")))
 	http.HandleFunc("/ws", ws.handleWs)
 	return http.ListenAndServe(":8000", nil)

@@ -1,6 +1,7 @@
-import * as conf from "./conf.js"
-import * as assets from "./assets.js"
-import { Vec } from "./math.js"
+import * as conf from "../conf.js"
+import * as assets from "../assets.js"
+import { Vec } from "../math.js"
+import { unmarshal } from "./marshal.js";
 
 class TileType {
     static EMPTY;
@@ -296,4 +297,10 @@ class Map {
     }
 }
 
-export{Tile, TileType, Map, defineTileTypes, posFromRowCol};
+async function fromFile() {
+    const buf = (await assets.request("assets/maps/test.bin", "arraybuffer")).response;
+    const rows = await unmarshal(buf);
+    return new Map(rows);
+}
+
+export{Tile, TileType, Map, defineTileTypes, posFromRowCol, fromFile};

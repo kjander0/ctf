@@ -1,7 +1,7 @@
 import { Encoder, Decoder } from "./encode.js";
 import { Player} from "./player.js";
 import { Laser } from "./weapons.js";
-import { Map } from "./map.js";
+import { Map } from "./map/map.js";
 import * as sound from "./sound.js";
 import * as particle from "./gfx/particle.js";
 
