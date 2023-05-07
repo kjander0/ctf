@@ -100,16 +100,8 @@ func (in PlayerInput) GetDirNum() int {
 }
 
 func NewPlayer(id uint8, team int, client web.Client) Player {
-	acked := PlayerPredicted{
-		mymath.Vec{},
-		conf.Shared.MaxLaserEnergy,
-		conf.Shared.MaxBouncyEnergy,
-	}
-	predicted := PlayerPredicted{
-		mymath.Vec{},
-		conf.Shared.MaxLaserEnergy,
-		conf.Shared.MaxBouncyEnergy,
-	}
+	acked := NewPlayerPredicted()
+	predicted := NewPlayerPredicted()
 
 	return Player{
 		Id:             id,
@@ -122,6 +114,14 @@ func NewPlayer(id uint8, team int, client web.Client) Player {
 		Client:         client,
 		ReceivedInputs: make([]PlayerInput, 0, maxPredictedInputs),
 		FlagIndex:      -1,
+	}
+}
+
+func NewPlayerPredicted() PlayerPredicted {
+	return PlayerPredicted{
+		mymath.Vec{},
+		conf.Shared.MaxLaserEnergy,
+		conf.Shared.MaxBouncyEnergy,
 	}
 }
 

@@ -10,7 +10,6 @@ import (
 	"github.com/kjander0/ctf/web"
 )
 
-// TODO: Game struct should really be a game runner, providing players and update ticks to each game
 type Game struct {
 	ClientC chan web.Client
 	World   entity.World
@@ -27,7 +26,7 @@ func (g *Game) Run() {
 	ticker := NewTicker(float64(conf.Shared.TickRate))
 	ticker.Start()
 
-	reset(g)
+	g.roundReset()
 
 	for {
 		// TODO: probs wanna accept more than 1 client per tick?
@@ -50,19 +49,37 @@ func (g *Game) Run() {
 		net.SendMessages(&g.World)
 		removeDisconnectedPlayers(&g.World)
 
+		if g.World.WinCooldownTicks > 0 {
+			g.World.WinCooldownTicks--
+		}
+
+		if g.World.WinningTeam != -1 && g.World.WinCooldownTicks == 0 {
+			logger.Debug("ROUND RESET")
+			g.roundReset()
+		}
+
 		g.World.Tick += 1
 
 		ticker.Sleep()
 	}
 }
 
-func reset(g *Game) {
+func (g *Game) roundReset() {
+	g.World.WinningTeam = -1
+
+	// Reset flags
 	g.World.FlagList = []entity.Flag{}
 	for _, pos := range g.World.Map.FlagSpawns {
-		g.World.FlagList = append(g.World.FlagList, entity.Flag{
-			Pos: pos,
-		})
+		g.World.FlagList = append(g.World.FlagList, entity.NewFlag(pos))
 	}
+
+	// Reset players
+	for i := range g.World.PlayerList {
+		player := &g.World.PlayerList[i]
+		entity.SendToJail(&g.World, player)
+	}
+
+	g.World.LaserList = []entity.Laser{}
 }
 
 func findNextTeam(world *entity.World) int {

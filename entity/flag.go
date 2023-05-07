@@ -72,7 +72,30 @@ func UpdateFlags(world *World) {
 				flag.Pos = closestPlayer.Acked.Pos
 			}
 		}
+	}
 
+	numGreen := 0
+	numRed := 0
+	for i := range world.FlagList {
+		flag := &world.FlagList[i]
+		switch flag.Team {
+		case TeamGreen:
+			numGreen++
+		case TeamRed:
+			numRed++
+		}
+	}
+
+	numFlags := len(world.FlagList)
+	logger.Debug(numFlags, numGreen, numRed)
+	if numGreen == numFlags {
+		world.WinningTeam = TeamGreen
+	} else if numRed == numFlags {
+		world.WinningTeam = TeamRed
+	}
+
+	if world.WinningTeam != -1 && world.WinCooldownTicks == 0 {
+		world.WinCooldownTicks = 150
 	}
 }
 

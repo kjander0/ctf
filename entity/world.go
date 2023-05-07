@@ -3,20 +3,23 @@ package entity
 import "github.com/kjander0/ctf/mymath"
 
 type World struct {
-	Tick          uint8
-	Map           *Map
-	PlayerList    []Player
-	LaserList     []Laser
-	NewLasers     []Laser
-	NewHits       []mymath.Vec
-	freePlayerIds []uint8
-	playerIdCount int
-	FlagList      []Flag
+	Tick             uint8
+	Map              *Map
+	PlayerList       []Player
+	LaserList        []Laser
+	NewLasers        []Laser
+	NewHits          []mymath.Vec
+	freePlayerIds    []uint8
+	playerIdCount    int
+	FlagList         []Flag
+	WinningTeam      int
+	WinCooldownTicks int
 }
 
 func NewWorld(gameMap *Map) World {
 	return World{
-		Map: gameMap,
+		Map:         gameMap,
+		WinningTeam: -1,
 	}
 }
 
