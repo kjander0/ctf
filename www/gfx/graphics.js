@@ -29,7 +29,8 @@ class Graphics {
 
     screenSize = new Vec();
 
-    tilesAlbedoModel TODO
+    staticAlbedoModel = null;
+    staticNormalModel = null;
 
     // offscreen render textures
     albedoTex = null;
@@ -57,13 +58,19 @@ class Graphics {
         this.lightsShader = new Shader(gl, assets.lightsVertSrc, assets.lightsFragSrc);
         this.spriteShader = new Shader(gl, assets.spriteVertSrc, assets.spriteFragSrc);
         this.gammaShader = new Shader(gl, assets.texVertSrc, assets.gammaFragSrc);
-    
+
         const resizeObserver = new ResizeObserver(() => {
             this._onresize();
         });
         resizeObserver.observe(this.canvas);
     
         this._onresize(); // initial resize
+    }
+
+    _prepareStaticModels() {
+        TODO: can only do this if textures are in an atlas
+        const mesh = new Mesh(VertAttrib.POS_BIT | VertAttrib.TEX_BIT);
+        game.staticAlbedoModel = new Model(gl, mesh, gl.TRIANGLES, assets.texShader);
     }
 
     _onresize() {
