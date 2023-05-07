@@ -25,16 +25,13 @@ const (
 )
 
 const (
-	leftBit  = 1
-	rightBit = 2
-	upBit    = 4
-	downBit  = 8
-)
-
-// Flags from client
-const (
-	shootFlagBit     = 1
-	secondaryFlagBit = 2
+	leftBit          = 1
+	rightBit         = 2
+	upBit            = 4
+	downBit          = 8
+	shootFlagBit     = 16
+	secondaryFlagBit = 32
+	dropFlagBit      = 64
 )
 
 // Flags from server
@@ -87,7 +84,6 @@ outer:
 }
 
 func processInputMsg(player *entity.Player, decoder Decoder) {
-	flags := decoder.ReadUint8()
 	var newInputState entity.PlayerInput
 
 	newInputState.Tick = decoder.ReadUint8()
@@ -109,12 +105,17 @@ func processInputMsg(player *entity.Player, decoder Decoder) {
 		newInputState.Down = true
 	}
 
-	if (flags & shootFlagBit) == shootFlagBit {
+	if (cmdBits & shootFlagBit) == shootFlagBit {
 		newInputState.ShootPrimary = true
 	}
 
-	if (flags & secondaryFlagBit) == secondaryFlagBit {
+	if (cmdBits & secondaryFlagBit) == secondaryFlagBit {
 		newInputState.ShootSecondary = true
+	}
+
+	if (cmdBits & dropFlagBit) == dropFlagBit {
+		logger.Debug("drop flag")
+		newInputState.DropFlag = true
 	}
 
 	if newInputState.ShootPrimary || newInputState.ShootSecondary {

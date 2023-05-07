@@ -29,6 +29,10 @@ const (
 )
 
 const (
+	FlagCooldownTicks = 45
+)
+
+const (
 	// TODO: these can be shared values if server prediction/correction is made to be the same
 	maxPredictedInputs   = 300 // needs to be large enough to allow catchup of burst of delayed inputs
 	maxMotionPredictions = 5   // too much motion extrapolation causes overshoot
@@ -55,6 +59,7 @@ type Player struct {
 	DoDisconnect        bool
 	DoSpeedup           bool
 	JailTimeTicks       int
+	FlagCooldownTicks   int
 	FlagIndex           int // -1 means no flag
 }
 
@@ -66,6 +71,7 @@ type PlayerInput struct {
 	Down           bool
 	ShootPrimary   bool
 	ShootSecondary bool
+	DropFlag       bool
 	AimAngle       float64
 }
 
@@ -133,6 +139,10 @@ func UpdatePlayers(world *World) {
 
 		if player.Health <= 0 {
 			SendToJail(world, player)
+		}
+
+		if player.FlagCooldownTicks > 0 {
+			player.FlagCooldownTicks -= 1
 		}
 
 		if player.State == PlayerStateJailed {

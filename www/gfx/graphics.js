@@ -290,7 +290,6 @@ class Graphics {
 
         for (let flagIndex = 0; flagIndex < game.flagList.length; flagIndex++) {
             let flagPos = game.flagList[flagIndex];
-            console.log(flagIndex, game.player.flagIndex);
             if (game.player.flagIndex === flagIndex) {
                 flagPos = lerpVec(game.player.prevPos, game.player.pos, lerpFraction);
             }

@@ -61,6 +61,7 @@ class PlayerInputState {
     down = false;
     doShoot = false;
     doSecondary = false;
+    dropFlag = false;
     aimAngle = 0;
 }
 
@@ -77,6 +78,9 @@ function sampleInput(game) {
     }
     if (game.input.isActive(Input.CMD_DOWN)) {
         inputState.down = true;
+    }
+    if (game.input.getCommand(Input.CMD_DROP_FLAG).wasActivated) {
+        inputState.dropFlag = true;
     }
 
     let shootCmd = game.input.getCommand(Input.CMD_SHOOT);

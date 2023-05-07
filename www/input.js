@@ -19,9 +19,10 @@ class Input {
     static CMD_DOWN = 3;
     static CMD_SHOOT = 4;
     static CMD_SECONDARY = 5;
-    static CMD_TOGGLE_DEBUG = 6;
-    static CMD_TOGGLE_RECORD = 7;
-    static CMD_LAST = 8; // MUST BE LAST
+    static CMD_DROP_FLAG = 6;
+    static CMD_TOGGLE_DEBUG = 7;
+    static CMD_TOGGLE_RECORD = 8;
+    static CMD_LAST = 9; // MUST BE LAST
 
     _commands = [];
     _keyMap = {};
@@ -40,6 +41,7 @@ class Input {
         this._keyMap['d'] = Input.CMD_RIGHT;
         this._keyMap['w'] = Input.CMD_UP;
         this._keyMap['s'] = Input.CMD_DOWN;
+        this._keyMap['g'] = Input.CMD_DROP_FLAG;
         this._keyMap['p'] = Input.CMD_TOGGLE_DEBUG;
         this._keyMap['r'] = Input.CMD_TOGGLE_RECORD;
 

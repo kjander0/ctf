@@ -36,10 +36,9 @@ const leftBit = 1;
 const rightBit = 2;
 const upBit = 4;
 const downBit = 8;
-
-// Flags from client
-const shootFlagBit = 1;
-const secondaryFlagBit = 2;
+const shootBit = 16;
+const secondaryBit = 32;
+const dropFlagBit = 64;
 
 // Flags from server
 const ackInputFlagBit = 1;
@@ -64,18 +63,18 @@ function sendInput(game) {
     if (playerInput.down) {
         cmdBits |= downBit;
     }
-
-    let flags = 0;
     if (playerInput.doShoot) {
-        flags |= shootFlagBit;
+        cmdBits |= shootBit;
     }
     if (playerInput.doSecondary) {
-        flags |= secondaryFlagBit;
+        cmdBits |= secondaryBit;
+    }
+    if (playerInput.dropFlag) {
+        cmdBits |= dropFlagBit;
     }
 
     encoder.reset();
     encoder.writeUint8(inputMsgType);
-    encoder.writeUint8(flags);
     encoder.writeUint8(playerInput.tick); // tick that this input should be applied
     encoder.writeUint8(cmdBits);
     if (playerInput.doShoot || playerInput.doSecondary) {
@@ -132,7 +131,6 @@ function _processUpdateMsg(game, decoder) {
     game.player.state = newState;
 
     game.player.flagIndex = decoder.readInt8();
-    console.log("flag index: ", game.player.flagIndex);
 
     // TODO: setting lastAckedPos without ackedTick could cause stuttered movement
     // but we want to make sure pos is available for first load into game
