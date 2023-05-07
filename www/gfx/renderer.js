@@ -1,4 +1,3 @@
-import { checkError } from "./error.js";
 import { VertAttrib, Mesh, Model } from "./mesh.js";
 import { Transform, Vec } from "../math.js";
 import * as assets from "../assets.js";
@@ -87,6 +86,7 @@ class Renderer {
     setAndClearTarget(targetTexture=null) {
         if (targetTexture !== null) {
             this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.fbo);
+            // TODO: Don't change attachment, instead create fbo's for each target and swap them out (PROFILE)
             this.gl.framebufferTexture2D(this.gl.FRAMEBUFFER, this.gl.COLOR_ATTACHMENT0, this.gl.TEXTURE_2D, targetTexture.glTexture, 0);
             console.assert(this.gl.checkFramebufferStatus(this.gl.FRAMEBUFFER) === this.gl.FRAMEBUFFER_COMPLETE);
         } else {
@@ -120,8 +120,6 @@ class Renderer {
         }
 
         this.models = [];
-
-        checkError(this.gl);
     }
     
     _renderModel(model, camera) {

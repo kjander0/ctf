@@ -1,4 +1,6 @@
-function checkError(gl) {
+import {gl} from "./gl.js";
+
+function checkError() {
     const err = gl.getError();
     if (err === gl.NO_ERROR) {
         return;

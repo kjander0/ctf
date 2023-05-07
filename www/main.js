@@ -1,4 +1,5 @@
 // TODO
+// - profile code!
 // - prevent users from making massive map in editor and then not being able to export because it is too big
 // - reconsider message size limits (e.g. 1024 in encode.js)
 // - inputs tend to clump up with bad netowrk conditions. If server is consuming multiple inputs at the same time, it could fast

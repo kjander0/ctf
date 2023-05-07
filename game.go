@@ -54,7 +54,6 @@ func (g *Game) Run() {
 		}
 
 		if g.World.WinningTeam != -1 && g.World.WinCooldownTicks == 0 {
-			logger.Debug("ROUND RESET")
 			g.roundReset()
 		}
 

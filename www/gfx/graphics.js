@@ -12,6 +12,7 @@ import { Camera } from "./camera.js";
 import { gl } from "./gl.js";
 import * as tile_textures from "./tile_textures.js";
 import * as assets from "../assets.js";
+import { checkError } from "./error.js";
 
 const ATTRIB_LIGHT_POS_LOC = 3;
 
@@ -27,6 +28,8 @@ class Graphics {
     canvas;
 
     screenSize = new Vec();
+
+    tilesAlbedoModel TODO
 
     // offscreen render textures
     albedoTex = null;
@@ -91,6 +94,11 @@ class Graphics {
     }
 
     drawGame(game) {
+        if (game.doDebug) {
+            // NOTE: This has a HUGE performance hit
+            checkError();
+        }
+
         this.uiCamera.update(this.screenSize.x/2, this.screenSize.y/2, this.screenSize.x, this.screenSize.y);
 
         const lerpFraction = game.accumMs/conf.UPDATE_MS;
