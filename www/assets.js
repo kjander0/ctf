@@ -22,44 +22,6 @@ const textures = {};
 
 const shipPixelRatio = 406/512;
 
-const srgbImageList = [
-    "ship",
-    "floor_0_0",
-    "wall_0_0",
-    "wall_triangle_0_0",
-    "wall_triangle_1_0",
-    "wall_triangle_2_0",
-    "wall_triangle_3_0",
-    "wall_triangle_corner_0_0",
-    "wall_triangle_corner_1_0",
-    "wall_triangle_corner_2_0",
-    "wall_triangle_corner_3_0",
-    "green_spawn_0_0",
-    "red_spawn_0_0",
-    "flag",
-    "jail_0_0",
-    "green_flag_goal_0_0",
-    "red_flag_goal_0_0",
-    "flag_spawn_0_0",
-]
-
-const xyzImageList = [
-    "ship_normal",
-    "floor_normal_0_0",
-    "wall_normal_0_0",
-    "wall_triangle_normal_0_0",
-    "wall_triangle_normal_1_0",
-    "wall_triangle_normal_2_0",
-    "wall_triangle_normal_3_0",
-    "wall_triangle_corner_normal_0_0",
-    "wall_triangle_corner_normal_1_0",
-    "wall_triangle_corner_normal_2_0",
-    "wall_triangle_corner_normal_3_0",
-    "spawn_normal_0_0",
-    "jail_normal_0_0",
-    "flag_goal_normal_0_0",
-]
-
 async function loadAssets() {    
     // TODO: load assets in parallel
 
@@ -82,20 +44,29 @@ async function loadAssets() {
     shapeShader = new Shader(gl, shapeVertSrc, shapeFragSrc);
     texShader = new Shader(gl, texVertSrc, texFragSrc);
 
-    // ========== IMAGES ==========
-    for (let name of srgbImageList) {
-        let img = await requestImage("assets/" + name + ".png");
-        textures[name] = Texture.fromImage(img, true);
-    }
-    for (let name of xyzImageList) {
-        let img = await requestImage("assets/" + name + ".png");
-        textures[name] = Texture.fromImage(img, false);
-    }
+    await loadAtlasTextures("albedo_atlas", true);
+    await loadAtlasTextures("normal_atlas", false);
 
     // ========== FONTS ==========
-    const arialFontImage = await requestImage("assets/arial.png");
+    const arialFontTexture = getTexture("arial");
     const arialCSVText = await requestText("assets/arial.csv");
-    arialFont = new Font(arialFontImage, arialCSVText);
+    arialFont = new Font(arialFontTexture, arialCSVText);
+}
+
+async function loadAtlasTextures(name, srgb) {
+    const atlasImage = await requestImage("assets/" + name + ".png");
+    const atlasTex = Texture.fromImage(atlasImage, srgb);
+    const atlasInfo = JSON.parse(await requestText("assets/" + name + ".json"));
+    for (let [name, info] of Object.entries(atlasInfo.frames)) {
+        console.assert(!info.rotated);
+        const subTex = atlasTex.subTexture(info.frame.x, info.frame.y, info.frame.w, info.frame.h);
+        subTex.srcOffsetX = info.spriteSourceSize.x;
+        subTex.srcOffsetY = info.sourceSize.h - (info.spriteSourceSize.y + info.spriteSourceSize.h);
+        if (info.trimmed) {
+            console.log(name + " was trimmed ", subTex.srcOffsetX, subTex.srcOffsetY);
+        }
+        textures[name] = subTex;
+    }
 }
 
 // TODO: reuse this function for conf.js
@@ -137,7 +108,7 @@ async function requestImage(urlPath) {
 function getTexture(name) {
     const tex = textures[name];
     if (tex === undefined) {
-        throw "could not get undefined texture: " + name;
+        throw "texture not defined: " + name;
     }
     return tex;
 }

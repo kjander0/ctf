@@ -60,7 +60,7 @@ class Renderer {
             texMesh = new Mesh(VertAttrib.POS_BIT | VertAttrib.TEX_BIT);
             this.texMeshMap.set(texture, texMesh);
         }
-        texMesh.addRect(x, y, width, height);
+        texMesh.addRect(x, y, width, height, texture.s0, texture.t0, texture.s1, texture.t1);
     }
 
     drawText(text, x, y, font, height=24) {

@@ -15,8 +15,8 @@ class Font {
 
     glyphs = new Array(256);
 
-    constructor(bitmap, csvText) {
-        this.texture = Texture.fromImage(bitmap)
+    constructor(texture, csvText) {
+        this.texture = texture;
         this._parseCSV(csvText);
     }
 
@@ -67,10 +67,12 @@ class Font {
                 const col = Math.floor((charIndex - this.asciiCharStart) - row * cellsPerRow);
                 const glyph = new Glyph();
                 glyph.width  = baseWidth;
-                glyph.s0 = col * this.cellWidth / imgWidth;
-                glyph.s1 = (col+1) * this.cellWidth / imgWidth;
-                glyph.t1 = row * this.cellHeight / imgHeight;
-                glyph.t0 = (row+1) * this.cellHeight / imgHeight;
+                const sd = this.texture.s1 - this.texture.s0;
+                const td = this.texture.t1 - this.texture.t0;
+                glyph.s0 = this.texture.s0 + col * this.cellWidth / this.texture.width * sd;
+                glyph.s1 = this.texture.s0 + (col+1) * this.cellWidth / this.texture.width * sd;
+                glyph.t0 = this.texture.t0 + row * this.cellHeight / this.texture.height * td;
+                glyph.t1 = this.texture.t0 + (row+1) * this.cellHeight / this.texture.height * td;
                 this.glyphs[charIndex] = glyph;
             }
         }

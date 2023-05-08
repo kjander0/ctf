@@ -47,6 +47,8 @@ import (
 // - power crystal flag that hovers behind player
 
 // GRAPHICS IDEAS
+// - clamp textures now that they are in atlas
+// - use proper VBO streaming methods for dynamic stuff (player sprite, particles, etc)
 // - Can draw things like flag goal larger than one tile (draw on top of floor tiles)
 // - half thickness walls (would require corner and intersection variations)
 // - after being destroyed, particles could come together to reform tank in jail (electricity effects, etc)

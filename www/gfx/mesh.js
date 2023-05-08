@@ -29,6 +29,7 @@ class Mesh {
     color;
     transform;
     data;
+    yFlip = true;
 
     constructor(attribBits) {
         this.attribBits = attribBits;
@@ -99,7 +100,12 @@ class Mesh {
         }
     }
 
-    addRect(x, y, width, height, s0=0, t0=1, s1=1, t1=0) {
+    addRect(x, y, width, height, s0=0, t0=0, s1=1, t1=1) {
+        if (this.yFlip) {
+            const tmp = t0;
+            t0 = t1;
+            t1 = tmp;
+        }
         this.add(x, y, s0, t0);
         this.add(x+width, y, s1, t0);
         this.add(x+width, y+height, s1, t1);
@@ -109,6 +115,11 @@ class Mesh {
     }
     
     addCircle(x, y, radius, s0=0, t0=0, s1=1, t1=1) {
+        if (this.yFlip) {
+            const tmp = t0;
+            t0 = t1;
+            t1 = tmp;
+        }
         const resolution = 36;
         const rads = 2 * Math.PI / resolution;
         const sDiff = s1 - s0;

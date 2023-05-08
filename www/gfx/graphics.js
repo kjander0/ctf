@@ -68,9 +68,9 @@ class Graphics {
     }
 
     _prepareStaticModels() {
-        TODO: can only do this if textures are in an atlas
         const mesh = new Mesh(VertAttrib.POS_BIT | VertAttrib.TEX_BIT);
         game.staticAlbedoModel = new Model(gl, mesh, gl.TRIANGLES, assets.texShader);
+        // TODO Dispose!
     }
 
     _onresize() {

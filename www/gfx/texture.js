@@ -10,6 +10,10 @@ class Texture {
     width;
     height;
 
+    // Offset from original source image (e.g. because texture packer trimmed)
+    srcOffsetX = 0;
+    srcOffsetY = 0;
+
     static fromSize(width, height, srgb=false) {
         let tex = new Texture();
         tex.width = width;
@@ -60,6 +64,19 @@ class Texture {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         
         return tex;
+    }
+
+    subTexture(x, y, width, height) {
+        NEED TO USE TEXTURE ARRAY TO PREVENT BLEEDING
+        const sub = new Texture();
+        sub.glTexture = this.glTexture;
+        sub.width = width;
+        sub.height = height;
+        sub.s0 = (x+0.5) / this.width;
+        sub.s1 = (x + width-0.5) / this.width;
+        sub.t0 = (y+0.5) / this.height;
+        sub.t1 = (y + height-0.5) / this.height;
+        return sub;
     }
 
     dispose() {
