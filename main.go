@@ -19,6 +19,7 @@ import (
 // - single texture atlas for everything
 // - draw lasers underneath tank
 // - 9 sprites for tank movement
+// - load assets in parallel
 // - Predicted buffer will fill up if client running faster than server. Reconsider adding some throttling.
 // - Client should probs start dropping world updates when minimised (otherwise they see million lasers spawned in)
 // - TCP NODELAY, server and client
@@ -47,6 +48,9 @@ import (
 // - power crystal flag that hovers behind player
 
 // GRAPHICS IDEAS
+// - texMeshMap is flawed (compares Texture and not glTexture, even though glTexture could be shared by multiple Texture)
+// 		- probs a better way to avoid texture rebinding (sorting!)
+// - consider y-flipping all textures using createImageBitmap() (current way of flipping vertical texture coord is probs best tho)
 // - clamp textures now that they are in atlas
 // - use proper VBO streaming methods for dynamic stuff (player sprite, particles, etc)
 // - Can draw things like flag goal larger than one tile (draw on top of floor tiles)
@@ -55,6 +59,7 @@ import (
 // - improve static tile rendering performance by filling vbo with all tiles once and reuse vbo
 // - reduce floor tile repeating by rendering floor tile larger (across multiple tiles)
 //   - and add some tweaked floor tiles (vents, shell crater damage)
+//   - can blend randomly oriented, larger crack tiles over a number of floor tiles
 // - particles falling away from lasers (or maybe just special lasers to set them apart, i.e flak)
 // - 3d models rendered 2d, normal maps too
 // - models should have an inner skeleton with different coloured/styled armour (like mobile suits)

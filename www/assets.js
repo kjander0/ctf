@@ -1,12 +1,14 @@
 import { Shader } from "./gfx/shader.js";
 import { gl } from "./gfx/gl.js";
 import { Font } from "./gfx/text.js";
-import { Texture } from "./gfx/texture.js";
+import { Texture, TextureArray } from "./gfx/texture.js";
 
 let shapeVertSrc;
 let shapeFragSrc;
 let texVertSrc;
 let texFragSrc;
+let texArrayVertSrc;
+let texArrayFragSrc;
 let lightsVertSrc;
 let lightsFragSrc;
 let spriteVertSrc;
@@ -15,6 +17,10 @@ let gammaFragSrc;
 
 let shapeShader;
 let texShader;
+let texArrayShader;
+
+let albedoAtlas;
+let normalAtlas;
 
 let arialFont;
 
@@ -25,13 +31,15 @@ const shipPixelRatio = 406/512;
 async function loadAssets() {    
     // TODO: load assets in parallel
 
-
     // ========== SHADERS ==========
     shapeVertSrc = await requestText("assets/shaders/shape.vert");
     shapeFragSrc = await requestText("assets/shaders/shape.frag");
 
     texVertSrc = await requestText("assets/shaders/texture.vert");
     texFragSrc = await requestText("assets/shaders/texture.frag");
+
+    texArrayVertSrc = await requestText("assets/shaders/texture_array.vert");
+    texArrayFragSrc = await requestText("assets/shaders/texture_array.frag");
 
     lightsVertSrc = await requestText("assets/shaders/lights.vert");
     lightsFragSrc = await requestText("assets/shaders/lights.frag");
@@ -43,30 +51,24 @@ async function loadAssets() {
 
     shapeShader = new Shader(gl, shapeVertSrc, shapeFragSrc);
     texShader = new Shader(gl, texVertSrc, texFragSrc);
+    texArrayShader = new Shader(gl, texArrayVertSrc, texArrayFragSrc);
 
-    await loadAtlasTextures("albedo_atlas", true);
-    await loadAtlasTextures("normal_atlas", false);
+    // ========== TEXTURES ==========
+    albedoAtlas = await loadAtlas("assets/albedo_atlas.png", "assets/albedo_atlas.json", true);
+    normalAtlas = await loadAtlas("assets/normal_atlas.png", "assets/normal_atlas.json", false);
 
+    const flagImage = await requestImage("assets/flag.png");
+    textures["flag"] = Texture.fromImage(flagImage, true);
     // ========== FONTS ==========
-    const arialFontTexture = getTexture("arial");
+    const arialFontTexture = Texture.fromImage(await requestImage("assets/arial.png"));
     const arialCSVText = await requestText("assets/arial.csv");
     arialFont = new Font(arialFontTexture, arialCSVText);
 }
 
-async function loadAtlasTextures(name, srgb) {
-    const atlasImage = await requestImage("assets/" + name + ".png");
-    const atlasTex = Texture.fromImage(atlasImage, srgb);
-    const atlasInfo = JSON.parse(await requestText("assets/" + name + ".json"));
-    for (let [name, info] of Object.entries(atlasInfo.frames)) {
-        console.assert(!info.rotated);
-        const subTex = atlasTex.subTexture(info.frame.x, info.frame.y, info.frame.w, info.frame.h);
-        subTex.srcOffsetX = info.spriteSourceSize.x;
-        subTex.srcOffsetY = info.sourceSize.h - (info.spriteSourceSize.y + info.spriteSourceSize.h);
-        if (info.trimmed) {
-            console.log(name + " was trimmed ", subTex.srcOffsetX, subTex.srcOffsetY);
-        }
-        textures[name] = subTex;
-    }
+async function loadAtlas(imgPath, infoPath, srgb) {
+    const img = await requestImage(imgPath);
+    const txt = await requestText(infoPath);
+    return await TextureArray.load(img, txt, srgb);
 }
 
 // TODO: reuse this function for conf.js
@@ -124,6 +126,7 @@ export {
     shapeFragSrc,
     texVertSrc,
     texFragSrc,
+    texArrayFragSrc,
     lightsVertSrc,
     lightsFragSrc,
     spriteVertSrc,
@@ -132,6 +135,10 @@ export {
 
     shapeShader,
     texShader,
+    texArrayShader,
+
+    albedoAtlas,
+    normalAtlas,
 
     shipPixelRatio,
 

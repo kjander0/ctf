@@ -5,10 +5,12 @@ class VertAttrib {
     static POS_BIT = 1;
     static COLOR_BIT = 2;
     static TEX_BIT = 4;
+    static TEX_3D_BIT = 8;
 
     static POS_LOC = 0;
     static COLOR_LOC = 1;
     static TEX_LOC = 2;
+    static TEX_3D_LOC = 3;
 
     loc;
     size;
@@ -65,7 +67,7 @@ class Mesh {
         this.data = data;
     }
 
-    add(x, y, s, t) {
+    add(x, y, s, t, p) {
         this.data.push(x, y);
         if ((this.attribBits & VertAttrib.COLOR_BIT) === VertAttrib.COLOR_BIT) {
             this.data.push(this.color[0], this.color[1], this.color[2], this.color[3]);
@@ -74,6 +76,11 @@ class Mesh {
         if ((this.attribBits & VertAttrib.TEX_BIT) === VertAttrib.TEX_BIT) {
             console.assert(s !== undefined && t !== undefined);
             this.data.push(s, t);
+        }
+
+        if ((this.attribBits & VertAttrib.TEX_3D_BIT) === VertAttrib.TEX_3D_BIT) {
+            console.assert(s !== undefined && t !== undefined && p !== undefined);
+            this.data.push(s, t, p);
         }
     }
 
@@ -100,21 +107,21 @@ class Mesh {
         }
     }
 
-    addRect(x, y, width, height, s0=0, t0=0, s1=1, t1=1) {
+    addRect(x, y, width, height, s0=0, t0=0, s1=1, t1=1, p=0) {
         if (this.yFlip) {
             const tmp = t0;
             t0 = t1;
             t1 = tmp;
         }
-        this.add(x, y, s0, t0);
-        this.add(x+width, y, s1, t0);
-        this.add(x+width, y+height, s1, t1);
-        this.add(x, y, s0, t0);
-        this.add(x+width, y+height, s1, t1);
-        this.add(x, y+height, s0, t1);
+        this.add(x, y, s0, t0, p);
+        this.add(x+width, y, s1, t0, p);
+        this.add(x+width, y+height, s1, t1, p);
+        this.add(x, y, s0, t0, p);
+        this.add(x+width, y+height, s1, t1, p);
+        this.add(x, y+height, s0, t1, p);
     }
     
-    addCircle(x, y, radius, s0=0, t0=0, s1=1, t1=1) {
+    addCircle(x, y, radius, s0=0, t0=0, s1=1, t1=1, p=0) {
         if (this.yFlip) {
             const tmp = t0;
             t0 = t1;
@@ -127,18 +134,20 @@ class Mesh {
         for (let i = 0; i < resolution; i++) {
             let rad0 = i * rads;
             let rad1 = (i+1) * rads;
-            this.add(x, y, (s0 + s1)/2, (t0 + t1)/2);
+            this.add(x, y, (s0 + s1)/2, (t0 + t1)/2, p);
             this.add(
                 x+radius * Math.cos(rad0),
                 y+radius * Math.sin(rad0),
                 s0 + sDiff/2 * (1 + Math.cos(rad0)),
                 t0 + tDiff/2 * (1 + Math.sin(rad0)),
+                p,
             );
             this.add(
                 x+radius * Math.cos(rad1),
                 y+radius * Math.sin(rad1),
                 s0 + sDiff/2 * (1 + Math.cos(rad1)),
                 t0 + tDiff/2 * (1 + Math.sin(rad1)),
+                p,
             );
         }
     }
@@ -204,6 +213,9 @@ class Model {
         }
         if (this.hasAttrib(VertAttrib.TEX_BIT)) {
             attribs.push(new VertAttrib(VertAttrib.TEX_LOC, 2, this.gl.FLOAT));
+        }
+        if (this.hasAttrib(VertAttrib.TEX_3D_BIT)) {
+            attribs.push(new VertAttrib(VertAttrib.TEX_3D_LOC, 3, this.gl.FLOAT));
         }
 
         let parallelAttribs = [];

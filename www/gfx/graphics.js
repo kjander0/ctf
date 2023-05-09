@@ -10,7 +10,6 @@ import { Shader } from "./shader.js";
 import { Texture } from "./texture.js";
 import { Camera } from "./camera.js";
 import { gl } from "./gl.js";
-import * as tile_textures from "./tile_textures.js";
 import * as assets from "../assets.js";
 import { checkError } from "./error.js";
 
@@ -130,18 +129,18 @@ class Graphics {
             for (let c = 0; c < rows[r].length; c++) {
                 const tile = rows[r][c];
                 if (tile.type.onFloor) {
-                    this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("floor_normal_0_0"));
+                    this.renderer.drawArrayTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, assets.normalAtlas.getTexture("floor_normal_0_0"));
                 }
                 const normTex = tile.getNormalTexture();
                 if (normTex === null) {
                     continue;
                 }
-                this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, normTex);
+                this.renderer.drawArrayTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, normTex);
             }
         }
 
         for (let pos of shipPositions) {
-            this.renderer.drawTexture(pos.x - shipRadius, pos.y - shipRadius, shipRadius * 2, shipRadius * 2, assets.getTexture("ship_normal"));
+            this.renderer.drawArrayTexture(pos.x - shipRadius, pos.y - shipRadius, shipRadius * 2, shipRadius * 2, assets.normalAtlas.getTexture("ship_normal"));
         }
 
         this.renderer.setAndClearTarget(this.normalTex);
@@ -154,18 +153,18 @@ class Graphics {
             for (let c = 0; c < rows[r].length; c++) {
                 const tile = rows[r][c];
                 if (tile.type.onFloor) {
-                    this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("floor_0_0"));
+                    this.renderer.drawArrayTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, assets.albedoAtlas.getTexture("floor_0_0"));
                 }
                 const tex = tile.getAlbedoTexture();
                 if (tex === null) {
                     continue;
                 }
-                this.renderer.drawTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, tex);
+                this.renderer.drawArrayTexture(c * conf.TILE_SIZE, r * conf.TILE_SIZE, conf.TILE_SIZE, conf.TILE_SIZE, tex);
             }
         }
         
         for (let pos of shipPositions) {
-            this.renderer.drawTexture(pos.x - shipRadius, pos.y - shipRadius, shipRadius * 2, shipRadius * 2, assets.getTexture("ship"));
+            this.renderer.drawArrayTexture(pos.x - shipRadius, pos.y - shipRadius, shipRadius * 2, shipRadius * 2, assets.albedoAtlas.getTexture("ship"));
         }
 
         this.renderer.setAndClearTarget(this.albedoTex);

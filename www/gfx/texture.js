@@ -10,10 +10,6 @@ class Texture {
     width;
     height;
 
-    // Offset from original source image (e.g. because texture packer trimmed)
-    srcOffsetX = 0;
-    srcOffsetY = 0;
-
     static fromSize(width, height, srgb=false) {
         let tex = new Texture();
         tex.width = width;
@@ -67,7 +63,6 @@ class Texture {
     }
 
     subTexture(x, y, width, height) {
-        NEED TO USE TEXTURE ARRAY TO PREVENT BLEEDING
         const sub = new Texture();
         sub.glTexture = this.glTexture;
         sub.width = width;
@@ -84,4 +79,86 @@ class Texture {
     }
 }
 
-export {Texture};
+class TextureArray {
+    glTexture;
+    width;
+    height;
+    texMap = {};
+
+    static async load(image, infoJsonText, srgb=false) {
+        const newTexArray = new TextureArray();
+        const atlasInfo = JSON.parse(infoJsonText);
+
+        // Find max size sprite in atlas
+        newTexArray.width = 0;
+        newTexArray.height = 0;
+        let numLayers = 0;
+        for (let [_, info] of Object.entries(atlasInfo.frames)) {
+            newTexArray.width = Math.max(newTexArray.width, info.frame.w);
+            newTexArray.height = Math.max(newTexArray.height, info.frame.h);
+            numLayers++;
+        }
+
+        // Allocate gl texture array
+        newTexArray.glTexture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D_ARRAY, newTexArray.glTexture);
+        let internalFormat = gl.RGBA8;
+        if (srgb) {
+            internalFormat = gl.SRGB8_ALPHA8;
+        }
+        const numMipMapLevels = 4;
+        gl.texStorage3D(gl.TEXTURE_2D_ARRAY, numMipMapLevels, internalFormat, newTexArray.width, newTexArray.height, numLayers)
+
+        // Move each sprite into texture array
+        const clearData = new Uint8Array(newTexArray.width * newTexArray.height * 4);
+        for (let i = 0; i < clearData.length; i++) {
+            clearData[i] = 0;
+        }
+        const srcFormat = gl.RGBA;
+        const srcType = gl.UNSIGNED_BYTE;
+        const mipLevel = 0;
+        // TODO: set x/y offset to correct for trimming in atlas file
+        const xOffset = 0;
+        const yOffset = 0;
+        let zOffset = 0;
+        for (let [name, info] of Object.entries(atlasInfo.frames)) {
+            const subImage = await createImageBitmap(image, info.frame.x, info.frame.y, info.frame.w, info.frame.h);
+            // Clear to transparent
+            gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, mipLevel, xOffset, yOffset, zOffset, newTexArray.width, newTexArray.height, 1, srcFormat, srcType, clearData);
+            // Write sprite data
+            gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, mipLevel, xOffset, yOffset, zOffset, subImage.width, subImage.height, 1, srcFormat, srcType, subImage)
+
+            const elem = new TextureArrayElement();
+            elem.textureArray = newTexArray;
+            elem.layer = zOffset;
+            elem.contentWidth = subImage.width;
+            elem.contentHeight = subImage.height;
+            newTexArray.texMap[name] = elem;
+
+            zOffset++;
+        }
+
+        gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
+        gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);	
+        gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+        return newTexArray;
+    }
+
+    getTexture(name) {
+        const tex = this.texMap[name];
+        console.assert(tex !== undefined, "no element for name: " + tex);
+        return tex;
+    }
+}
+
+class TextureArrayElement {
+    textureArray;
+    layer;
+    contentWidth;
+    contentHeight;
+}
+
+export {Texture, TextureArray, TextureArrayElement};

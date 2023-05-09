@@ -145,7 +145,12 @@ function _mapTextures(name, orientations=1, variations=1) {
         mapping.push([]);
         for (let v = 0; v < variations; v++) {
             const texName = name + '_' + o + '_' + v;
-            mapping[o].push(assets.getTexture(texName));
+            let atlas = assets.albedoAtlas;
+            DO BETTER THAN THIS
+            if (name.includes("normal")) {
+                atlas = assets.normalAtlas;
+            }
+            mapping[o].push(atlas.getTexture(texName));
         }
     }
     return mapping;

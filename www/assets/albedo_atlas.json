@@ -360,33 +360,9 @@
         "y": 0.5
       }
     },
-    "arial": {
-      "frame": {
-        "x": 1536,
-        "y": 129,
-        "w": 231,
-        "h": 237
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 3,
-        "w": 231,
-        "h": 237
-      },
-      "sourceSize": {
-        "w": 256,
-        "h": 256
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
     "wall_triangle_1_0": {
       "frame": {
-        "x": 1767,
+        "x": 1536,
         "y": 129,
         "w": 129,
         "h": 256
@@ -410,7 +386,7 @@
     },
     "wall_triangle_3_0": {
       "frame": {
-        "x": 1896,
+        "x": 1665,
         "y": 129,
         "w": 129,
         "h": 256
@@ -426,30 +402,6 @@
       "sourceSize": {
         "w": 256,
         "h": 256
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "flag": {
-      "frame": {
-        "x": 256,
-        "y": 256,
-        "w": 62,
-        "h": 61
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 2,
-        "y": 0,
-        "w": 62,
-        "h": 61
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 64
       },
       "pivot": {
         "x": 0.5,
