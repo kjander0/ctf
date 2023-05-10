@@ -2,6 +2,8 @@ import { VertAttrib, Mesh, Model } from "./mesh.js";
 import { Texture, TextureArray } from "./texture.js";
 import { Transform, Vec } from "../math.js";
 import * as assets from "../assets.js";
+import { checkError } from "./error.js";
+
 
 class Renderer {
     gl;
@@ -64,7 +66,6 @@ class Renderer {
             }
             this.texMeshMap.set(texture, texMesh);
         }
-        console.log("layer ", texture.layer);
         texMesh.addRect(x, y, width, height, texture.s0, texture.t0, texture.s1, texture.t1, texture.layer);
     }
 
@@ -89,14 +90,20 @@ class Renderer {
     }
 
     setAndClearTarget(targetTexture=null) {
+        this.gl.bindTexture(this.gl.TEXTURE_2D, null);
+        this.gl.bindTexture(this.gl.TEXTURE_2D_ARRAY, null);
+
         if (targetTexture !== null) {
+            console.log("attaching: ", targetTexture.debugName);
             this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.fbo);
             // TODO: Don't change attachment, instead create fbo's for each target and swap them out (PROFILE)
             this.gl.framebufferTexture2D(this.gl.FRAMEBUFFER, this.gl.COLOR_ATTACHMENT0, this.gl.TEXTURE_2D, targetTexture.glTexture, 0);
             console.assert(this.gl.checkFramebufferStatus(this.gl.FRAMEBUFFER) === this.gl.FRAMEBUFFER_COMPLETE);
         } else {
+            console.log("attaching: default");
             this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
         }
+
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
     }
 
@@ -156,9 +163,10 @@ class Renderer {
         if (model.hasAttrib(VertAttrib.TEX_BIT) && model.textures.length ===0) {
             throw "missing textures for model with tex coord attribs";
         }
-    
+
         for (let i = 0; i < model.textures.length; i++) {
             let tex = model.textures[i];
+            console.log("activating: ", tex.debugName);
             if (tex.parent instanceof TextureArray) {
                 this.gl.bindTexture(this.gl.TEXTURE_2D_ARRAY, tex.glTexture);
             } else {

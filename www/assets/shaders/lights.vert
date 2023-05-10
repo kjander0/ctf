@@ -1,7 +1,7 @@
 #version 300 es
 layout (location=0) in vec2 aVertexPosition;
 layout (location=2) in vec2 aTexCoord;
-layout (location=3) in vec2 aLightPos;
+layout (location=8) in vec2 aLightPos;
 
 out vec2 vTexCoord;
 out vec2 vLightPos;

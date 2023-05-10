@@ -13,7 +13,7 @@ import { gl } from "./gl.js";
 import * as assets from "../assets.js";
 import { checkError } from "./error.js";
 
-const ATTRIB_LIGHT_POS_LOC = 3;
+const ATTRIB_LIGHT_POS_LOC = 8;
 
 // tree of containers
 
@@ -85,18 +85,24 @@ class Graphics {
             this.screenSize.x,
             this.screenSize.y,
         );
+        this.albedoTex.debugName = "albedo";
         this.normalTex = Texture.fromSize(
             this.screenSize.x,
             this.screenSize.y,
         );
+        this.normalTex.debugName = "normal";
+
         this.highlightTex = Texture.fromSize(
             this.screenSize.x,
             this.screenSize.y,
         );
+        this.highlightTex.debugName = "highlight";
+
         this.finalTex = Texture.fromSize (
             this.screenSize.x,
             this.screenSize.y,
         );
+        this.finalTex.debugName = "final";
     }
 
     drawGame(game) {
@@ -119,14 +125,6 @@ class Graphics {
             const lerpPos = lerpVec(other.prevPos, other.pos, lerpFraction);
             shipPositions.push(lerpPos);
         }
-
-        //==================================DEBUG===========================================
-        this.camera.update(0, 0, this.screenSize.x, this.screenSize.y);
-        this.renderer.drawTexture(0, 0, 200, 200, assets.albedoAtlas.getTexture("wall_0_0"));
-        this.renderer.setAndClearTarget(null);
-        this.renderer.render(this.camera);
-        return;
-        //==================================DEBUG===========================================
 
         // ========== DRAW NORMALS ==========
         gl.clearColor(0.0, 0.0, 0.0, 0.0); // < 1 in alpha channel for normals means no lighting
@@ -213,10 +211,6 @@ class Graphics {
         this.renderer.setAndClearTarget(this.highlightTex);
         this.renderer.render(this.camera);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-        
-        // this.renderer.drawTexture(0, 0, this.screenSize.x, this.screenSize.y, this.highlightTex);
-        // this.renderer.setAndClearTarget(null);
-        // this.renderer.render(this.uiCamera);
 
         let screenMesh = new Mesh(VertAttrib.POS_BIT | VertAttrib.TEX_BIT);
         screenMesh.addRect(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
@@ -238,6 +232,7 @@ class Graphics {
             this.gammaShader,
             [this.finalTex]
         );
+
         this.renderer.drawModel(screenModel);
         this.renderer.setAndClearTarget(null);
         this.renderer.render(this.uiCamera);
