@@ -1,7 +1,9 @@
 import {gl} from "./gl.js";
 
 class Texture {
-    glTexture;
+    parentTexture = null; // Another Texture or a TextureArray
+    glTexture = null;
+    layer; // layer of parent TextureArray
     s0 = 0;
     s1 = 1;
     t0 = 0;
@@ -125,16 +127,18 @@ class TextureArray {
             const subImage = await createImageBitmap(image, info.frame.x, info.frame.y, info.frame.w, info.frame.h);
             // Clear to transparent
             gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, mipLevel, xOffset, yOffset, zOffset, newTexArray.width, newTexArray.height, 1, srcFormat, srcType, clearData);
+            
             // Write sprite data
             gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, mipLevel, xOffset, yOffset, zOffset, subImage.width, subImage.height, 1, srcFormat, srcType, subImage)
 
-            const elem = new TextureArrayElement();
-            elem.textureArray = newTexArray;
+            const elem = new Texture();
+            elem.glTexture = newTexArray.glTexture;
+            elem.parent = newTexArray;
             elem.layer = zOffset;
-            elem.contentWidth = subImage.width;
-            elem.contentHeight = subImage.height;
+            elem.width = newTexArray.width;
+            elem.height = newTexArray.height;
+            // TODO: CALCULATE TEX COORDS 
             newTexArray.texMap[name] = elem;
-
             zOffset++;
         }
 
@@ -154,11 +158,4 @@ class TextureArray {
     }
 }
 
-class TextureArrayElement {
-    textureArray;
-    layer;
-    contentWidth;
-    contentHeight;
-}
-
-export {Texture, TextureArray, TextureArrayElement};
+export {Texture, TextureArray};

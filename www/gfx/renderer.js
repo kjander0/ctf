@@ -1,5 +1,5 @@
 import { VertAttrib, Mesh, Model } from "./mesh.js";
-import { Texture, TextureArrayElement} from "./texture.js";
+import { Texture, TextureArray } from "./texture.js";
 import { Transform, Vec } from "../math.js";
 import * as assets from "../assets.js";
 
@@ -57,21 +57,15 @@ class Renderer {
 
         let texMesh = this.texMeshMap.get(texture);
         if (texMesh === undefined) {
-            texMesh = new Mesh(VertAttrib.POS_BIT | VertAttrib.TEX_BIT);
+            if (texture.parent instanceof TextureArray) {
+                texMesh = new Mesh(VertAttrib.POS_BIT | VertAttrib.TEX_3D_BIT);
+            } else {
+                texMesh = new Mesh(VertAttrib.POS_BIT | VertAttrib.TEX_BIT);
+            }
             this.texMeshMap.set(texture, texMesh);
         }
-        texMesh.addRect(x, y, width, height, texture.s0, texture.t0, texture.s1, texture.t1);
-    }
-
-    drawArrayTexture(x, y, width, height, textureElem) {
-        console.assert(textureElem instanceof TextureArrayElement, "bad texture");
-
-        let texMesh = this.texMeshMap.get(textureElem);
-        if (texMesh === undefined) {
-            texMesh = new Mesh(VertAttrib.POS_BIT | VertAttrib.TEX_3D_BIT);
-            this.texMeshMap.set(textureElem, texMesh);
-        }
-        texMesh.addRect(x, y, width, height, 0, 0, 1, 1, textureElem.layer);
+        console.log("layer ", texture.layer);
+        texMesh.addRect(x, y, width, height, texture.s0, texture.t0, texture.s1, texture.t1, texture.layer);
     }
 
     drawText(text, x, y, font, height=24) {
@@ -116,10 +110,10 @@ class Renderer {
     
         this.texMeshMap.forEach((mesh, texture) => {
             let shader;
-            if (texture instanceof Texture) {
-                shader = assets.texShader;
-            } else if (texture instanceof TextureArrayElement) {
+            if (texture.parent instanceof TextureArray) {
                 shader = assets.texArrayShader;
+            } else {
+                shader = assets.texShader;
             }
             const texModel = new Model(this.gl, mesh, this.gl.TRIANGLES, shader, [texture]);
             this.models.push(texModel);
@@ -165,10 +159,10 @@ class Renderer {
     
         for (let i = 0; i < model.textures.length; i++) {
             let tex = model.textures[i];
-            if (tex instanceof Texture) {
+            if (tex.parent instanceof TextureArray) {
+                this.gl.bindTexture(this.gl.TEXTURE_2D_ARRAY, tex.glTexture);
+            } else {
                 this.gl.bindTexture(this.gl.TEXTURE_2D, tex.glTexture);
-            } else if (tex instanceof TextureArrayElement) {
-                this.gl.bindTexture(this.gl.TEXTURE_2D_ARRAY, tex.textureArray.glTexture);
             }
             this.gl.activeTexture(this.gl.TEXTURE0 + i);
             model.shader.setUniformi("uTex"+i, i);
