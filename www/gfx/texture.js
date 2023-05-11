@@ -137,7 +137,7 @@ class TextureArray {
             elem.layer = zOffset;
             elem.width = newTexArray.width;
             elem.height = newTexArray.height;
-            // TODO: CALCULATE TEX COORDS 
+            TODO: CALCULATE TEX COORDS 
             newTexArray.texMap[name] = elem;
             zOffset++;
         }

@@ -8,6 +8,7 @@ import (
 )
 
 // TODO
+// - file bug report texture arrays firefox
 // - add team mate collisions (does no damage but bullet dissapears)
 // - if you temporarily minimise tab motion prediction limit is reached. And it stays that way even once you return.
 // - handle user leaving tab (updates stop being called), maybe ignore net updates during this time and reset predicted buffers etc
