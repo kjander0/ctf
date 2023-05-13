@@ -12,6 +12,7 @@ import { Camera } from "./camera.js";
 import { gl } from "./gl.js";
 import * as assets from "../assets.js";
 import { checkError } from "./error.js";
+import { ParticleSystem, renderEmitter } from "./particle.js";
 
 const ATTRIB_LIGHT_POS_LOC = 8;
 
@@ -44,6 +45,8 @@ class Graphics {
     shapeShader;
     texShader;
 
+    testParticleSystem;
+
     constructor (canvas) {
         this.canvas = canvas;
 
@@ -57,6 +60,8 @@ class Graphics {
         this.lightsShader = new Shader(gl, assets.lightsVertSrc, assets.lightsFragSrc);
         this.spriteShader = new Shader(gl, assets.spriteVertSrc, assets.spriteFragSrc);
         this.gammaShader = new Shader(gl, assets.texVertSrc, assets.gammaFragSrc);
+
+        this.testParticleSystem = new ParticleSystem();
 
         const resizeObserver = new ResizeObserver(() => {
             this._onresize();
@@ -317,13 +322,9 @@ class Graphics {
                 }
             }
             this.renderer.drawTexture(flagPos.x, flagPos.y, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("flag"));
-        }
-
-        for (let emitter of game.emitterList) {
-            this.renderer.drawModel(emitter.makeModel(gl));
-        }
-        
+        }        
         this.renderer.render(this.camera);
+        renderEmitter(this.testParticleSystem, this.camera);
 
         // ========== BEGIN DRAW UI ==========
         const border = 10;

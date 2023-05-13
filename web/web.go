@@ -15,7 +15,8 @@ const (
 )
 
 type WebServer struct {
-	ClientC chan Client
+	ClientC   chan Client
+	fsHandler http.Handler
 }
 
 type Client struct {
@@ -32,12 +33,13 @@ var upgrader = websocket.Upgrader{}
 
 func NewWebServer() WebServer {
 	return WebServer{
-		ClientC: make(chan Client, 10),
+		ClientC:   make(chan Client, 10),
+		fsHandler: http.FileServer(http.Dir("www")),
 	}
 }
 
 func (ws *WebServer) Run() error {
-	http.Handle("/", http.FileServer(http.Dir("www")))
+	http.HandleFunc("/", ws.handleHttp)
 	http.HandleFunc("/ws", ws.handleWs)
 	return http.ListenAndServe(":8000", nil)
 }
@@ -47,6 +49,11 @@ func NewClient() Client {
 		ReadC:  make(chan []byte, 5), // buffered so we can detect throttle condition
 		WriteC: make(chan []byte, 5), // buffered so we don't block game when writePump busy sending ping
 	}
+}
+
+func (ws *WebServer) handleHttp(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-cache") // client must check for newer version of files every time
+	ws.fsHandler.ServeHTTP(w, r)
 }
 
 func (ws *WebServer) handleWs(w http.ResponseWriter, r *http.Request) {

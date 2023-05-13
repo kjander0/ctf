@@ -139,18 +139,8 @@ class Renderer {
         }
     
         model.shader.use();
-
-        // TODO: move projection into camera matrix so we only need one
-        const scaleX = 2 / this.gl.drawingBufferWidth;
-        const scaleY = 2 / this.gl.drawingBufferHeight;
-        const projMatrix = [
-            scaleX, 0, 0, 0,
-            0, scaleY, 0, 0,
-            0, 0, -1, 0,
-            -1, -1, 0, 1,
-          ];
     
-        model.shader.setUniform("uProjMatrix", projMatrix);
+        model.shader.setUniform("uProjMatrix", camera.projMatrix);
         model.shader.setUniform("uCamMatrix", camera.invTransform.mat);
     
         if (model.hasAttrib(VertAttrib.TEX_BIT) && model.textures.length ===0) {

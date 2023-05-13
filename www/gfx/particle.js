@@ -2,9 +2,97 @@ import {Vec} from "../math.js";
 import * as assets from "../assets.js";
 import {Mesh, Model,  VertAttrib} from "./mesh.js";
 import {Color} from "./color.js";
+import { gl } from "./gl.js";
 
 const SHAPE_TYPE_CIRCLE = 0;
 const SHAPE_TYPE_CONE = 1;
+
+// TODO: GPU PARTICLES
+// - each particle has a bunch of state, all of it dynamic
+//      - attributes in vbo
+//      - quad positions (get explanded in shader)
+
+// Pre-allocate all particles we could ever want
+// Shader pass to init particles
+// Shader pass to update particle data
+// SHader pass to draw particles
+
+const MAX_EMITTERS = 256;
+const MAX_EMITTER_PARTICLES = 256;
+const VERTICES_PER_PARTICLE = 6;
+
+class ParticleSystem {
+    static VERTEX_POS_LOC = 0;
+    static PARTICLE_POS_LOC = 1;
+    static COLOR_LOC = 2;
+
+    vao;
+    meshVbo;
+    particleVbo;
+
+    constructor() {
+        const floatBytes = Float32Array.BYTES_PER_ELEMENT;
+
+        this.vao = gl.createVertexArray();
+        gl.bindVertexArray(this.vao);
+
+        this.meshVbo = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.meshVbo);
+        const meshData = [
+            -1, -1, 1, -1, 1, 1,
+            -1, -1, 1, 1, -1, 1,
+        ];
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(meshData), gl.STATIC_DRAW);
+        const attribSize = 2;
+        gl.vertexAttribPointer(ParticleSystem.VERTEX_POS_LOC, attribSize, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(ParticleSystem.VERTEX_POS_LOC);
+        //gl.vertexAttribDivisor(ParticleSystem.VERTEX_POS_LOC, 0);
+
+        this.particleVbo = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.particleVbo);
+        const bufSize = MAX_EMITTERS * MAX_EMITTER_PARTICLES * VERTICES_PER_PARTICLE;
+        const initData = new Float32Array(bufSize); // TODO: init with shader instead
+        for (let i = 0; i < bufSize; i++) {
+            initData[i] = i * 15;
+        }
+        gl.bufferData(gl.ARRAY_BUFFER, initData , gl.STATIC_DRAW);
+
+        const attribs = [
+            new VertAttrib(ParticleSystem.PARTICLE_POS_LOC, 2, gl.FLOAT, 1),
+            new VertAttrib(ParticleSystem.COLOR_LOC, 4, gl.FLOAT, 1),
+        ];
+
+        let elementSize = 0;
+        for (let attrib of attribs) {
+            elementSize += attrib.size;
+        }
+        const stride = elementSize * floatBytes;
+
+        let offset = 0;
+        for (let attrib of attribs) {
+            gl.vertexAttribPointer(attrib.loc, attrib.size, attrib.type, false, stride, offset);
+            gl.enableVertexAttribArray(attrib.loc);
+            gl.vertexAttribDivisor(attrib.loc, attrib.divisor);
+            offset += attrib.size * floatBytes;
+        }
+    }
+
+    dispose() {
+        gl.deleteBuffer(this.meshVbo);
+        gl.deleteBuffer(this.particleVbo);
+        gl.deleteVertexArray(this.vao);
+    }
+}
+
+function renderEmitter(particleSystem, camera) {
+    assets.particleShader.use();
+
+    assets.particleShader.setUniform("uProjMatrix", camera.projMatrix);
+    assets.particleShader.setUniform("uCamMatrix", camera.invTransform.mat);
+
+    gl.bindVertexArray(particleSystem.vao);
+    gl.drawArraysInstanced(gl.TRIANGLES, 0, VERTICES_PER_PARTICLE, 100);
+}
 
 class Range {
     start;
@@ -139,4 +227,4 @@ class Emitter {
     }
 }
 
-export {Emitter, EmitterParams, sparkEmitterParams};
+export {ParticleSystem, Emitter, EmitterParams, sparkEmitterParams, renderEmitter};

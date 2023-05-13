@@ -77,7 +77,9 @@ class Texture {
     }
 
     dispose() {
-        gl.deleteTexture(glTexture);
+        if (this.parentTexture === null) {
+            gl.deleteTexture(glTexture);
+        }
     }
 }
 
@@ -119,26 +121,28 @@ class TextureArray {
         const srcFormat = gl.RGBA;
         const srcType = gl.UNSIGNED_BYTE;
         const mipLevel = 0;
-        // TODO: set x/y offset to correct for trimming in atlas file
-        const xOffset = 0;
-        const yOffset = 0;
         let zOffset = 0;
+
         for (let [name, info] of Object.entries(atlasInfo.frames)) {
             const subImage = await createImageBitmap(image, info.frame.x, info.frame.y, info.frame.w, info.frame.h);
+
             // Clear to transparent
-            gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, mipLevel, xOffset, yOffset, zOffset, newTexArray.width, newTexArray.height, 1, srcFormat, srcType, clearData);
+            gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, mipLevel, 0, 0, zOffset, newTexArray.width, newTexArray.height, 1, srcFormat, srcType, clearData);
             
             // Write sprite data
+            const xOffset = info.spriteSourceSize.x;
+            const yOffset = info.spriteSourceSize.y;
             gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, mipLevel, xOffset, yOffset, zOffset, subImage.width, subImage.height, 1, srcFormat, srcType, subImage)
 
-            const elem = new Texture();
-            elem.glTexture = newTexArray.glTexture;
-            elem.parent = newTexArray;
-            elem.layer = zOffset;
-            elem.width = newTexArray.width;
-            elem.height = newTexArray.height;
-            TODO: CALCULATE TEX COORDS 
-            newTexArray.texMap[name] = elem;
+            const subTex = new Texture();
+            subTex.glTexture = newTexArray.glTexture;
+            subTex.parent = newTexArray;
+            subTex.layer = zOffset;
+            subTex.width = newTexArray.width;
+            subTex.height = newTexArray.height;
+            subTex.s1 = (info.sourceSize.w-0.5) / newTexArray.width;
+            subTex.t1 = (info.sourceSize.h-0.5) / newTexArray.height;
+            newTexArray.texMap[name] = subTex;
             zOffset++;
         }
 
@@ -155,6 +159,10 @@ class TextureArray {
         const tex = this.texMap[name];
         console.assert(tex !== undefined, "no element for name: " + tex);
         return tex;
+    }
+
+    dispose() {
+        gl.deleteTexture(glTexture);
     }
 }
 

@@ -9,6 +9,7 @@ import (
 
 // TODO
 // - file bug report texture arrays firefox
+// - optimize by choosing more appropriate VBO usage hint
 // - add team mate collisions (does no damage but bullet dissapears)
 // - if you temporarily minimise tab motion prediction limit is reached. And it stays that way even once you return.
 // - handle user leaving tab (updates stop being called), maybe ignore net updates during this time and reset predicted buffers etc
@@ -49,6 +50,7 @@ import (
 // - power crystal flag that hovers behind player
 
 // GRAPHICS IDEAS
+// - draw tiles from slight angle (e.g. if from slightly above, then draw top to bottom overlaping so lower tiles cover wall of higher tiles)
 // - texMeshMap is flawed (compares Texture and not glTexture, even though glTexture could be shared by multiple Texture)
 // 		- probs a better way to avoid texture rebinding (sorting!)
 // - consider y-flipping all textures using createImageBitmap() (current way of flipping vertical texture coord is probs best tho)

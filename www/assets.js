@@ -18,6 +18,7 @@ let gammaFragSrc;
 let shapeShader;
 let texShader;
 let texArrayShader;
+let particleShader;
 
 let albedoAtlas;
 let normalAtlas;
@@ -47,11 +48,15 @@ async function loadAssets() {
     spriteVertSrc = await requestText("assets/shaders/sprite.vert");
     spriteFragSrc = await requestText("assets/shaders/sprite.frag");
 
+    const particleVertSrc = await requestText("assets/shaders/particle.vert");
+    const particleFragSrc = await requestText("assets/shaders/particle.frag");
+
     gammaFragSrc = await requestText("assets/shaders/gamma.frag");
 
     shapeShader = new Shader(gl, shapeVertSrc, shapeFragSrc);
     texShader = new Shader(gl, texVertSrc, texFragSrc);
     texArrayShader = new Shader(gl, texArrayVertSrc, texArrayFragSrc);
+    particleShader = new Shader(gl, particleVertSrc, particleFragSrc);
 
     // ========== TEXTURES ==========
     albedoAtlas = await loadAtlas("assets/albedo_atlas.png", "assets/albedo_atlas.json", true);
@@ -136,6 +141,7 @@ export {
     shapeShader,
     texShader,
     texArrayShader,
+    particleShader,
 
     albedoAtlas,
     normalAtlas,
