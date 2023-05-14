@@ -8,6 +8,7 @@ import (
 )
 
 // TODO
+// - blit frame buffers to screen instead of drawing fullscreen quad
 // - file bug report texture arrays firefox
 // - optimize by choosing more appropriate VBO usage hint
 // - add team mate collisions (does no damage but bullet dissapears)

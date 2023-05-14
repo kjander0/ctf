@@ -12,7 +12,7 @@ import { Camera } from "./camera.js";
 import { gl } from "./gl.js";
 import * as assets from "../assets.js";
 import { checkError } from "./error.js";
-import { ParticleSystem, renderEmitter } from "./particle.js";
+import { ParticleSystem } from "./particle.js";
 
 const ATTRIB_LIGHT_POS_LOC = 8;
 
@@ -324,7 +324,6 @@ class Graphics {
             this.renderer.drawTexture(flagPos.x, flagPos.y, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("flag"));
         }        
         this.renderer.render(this.camera);
-        renderEmitter(this.testParticleSystem, this.camera);
 
         // ========== BEGIN DRAW UI ==========
         const border = 10;

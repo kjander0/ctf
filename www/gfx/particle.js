@@ -3,6 +3,7 @@ import * as assets from "../assets.js";
 import {Mesh, Model,  VertAttrib} from "./mesh.js";
 import {Color} from "./color.js";
 import { gl } from "./gl.js";
+import { Texture } from "./texture.js";
 
 const SHAPE_TYPE_CIRCLE = 0;
 const SHAPE_TYPE_CONE = 1;
@@ -17,81 +18,90 @@ const SHAPE_TYPE_CONE = 1;
 // Shader pass to update particle data
 // SHader pass to draw particles
 
+// - store particle state in texture (n pixels per particle)
+// - sample above texture for each rect instance
+// - chunk up texture for each emitter
+
+const TEXTURE_SIZE = 1024;
+const FLOAT_PER_PIXEL = 4;
+
 const MAX_EMITTERS = 256;
-const MAX_EMITTER_PARTICLES = 256;
-const VERTICES_PER_PARTICLE = 6;
+const MAX_EMITTER_PARTICLES = 1024;
+const FLOAT_PER_PARTICLE = 16;
+console.assert(TEXTURE_SIZE * TEXTURE_SIZE * FLOAT_PER_PIXEL === MAX_EMITTERS * MAX_EMITTER_PARTICLES * FLOAT_PER_PARTICLE);
 
+const EMITTER_ATTRIB_LOC = 8;
+
+// GPU particles with particle state stored in textures
 class ParticleSystem {
-    static VERTEX_POS_LOC = 0;
-    static PARTICLE_POS_LOC = 1;
-    static COLOR_LOC = 2;
-
     vao;
     meshVbo;
-    particleVbo;
+
+    // double buffered particle state
+    tex0;
+    tex1;
+
+
+    // pos - 2
+    // start vel, end vel -4
+    // start color, end color - 8
+    // timeLeft - 1
+    // textureLayer - 1
+
+    // (16 floats) = 4  pixels
+
 
     constructor() {
-        const floatBytes = Float32Array.BYTES_PER_ELEMENT;
+        this.tex0 = this._createTexture();
+        this.tex1 = this._createTexture();
+    }
 
-        this.vao = gl.createVertexArray();
-        gl.bindVertexArray(this.vao);
+    _createTexture() {
+        const tex = new Texture();
+        tex.width = TEXTURE_SIZE;
+        tex.height = TEXTURE_SIZE;
+        tex.glTexture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, tex.glTexture);
+        let internalFormat = gl.RGBA32F;
+        gl.texImage2D(gl.TEXTURE_2D, 0, internalFormat, tex.width, tex.height, 0, gl.RGBA, gl.FLOAT, null);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        return tex;
+    }
 
-        this.meshVbo = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.meshVbo);
-        const meshData = [
-            -1, -1, 1, -1, 1, 1,
-            -1, -1, 1, 1, -1, 1,
-        ];
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(meshData), gl.STATIC_DRAW);
-        const attribSize = 2;
-        gl.vertexAttribPointer(ParticleSystem.VERTEX_POS_LOC, attribSize, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(ParticleSystem.VERTEX_POS_LOC);
-        //gl.vertexAttribDivisor(ParticleSystem.VERTEX_POS_LOC, 0);
+    update() {
+        // init chunks with one off draw call for each region of texture
 
-        this.particleVbo = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.particleVbo);
-        const bufSize = MAX_EMITTERS * MAX_EMITTER_PARTICLES * VERTICES_PER_PARTICLE;
-        const initData = new Float32Array(bufSize); // TODO: init with shader instead
-        for (let i = 0; i < bufSize; i++) {
-            initData[i] = i * 15;
-        }
-        gl.bufferData(gl.ARRAY_BUFFER, initData , gl.STATIC_DRAW);
+        // update entire texture (discard early)
+    }
 
-        const attribs = [
-            new VertAttrib(ParticleSystem.PARTICLE_POS_LOC, 2, gl.FLOAT, 1),
-            new VertAttrib(ParticleSystem.COLOR_LOC, 4, gl.FLOAT, 1),
-        ];
+    makeModel() {
+        // subBufferUpate instance vbo that says 
+        const mesh = new Mesh(VertAttrib.POS_BIT);
+        mesh.addRect(-1, -1, 2, 2);
 
-        let elementSize = 0;
-        for (let attrib of attribs) {
-            elementSize += attrib.size;
-        }
-        const stride = elementSize * floatBytes;
+        // Attrib specifies which chunk the instance should look up their pixel in
+        const emitterAttrib = new VertAttrib(EMITTER_ATTRIB_LOC, 1, gl.INT, MAX_EMITTER_PARTICLES);
+        emitterAttrib.data = [0];
+        const numParticles = emitterAttrib.length;
+        const model = new Model(
+            gl,
+            mesh,
+            gl.TRIANGLES,
+            assets.particleShader,
+            [this.tex0],
+            [lightPosAttrib],
+            numParticles,
+        );
 
-        let offset = 0;
-        for (let attrib of attribs) {
-            gl.vertexAttribPointer(attrib.loc, attrib.size, attrib.type, false, stride, offset);
-            gl.enableVertexAttribArray(attrib.loc);
-            gl.vertexAttribDivisor(attrib.loc, attrib.divisor);
-            offset += attrib.size * floatBytes;
-        }
+        return model;
     }
 
     dispose() {
-        gl.deleteBuffer(this.meshVbo);
-        gl.deleteBuffer(this.particleVbo);
-        gl.deleteVertexArray(this.vao);
+        // TODO
     }
-}
-
-function renderEmitter(particleSystem, camera) {
-    assets.particleShader.use();
-
-    assets.particleShader.setUniform("uProjMatrix", camera.projMatrix);
-    assets.particleShader.setUniform("uCamMatrix", camera.invTransform.mat);
-
-    gl.bindVertexArray(particleSystem.vao);
-    gl.drawArraysInstanced(gl.TRIANGLES, 0, VERTICES_PER_PARTICLE, 100);
 }
 
 class Range {
@@ -227,4 +237,4 @@ class Emitter {
     }
 }
 
-export {ParticleSystem, Emitter, EmitterParams, sparkEmitterParams, renderEmitter};
+export {ParticleSystem, Emitter, EmitterParams, sparkEmitterParams};

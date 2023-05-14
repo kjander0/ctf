@@ -33,6 +33,7 @@ class Mesh {
     data;
     yFlip = true;
 
+    // TODO: instead of taking attribBits, take list of VertAttrib objects
     constructor(attribBits) {
         this.attribBits = attribBits;
         this.clear(); //initialize

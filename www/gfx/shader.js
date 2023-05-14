@@ -62,7 +62,7 @@ class Shader {
         }
 
         if (isNaN(value)) {
-            throw "uniform type not supported";
+            throw "uniform type not supported: " + name;
         }
         this.gl.uniform1f(loc, value);
     }
