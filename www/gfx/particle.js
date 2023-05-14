@@ -41,6 +41,8 @@ class ParticleSystem {
     tex0;
     tex1;
 
+    initModel;
+
 
     // pos - 2
     // start vel, end vel -4
@@ -54,6 +56,15 @@ class ParticleSystem {
     constructor() {
         this.tex0 = this._createTexture();
         this.tex1 = this._createTexture();
+
+        const mesh = new Mesh(VertAttrib.POS_BIT | VertAttrib.TEX_BIT);
+        mesh.addRect(-1, -1, 2, 2);
+        this.initModel = new Model(
+            gl,
+            mesh,
+            gl.TRIANGLES,
+            assets.particleInitShader
+            );        
     }
 
     _createTexture() {
@@ -72,7 +83,11 @@ class ParticleSystem {
     }
 
     update() {
+        TODO: move fbo into texture (fbo per texture)
+        // subBuffer into emitter Attribs vbo
+
         // init chunks with one off draw call for each region of texture
+
 
         // update entire texture (discard early)
     }
@@ -84,15 +99,15 @@ class ParticleSystem {
 
         // Attrib specifies which chunk the instance should look up their pixel in
         const emitterAttrib = new VertAttrib(EMITTER_ATTRIB_LOC, 1, gl.INT, MAX_EMITTER_PARTICLES);
-        emitterAttrib.data = [0];
-        const numParticles = emitterAttrib.length;
+        emitterAttrib.data = [0, 1, 2, 3, 4];
+        const numParticles = emitterAttrib.data.length * MAX_EMITTER_PARTICLES;
         const model = new Model(
             gl,
             mesh,
             gl.TRIANGLES,
             assets.particleShader,
             [this.tex0],
-            [lightPosAttrib],
+            [emitterAttrib],
             numParticles,
         );
 

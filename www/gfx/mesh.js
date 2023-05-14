@@ -237,8 +237,20 @@ class Model {
             const vbo = this.gl.createBuffer();
             this.vboList.push(vbo);
             this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vbo);
-            this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(attrib.data), this.gl.STATIC_DRAW);
-            this.gl.vertexAttribPointer(attrib.loc, attrib.size, attrib.type, false, attrib.size * this.sizeOf(attrib.type), 0);
+            switch (attrib.type) {
+                case this.gl.FLOAT:
+                    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(attrib.data, attrib.type), this.gl.STATIC_DRAW);
+                    this.gl.vertexAttribPointer(attrib.loc, attrib.size, attrib.type, false, attrib.size * this.sizeOf(attrib.type), 0);
+                    break;
+                case this.gl.INT:
+                    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Int32Array(attrib.data, attrib.type), this.gl.STATIC_DRAW);
+                    // note: alternate function vertexAttrib[I]Pointer for integers!
+                    this.gl.vertexAttribIPointer(attrib.loc, attrib.size, attrib.type, false, attrib.size * this.sizeOf(attrib.type), 0);
+                    break;
+                default:
+                    throw "type not supported for vertex attrib input";
+            }
+
             this.gl.enableVertexAttribArray(attrib.loc);
             this.gl.vertexAttribDivisor(attrib.loc, attrib.divisor);
         }
@@ -270,10 +282,14 @@ class Model {
     }
 
     sizeOf(glType) {
-        if (glType === this.gl.FLOAT) {
-            return Float32Array.BYTES_PER_ELEMENT;
+        switch (glType) {
+            case this.gl.FLOAT:
+                return Float32Array.BYTES_PER_ELEMENT;
+            case this.gl.INT:
+                return Int32Array.BYTES_PER_ELEMENT;
+            default:
+                throw "length of type not specified";
         }
-        throw "length of type not specified";
     }
 
     dispose() {

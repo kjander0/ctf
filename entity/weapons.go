@@ -69,6 +69,7 @@ func UpdateProjectiles(world *World) {
 // Returns true if laser has hit a wall and should be destroyed
 func processCollisions(world *World, laserIndex int) bool {
 	// Keep resolving collisions until laser has stopped bouncing
+	bounceCount := 0
 	for {
 		line := world.LaserList[laserIndex].Line
 		hitDist, hitPos, normal := checkWallHit(world, line)
@@ -90,6 +91,8 @@ func processCollisions(world *World, laserIndex int) bool {
 		}
 
 		bounce(&world.LaserList[laserIndex], hitPos, normal)
+		logger.Debug("bounce: ", bounceCount)
+		bounceCount += 1
 	}
 }
 

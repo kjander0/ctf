@@ -8,6 +8,9 @@ import (
 )
 
 // TODO
+// - handle case of particle texture being full (max number emitters)
+//		- probs best to just override an existing emitter
+// - prevent bouncy lasers from being shot into edge between tiles (bouncing forever and crashing client or server)
 // - blit frame buffers to screen instead of drawing fullscreen quad
 // - file bug report texture arrays firefox
 // - optimize by choosing more appropriate VBO usage hint
@@ -29,10 +32,13 @@ import (
 // - Generate a www/config.js from a config.go for shared parameters (tick rate, etc)
 // - improve precision of ticker (sleep in smaller intervals?)
 // - binary messages to save bandwidth
+// - Use Float32Array, IntArray buffers for mesh data instead of making a full copy each upload
 // - 32 bit float to save bandwidth
 // - sanitise user input (assume bytes could be anything)
 // - remove debug delay/jitter
 // - run release build in production!
+// - verify client/server lasers at same position for each tick
+//  	- test edge cases like shooting into edges between two tiles
 
 // MVP FEATURES
 // - choose name (appears below player)

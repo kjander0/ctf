@@ -322,7 +322,11 @@ class Graphics {
                 }
             }
             this.renderer.drawTexture(flagPos.x, flagPos.y, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("flag"));
-        }        
+        }
+
+        const particleModel = this.testParticleSystem.makeModel();
+        this.renderer.drawModel(particleModel);
+
         this.renderer.render(this.camera);
 
         // ========== BEGIN DRAW UI ==========
