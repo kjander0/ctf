@@ -12,6 +12,15 @@ function initGL(canvas) {
         throw "could not get webgl2 context";
     }
 
+    const extensions = [
+        "EXT_color_buffer_float",
+        "EXT_float_blend",
+    ];
+    for (let ext of extensions) {
+        console.assert(gl.getExtension(ext) !== null, "extension not available: " + ext);
+        
+    }
+
     const paramsOfInterest = [
         "MAX_TEXTURE_SIZE",
         "MAX_VIEWPORT_DIMS",

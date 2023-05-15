@@ -55,13 +55,14 @@ class Graphics {
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
         gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
-        this.renderer = new Renderer(gl);
+        this.renderer = new Renderer();
 
-        this.lightsShader = new Shader(gl, assets.lightsVertSrc, assets.lightsFragSrc);
-        this.spriteShader = new Shader(gl, assets.spriteVertSrc, assets.spriteFragSrc);
-        this.gammaShader = new Shader(gl, assets.texVertSrc, assets.gammaFragSrc);
+        this.lightsShader = new Shader(assets.lightsVertSrc, assets.lightsFragSrc);
+        this.spriteShader = new Shader(assets.spriteVertSrc, assets.spriteFragSrc);
+        this.gammaShader = new Shader(assets.texVertSrc, assets.gammaFragSrc);
 
         this.testParticleSystem = new ParticleSystem();
+        this.testParticleSystem.update();
 
         const resizeObserver = new ResizeObserver(() => {
             this._onresize();
@@ -323,7 +324,7 @@ class Graphics {
             }
             this.renderer.drawTexture(flagPos.x, flagPos.y, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("flag"));
         }
-
+        gl.viewport(0, 0, this.screenSize.x, this.screenSize.y);
         const particleModel = this.testParticleSystem.makeModel();
         this.renderer.drawModel(particleModel);
 

@@ -23,12 +23,12 @@ const SHAPE_TYPE_CONE = 1;
 // - chunk up texture for each emitter
 
 const TEXTURE_SIZE = 1024;
-const FLOAT_PER_PIXEL = 4;
-
 const MAX_EMITTERS = 256;
 const MAX_EMITTER_PARTICLES = 1024;
-const FLOAT_PER_PARTICLE = 16;
-console.assert(TEXTURE_SIZE * TEXTURE_SIZE * FLOAT_PER_PIXEL === MAX_EMITTERS * MAX_EMITTER_PARTICLES * FLOAT_PER_PARTICLE);
+const PIXEL_PER_PARTICLE = 4;
+const FLOAT_PER_PIXEL = 4;
+
+console.assert(TEXTURE_SIZE * TEXTURE_SIZE === MAX_EMITTERS * MAX_EMITTER_PARTICLES * PIXEL_PER_PARTICLE);
 
 const EMITTER_ATTRIB_LOC = 8;
 
@@ -83,7 +83,43 @@ class ParticleSystem {
     }
 
     update() {
-        TODO: move fbo into texture (fbo per texture)
+        //TODO
+        // why not just send vert attribs for initial conditions of each particle? (then vert shader can just output position/color at time t)
+        // emitter instance variables (current positions/velocities of emitter so particles can track and respond accordingly)
+
+        const xOffset = 0;
+        const yOffset = 0;
+        const width = this.tex0.width;
+        const height = this.tex0.height;
+        const pixels = new Float32Array(width * height * FLOAT_PER_PIXEL); // TODO: reuse this for every emitter initialization
+
+        let floatIndex = 0;
+        for (let i = 0; i < MAX_EMITTERS; i++) {
+            for (let j = 0; j < MAX_EMITTER_PARTICLES; j++) {
+                pixels[floatIndex++] = j; pixels[floatIndex++] = j; // position
+                pixels[floatIndex++] = Math.random(); pixels[floatIndex++] = Math.random(); // velocity
+                pixels[floatIndex++] = 0; pixels[floatIndex++] = 0; pixels[floatIndex++] = 0; pixels[floatIndex++] = 0; // start color
+                pixels[floatIndex++] = 0; pixels[floatIndex++] = 0; pixels[floatIndex++] = 0; pixels[floatIndex++] = 0; // end color
+                pixels[floatIndex++] = 0; // time left
+                pixels[floatIndex++] = 0; // texture layer
+                pixels[floatIndex++] = 0;
+                pixels[floatIndex++] = 0;
+            }
+        }
+
+        gl.bindTexture(gl.TEXTURE_2D, this.tex0.glTexture);
+        gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, width, height, gl.RGBA, gl.FLOAT, pixels);
+
+
+        // this.tex0.setAsTarget();
+        // gl.clear(gl.COLOR_BUFFER_BIT);
+        // assets.particleInitShader.use();
+        // gl.viewport(0, 0, this.tex0.width, this.tex0.height);
+
+        // gl.bindVertexArray(this.initModel.vao);
+        // gl.drawArrays(this.initModel.drawMode, 0, this.initModel.numVertices);
+        // gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        //TODO: move fbo into texture (fbo per texture)
         // subBuffer into emitter Attribs vbo
 
         // init chunks with one off draw call for each region of texture
@@ -99,8 +135,8 @@ class ParticleSystem {
 
         // Attrib specifies which chunk the instance should look up their pixel in
         const emitterAttrib = new VertAttrib(EMITTER_ATTRIB_LOC, 1, gl.INT, MAX_EMITTER_PARTICLES);
-        emitterAttrib.data = [0, 1, 2, 3, 4];
-        const numParticles = emitterAttrib.data.length * MAX_EMITTER_PARTICLES;
+        emitterAttrib.data = [0];
+        const numParticles = emitterAttrib.data.length * 10;
         const model = new Model(
             gl,
             mesh,

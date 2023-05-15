@@ -2,20 +2,15 @@ import { VertAttrib, Mesh, Model } from "./mesh.js";
 import { Texture, TextureArray } from "./texture.js";
 import { Transform, Vec } from "../math.js";
 import * as assets from "../assets.js";
+import { gl } from "./gl.js";
 
 class Renderer {
-    gl;
-    fbo;
     bufferSize = new Vec();
     shapeMesh;
     texMeshMap = new Map();
     models = [];
 
-    constructor(gl) {
-        this.gl = gl;
-
-        this.fbo = this.gl.createFramebuffer();
-    
+    constructor() {    
         this.shapeMesh = new Mesh(VertAttrib.POS_BIT | VertAttrib.COLOR_BIT);
     }
     
@@ -89,21 +84,17 @@ class Renderer {
 
     setAndClearTarget(targetTexture=null) {
         if (targetTexture !== null) {
-            this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.fbo);
-            // TODO: Don't change attachment, instead create fbo's for each target and swap them out (PROFILE)
-            this.gl.framebufferTexture2D(this.gl.FRAMEBUFFER, this.gl.COLOR_ATTACHMENT0, this.gl.TEXTURE_2D, targetTexture.glTexture, 0);
-            console.assert(this.gl.checkFramebufferStatus(this.gl.FRAMEBUFFER) === this.gl.FRAMEBUFFER_COMPLETE);
+            targetTexture.setAsTarget();
         } else {
-            this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         }
-
-        this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+        gl.clear(gl.COLOR_BUFFER_BIT);
     }
 
     render(camera) {
         const disposeList = [];
 
-        const shapeModel = new Model(this.gl, this.shapeMesh, this.gl.TRIANGLES, assets.shapeShader);
+        const shapeModel = new Model(gl, this.shapeMesh, gl.TRIANGLES, assets.shapeShader);
         this.models.push(shapeModel);
         disposeList.push(shapeModel);
         this.shapeMesh.clear();
@@ -115,7 +106,7 @@ class Renderer {
             } else {
                 shader = assets.texShader;
             }
-            const texModel = new Model(this.gl, mesh, this.gl.TRIANGLES, shader, [texture]);
+            const texModel = new Model(gl, mesh, gl.TRIANGLES, shader, [texture]);
             this.models.push(texModel);
             disposeList.push(texModel);
             mesh.clear();
@@ -148,17 +139,17 @@ class Renderer {
         }
 
         for (let i = 0; i < model.textures.length; i++) {
-            this.gl.activeTexture(this.gl.TEXTURE0 + i);
+            gl.activeTexture(gl.TEXTURE0 + i);
             model.shader.setUniformi("uTex"+i, i);
             let tex = model.textures[i];
             if (tex.parent instanceof TextureArray) {
-                this.gl.bindTexture(this.gl.TEXTURE_2D_ARRAY, tex.glTexture);
+                gl.bindTexture(gl.TEXTURE_2D_ARRAY, tex.glTexture);
             } else {
-                this.gl.bindTexture(this.gl.TEXTURE_2D, tex.glTexture);
+                gl.bindTexture(gl.TEXTURE_2D, tex.glTexture);
             }
         }
-        this.gl.bindVertexArray(model.vao);
-        this.gl.drawArraysInstanced(model.drawMode, 0, model.numVertices, model.numInstances);
+        gl.bindVertexArray(model.vao);
+        gl.drawArraysInstanced(model.drawMode, 0, model.numVertices, model.numInstances);
     }
 }
 

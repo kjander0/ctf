@@ -37,6 +37,7 @@ import (
 // - sanitise user input (assume bytes could be anything)
 // - remove debug delay/jitter
 // - run release build in production!
+// - use integer textures for particles to improve performance and break dependency on RGBA float texture extension
 // - verify client/server lasers at same position for each tick
 //  	- test edge cases like shooting into edges between two tiles
 

@@ -3,6 +3,7 @@ import {gl} from "./gl.js";
 class Texture {
     parentTexture = null; // Another Texture or a TextureArray
     glTexture = null;
+    fbo = null;
     layer; // layer of parent TextureArray
     s0 = 0;
     s1 = 1;
@@ -64,6 +65,20 @@ class Texture {
         return tex;
     }
 
+    setAsTarget() {
+        console.assert(this.parentTexture === null);
+
+        if (this.fbo === null) {
+            this.fbo = gl.createFramebuffer();
+            gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.glTexture, 0);
+            console.assert(gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE);
+            return;
+        }
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
+    }
+
     subTexture(x, y, width, height) {
         const sub = new Texture();
         sub.glTexture = this.glTexture;
@@ -79,6 +94,9 @@ class Texture {
     dispose() {
         if (this.parentTexture === null) {
             gl.deleteTexture(glTexture);
+        }
+        if (this.fbo === null) {
+            gl.deleteFrameBuffer(this.fbo);
         }
     }
 }
