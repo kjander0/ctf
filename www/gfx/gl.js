@@ -13,8 +13,7 @@ function initGL(canvas) {
     }
 
     const extensions = [
-        "EXT_color_buffer_float",
-        "EXT_float_blend",
+        // None, yay!
     ];
     for (let ext of extensions) {
         console.assert(gl.getExtension(ext) !== null, "extension not available: " + ext);

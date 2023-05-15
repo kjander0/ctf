@@ -240,12 +240,12 @@ class Model {
             switch (attrib.type) {
                 case this.gl.FLOAT:
                     this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(attrib.data, attrib.type), this.gl.STATIC_DRAW);
-                    this.gl.vertexAttribPointer(attrib.loc, attrib.size, attrib.type, false, attrib.size * this.sizeOf(attrib.type), 0);
+                    this.gl.vertexAttribPointer(attrib.loc, attrib.size, attrib.type, false, 0, 0);
                     break;
                 case this.gl.INT:
                     this.gl.bufferData(this.gl.ARRAY_BUFFER, new Int32Array(attrib.data, attrib.type), this.gl.STATIC_DRAW);
                     // note: alternate function vertexAttrib[I]Pointer for integers!
-                    this.gl.vertexAttribIPointer(attrib.loc, attrib.size, attrib.type, false, attrib.size * this.sizeOf(attrib.type), 0);
+                    this.gl.vertexAttribIPointer(attrib.loc, attrib.size, attrib.type, false, 0, 0);
                     break;
                 default:
                     throw "type not supported for vertex attrib input";

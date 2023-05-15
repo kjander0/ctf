@@ -22,132 +22,76 @@ const SHAPE_TYPE_CONE = 1;
 // - sample above texture for each rect instance
 // - chunk up texture for each emitter
 
-const TEXTURE_SIZE = 1024;
 const MAX_EMITTERS = 256;
 const MAX_EMITTER_PARTICLES = 1024;
-const PIXEL_PER_PARTICLE = 4;
-const FLOAT_PER_PIXEL = 4;
 
-console.assert(TEXTURE_SIZE * TEXTURE_SIZE === MAX_EMITTERS * MAX_EMITTER_PARTICLES * PIXEL_PER_PARTICLE);
 
-const EMITTER_ATTRIB_LOC = 8;
+const PARTICLE_POS_LOC = 8;
+const EMITTER_TIME_LOC = 9;
 
 // GPU particles with particle state stored in textures
 class ParticleSystem {
-    vao;
-    meshVbo;
+    model;
 
-    // double buffered particle state
-    tex0;
-    tex1;
+    emitterVbo;
 
-    initModel;
-
-
-    // pos - 2
-    // start vel, end vel -4
-    // start color, end color - 8
-    // timeLeft - 1
-    // textureLayer - 1
-
-    // (16 floats) = 4  pixels
-
+    time = 0;
 
     constructor() {
-        this.tex0 = this._createTexture();
-        this.tex1 = this._createTexture();
-
-        const mesh = new Mesh(VertAttrib.POS_BIT | VertAttrib.TEX_BIT);
-        mesh.addRect(-1, -1, 2, 2);
-        this.initModel = new Model(
-            gl,
-            mesh,
-            gl.TRIANGLES,
-            assets.particleInitShader
-            );        
-    }
-
-    _createTexture() {
-        const tex = new Texture();
-        tex.width = TEXTURE_SIZE;
-        tex.height = TEXTURE_SIZE;
-        tex.glTexture = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, tex.glTexture);
-        let internalFormat = gl.RGBA32F;
-        gl.texImage2D(gl.TEXTURE_2D, 0, internalFormat, tex.width, tex.height, 0, gl.RGBA, gl.FLOAT, null);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        return tex;
     }
 
     update() {
-        //TODO
-        // why not just send vert attribs for initial conditions of each particle? (then vert shader can just output position/color at time t)
-        // emitter instance variables (current positions/velocities of emitter so particles can track and respond accordingly)
+        const numParticles = 100;
 
-        const xOffset = 0;
-        const yOffset = 0;
-        const width = this.tex0.width;
-        const height = this.tex0.height;
-        const pixels = new Float32Array(width * height * FLOAT_PER_PIXEL); // TODO: reuse this for every emitter initialization
-
-        let floatIndex = 0;
-        for (let i = 0; i < MAX_EMITTERS; i++) {
-            for (let j = 0; j < MAX_EMITTER_PARTICLES; j++) {
-                pixels[floatIndex++] = j; pixels[floatIndex++] = j; // position
-                pixels[floatIndex++] = Math.random(); pixels[floatIndex++] = Math.random(); // velocity
-                pixels[floatIndex++] = 0; pixels[floatIndex++] = 0; pixels[floatIndex++] = 0; pixels[floatIndex++] = 0; // start color
-                pixels[floatIndex++] = 0; pixels[floatIndex++] = 0; pixels[floatIndex++] = 0; pixels[floatIndex++] = 0; // end color
-                pixels[floatIndex++] = 0; // time left
-                pixels[floatIndex++] = 0; // texture layer
-                pixels[floatIndex++] = 0;
-                pixels[floatIndex++] = 0;
-            }
-        }
-
-        gl.bindTexture(gl.TEXTURE_2D, this.tex0.glTexture);
-        gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, width, height, gl.RGBA, gl.FLOAT, pixels);
-
-
-        // this.tex0.setAsTarget();
-        // gl.clear(gl.COLOR_BUFFER_BIT);
-        // assets.particleInitShader.use();
-        // gl.viewport(0, 0, this.tex0.width, this.tex0.height);
-
-        // gl.bindVertexArray(this.initModel.vao);
-        // gl.drawArrays(this.initModel.drawMode, 0, this.initModel.numVertices);
-        // gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-        //TODO: move fbo into texture (fbo per texture)
-        // subBuffer into emitter Attribs vbo
-
-        // init chunks with one off draw call for each region of texture
-
-
-        // update entire texture (discard early)
-    }
-
-    makeModel() {
-        // subBufferUpate instance vbo that says 
         const mesh = new Mesh(VertAttrib.POS_BIT);
         mesh.addRect(-1, -1, 2, 2);
 
-        // Attrib specifies which chunk the instance should look up their pixel in
-        const emitterAttrib = new VertAttrib(EMITTER_ATTRIB_LOC, 1, gl.INT, MAX_EMITTER_PARTICLES);
-        emitterAttrib.data = [0];
-        const numParticles = emitterAttrib.data.length * 10;
-        const model = new Model(
+        this.model = new Model(
             gl,
             mesh,
             gl.TRIANGLES,
             assets.particleShader,
-            [this.tex0],
-            [emitterAttrib],
+            null,
+            null,
             numParticles,
         );
 
-        return model;
+        gl.bindVertexArray(this.model.vao);
+
+        // Particle instance data
+        const particleData = new Float32Array(numParticles * 2);
+        for (let i = 0; i < particleData.length; i++) {
+            particleData[i * 2]     = i * 10;
+            particleData[i * 2 + 1] = i * 10;
+        }
+
+        const particleVbo = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, particleVbo);
+        gl.bufferData(gl.ARRAY_BUFFER, particleData, gl.STATIC_DRAW);
+        let attribSize = 2;
+        let attribType = gl.FLOAT;
+        gl.vertexAttribPointer(PARTICLE_POS_LOC, attribSize, attribType, false, 0, 0);
+        gl.enableVertexAttribArray(PARTICLE_POS_LOC);
+        gl.vertexAttribDivisor(PARTICLE_POS_LOC, 1);
+
+        // Emitter instance variables
+        const emitterData = new Float32Array([0]);
+        this.emitterVbo = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.emitterVbo);
+        gl.bufferData(gl.ARRAY_BUFFER, emitterData, gl.STATIC_DRAW);
+        attribSize = 1;
+        attribType = gl.FLOAT;
+        gl.vertexAttribPointer(EMITTER_TIME_LOC, attribSize, attribType, false, 0, 0);
+        gl.enableVertexAttribArray(EMITTER_TIME_LOC);
+        gl.vertexAttribDivisor(EMITTER_TIME_LOC, MAX_EMITTER_PARTICLES);
+    }
+
+    makeModel() {
+        this.time += 0.1;
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.emitterVbo);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([this.time]), gl.STATIC_DRAW);
+        // subBufferUpate instance vbo that says 
+        return this.model;
     }
 
     dispose() {

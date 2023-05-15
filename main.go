@@ -26,6 +26,7 @@ import (
 // - draw lasers underneath tank
 // - 9 sprites for tank movement
 // - load assets in parallel
+// - EVERYTHING should receive final gamma pass so all processing is in linear space
 // - Predicted buffer will fill up if client running faster than server. Reconsider adding some throttling.
 // - Client should probs start dropping world updates when minimised (otherwise they see million lasers spawned in)
 // - TCP NODELAY, server and client
