@@ -34,4 +34,15 @@ function initGL(canvas) {
     }
 }
 
-export {initGL, gl};
+function sizeOf(glType) {
+    switch (glType) {
+        case gl.FLOAT:
+            return Float32Array.BYTES_PER_ELEMENT;
+        case gl.INT:
+            return Int32Array.BYTES_PER_ELEMENT;
+        default:
+            throw "length of type not specified";
+    }
+}
+
+export {initGL, sizeOf, gl};

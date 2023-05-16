@@ -12,7 +12,7 @@ import { Camera } from "./camera.js";
 import { gl } from "./gl.js";
 import * as assets from "../assets.js";
 import { checkError } from "./error.js";
-import { ParticleSystem } from "./particle.js";
+import { ParticleSystem, sparkEmitterParams } from "./particle.js";
 
 const ATTRIB_LIGHT_POS_LOC = 8;
 
@@ -62,7 +62,16 @@ class Graphics {
         this.gammaShader = new Shader(assets.texVertSrc, assets.gammaFragSrc);
 
         this.testParticleSystem = new ParticleSystem();
-        this.testParticleSystem.update();
+        this.testParticleSystem.addEmitter(new Vec(), sparkEmitterParams);
+        this.testParticleSystem.addEmitter(new Vec(100, 100), sparkEmitterParams);
+        this.testParticleSystem.addEmitter(new Vec(400, 100), sparkEmitterParams);
+        this.testParticleSystem.addEmitter(new Vec(100, -250), sparkEmitterParams);
+        this.testParticleSystem.addEmitter(new Vec(-100, -180), sparkEmitterParams);
+        this.testParticleSystem.addEmitter(new Vec(-200, -220), sparkEmitterParams);
+        this.testParticleSystem.addEmitter(new Vec(-210, -450), sparkEmitterParams);
+        this.testParticleSystem.addEmitter(new Vec(-500, -25), sparkEmitterParams);
+
+
 
         const resizeObserver = new ResizeObserver(() => {
             this._onresize();
@@ -324,8 +333,8 @@ class Graphics {
             }
             this.renderer.drawTexture(flagPos.x, flagPos.y, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("flag"));
         }
-        gl.viewport(0, 0, this.screenSize.x, this.screenSize.y);
-        const particleModel = this.testParticleSystem.makeModel();
+        this.testParticleSystem.update(game.deltaMs);
+        const particleModel = this.testParticleSystem.model;
         this.renderer.drawModel(particleModel);
 
         this.renderer.render(this.camera);
