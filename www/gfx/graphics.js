@@ -62,16 +62,10 @@ class Graphics {
         this.gammaShader = new Shader(assets.texVertSrc, assets.gammaFragSrc);
 
         this.testParticleSystem = new ParticleSystem();
-        this.testParticleSystem.addEmitter(new Vec(), sparkEmitterParams);
         this.testParticleSystem.addEmitter(new Vec(100, 100), sparkEmitterParams);
-        this.testParticleSystem.addEmitter(new Vec(400, 100), sparkEmitterParams);
-        this.testParticleSystem.addEmitter(new Vec(100, -250), sparkEmitterParams);
-        this.testParticleSystem.addEmitter(new Vec(-100, -180), sparkEmitterParams);
-        this.testParticleSystem.addEmitter(new Vec(-200, -220), sparkEmitterParams);
-        this.testParticleSystem.addEmitter(new Vec(-210, -450), sparkEmitterParams);
-        this.testParticleSystem.addEmitter(new Vec(-500, -25), sparkEmitterParams);
-
-
+        this.testParticleSystem.addEmitter(new Vec(300, 100), sparkEmitterParams);
+        this.testParticleSystem.addEmitter(new Vec(500, 100), sparkEmitterParams);
+        this.testParticleSystem.addEmitter(new Vec(700, 100), sparkEmitterParams);
 
         const resizeObserver = new ResizeObserver(() => {
             this._onresize();

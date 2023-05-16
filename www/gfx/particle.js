@@ -31,18 +31,19 @@ const PARTICLE_START_COLOR_LOC = 7;
 const PARTICLE_END_COLOR_LOC = 8;
 const PARTICLE_TIME_LOC = 9;
 
-const EMITTER_TIME_LOC = 10;
+const EMITTER_SIZE_LOC = 11;
 
 // GPU particles with particle state stored in textures
 class ParticleSystem {
     model;
 
     particleVbo;
-    emitterVbo;
-
     emitterList = [];
 
     floatsPerParticle;
+    floatsPerEmitter;
+
+    emitterAttribs;
 
     constructor() {
         const mesh = new Mesh(VertAttrib.POS_BIT);
@@ -77,7 +78,7 @@ class ParticleSystem {
 
         this.particleVbo = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.particleVbo);
-        gl.bufferData(gl.ARRAY_BUFFER, MAX_EMITTERS * MAX_EMITTER_PARTICLES * this.floatsPerParticle, gl.STATIC_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, MAX_EMITTERS * MAX_EMITTER_PARTICLES * this.floatsPerParticle * sizeOf(gl.FLOAT), gl.STATIC_DRAW);
 
         let offset = 0;
         for (let attrib of particleAttribs) {
@@ -87,27 +88,41 @@ class ParticleSystem {
             offset += attrib.size * floatBytes;
         }
 
-        // Emitter instance variables
-        const emitterData = new Float32Array([0]);
-        this.emitterVbo = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.emitterVbo);
-        gl.bufferData(gl.ARRAY_BUFFER, emitterData, gl.STATIC_DRAW);
-        const attribSize = 1;
-        const attribType = gl.FLOAT;
-        gl.vertexAttribPointer(EMITTER_TIME_LOC, attribSize, attribType, false, 0, 0);
-        gl.enableVertexAttribArray(EMITTER_TIME_LOC);
-        gl.vertexAttribDivisor(EMITTER_TIME_LOC, MAX_EMITTER_PARTICLES);
+        // EMITTER DATA
+        this.emitterAttribs = [
+            new VertAttrib(EMITTER_SIZE_LOC, 1, gl.FLOAT, MAX_EMITTER_PARTICLES)
+        ];
+
+        this.floatsPerEmitter = 0;
+        for (let attrib of this.emitterAttribs) {
+            this.floatsPerEmitter += attrib.size;
+        }
+
+        const emitterVbo = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, emitterVbo);
+        gl.bufferData(gl.ARRAY_BUFFER, MAX_EMITTERS * this.floatsPerEmitter * sizeOf(gl.FLOAT), gl.STATIC_DRAW);
+
+        offset = 0;
+        stride = this.floatsPerEmitter * floatBytes;
+        for (let attrib of this.emitterAttribs) {
+            console.log(attrib.size, stride, offset)
+            gl.vertexAttribPointer(attrib.loc, attrib.size, attrib.type, false, stride, offset);
+            gl.enableVertexAttribArray(attrib.loc);
+            gl.vertexAttribDivisor(attrib.loc, attrib.divisor);
+            offset += attrib.size * sizeOf(gl.FLOAT);
+        }
     }
 
     addEmitter(pos, params) {
         const emitter = new Emitter(pos, params);
-        const vboOffset = this.emitterList.length * MAX_EMITTER_PARTICLES * this.floatsPerParticle * sizeOf(gl.FLOAT);
+
         this.emitterList.push(emitter);
         this.model.numInstances = this.emitterList.length * MAX_EMITTER_PARTICLES;
+        emitter.numParticles = this.emitterList.length;
 
         // Particle instance data
-        const particleData = new Float32Array(MAX_EMITTER_PARTICLES * this.floatsPerParticle);
-        for (let i = 0; i < MAX_EMITTER_PARTICLES; i++) {
+        const particleData = new Float32Array(emitter.numParticles * this.floatsPerParticle);
+        for (let i = 0; i < emitter.numParticles; i++) {
             const angleRads = Math.random() * 2 * Math.PI;
             const startSpeed = params.startSpeed.sample();
             const endSpeed = params.endSpeed.sample();
@@ -138,20 +153,19 @@ class ParticleSystem {
             particleData[i * this.floatsPerParticle + 14] = params.startSecs.sample();
             particleData[i * this.floatsPerParticle + 15] = params.lifeSecs.sample();
         }
-
+        const particleVboOffset = (this.emitterList.length-1) * MAX_EMITTER_PARTICLES * this.floatsPerParticle * sizeOf(gl.FLOAT);
         gl.bindBuffer(gl.ARRAY_BUFFER, this.particleVbo);
-        gl.bufferSubData(gl.ARRAY_BUFFER, vboOffset, particleData);
+        gl.bufferSubData(gl.ARRAY_BUFFER, particleVboOffset, particleData);
+
+        const emitterVboOffset = (this.emitterList.length-1) * this.floatsPerEmitter * sizeOf(gl.FLOAT);
+        const emitterData = new Float32Array([emitter.numParticles]);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.emitterVbo);
+        console.log(emitterVboOffset);
+        gl.bufferSubData(gl.ARRAY_BUFFER, emitterVboOffset, emitterData);
     }
 
     update(deltaMs) {
-        const times = [];
-        for (let emitter of this.emitterList) {
-            emitter.timeSecs += deltaMs/1000;
-            times.push(emitter.timeSecs);
-        }
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.emitterVbo);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(times), gl.STATIC_DRAW);
+        SET TIME UNIFORM FOR MODEL
     }
 
     dispose() {
@@ -188,12 +202,12 @@ class EmitterParams {
     // Group params
     shapeType = SHAPE_TYPE_CIRCLE;
     circleRadius = new Range(5);
-    numParticles = new Range(10);
+    numParticles = new Range(1, 1024);
 
     // Particle Params
     startColor = new Range(new Color(1, 1, 1, 1));
     endColor = new Range(new Color(1, 1, 0, 1));
-    startSpeed = new Range(60);
+    startSpeed = new Range(20);
     endSpeed = new Range(0.0);
     startSecs = new Range(0, 3);
     lifeSecs = new Range(2, 3);
