@@ -59,11 +59,14 @@ import (
 // - power crystal flag that hovers behind player
 
 // GRAPHICS IDEAS
+// - particles should be lights
+// - add bloom effect by drawing some storngly decaying amount of light colour (irresepective of normal)
 // - draw tiles from slight angle (e.g. if from slightly above, then draw top to bottom overlaping so lower tiles cover wall of higher tiles)
 // - texMeshMap is flawed (compares Texture and not glTexture, even though glTexture could be shared by multiple Texture)
 // 		- probs a better way to avoid texture rebinding (sorting!)
 // - consider y-flipping all textures using createImageBitmap() (current way of flipping vertical texture coord is probs best tho)
 // - clamp textures now that they are in atlas
+// - could texture particles with sections of ship sprite to have it explode into pieces
 // - use proper VBO streaming methods for dynamic stuff (player sprite, particles, etc)
 // - Can draw things like flag goal larger than one tile (draw on top of floor tiles)
 // - half thickness walls (would require corner and intersection variations)

@@ -62,10 +62,6 @@ class Graphics {
         this.gammaShader = new Shader(assets.texVertSrc, assets.gammaFragSrc);
 
         this.testParticleSystem = new ParticleSystem();
-        this.testParticleSystem.addEmitter(new Vec(100, 100), sparkEmitterParams);
-        this.testParticleSystem.addEmitter(new Vec(300, 100), sparkEmitterParams);
-        this.testParticleSystem.addEmitter(new Vec(500, 100), sparkEmitterParams);
-        this.testParticleSystem.addEmitter(new Vec(700, 100), sparkEmitterParams);
 
         const resizeObserver = new ResizeObserver(() => {
             this._onresize();
@@ -128,6 +124,8 @@ class Graphics {
         this.camera.update(lerpPos.x, lerpPos.y, this.screenSize.x, this.screenSize.y);
 
         let shipRadius = conf.PLAYER_RADIUS / assets.shipPixelRatio;
+
+        this.testParticleSystem.addEmitter(lerpPos, sparkEmitterParams);
 
         let shipPositions = [lerpPos]
         for (let other of game.otherPlayers) {
