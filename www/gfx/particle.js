@@ -279,12 +279,12 @@ class EmitterParams {
     // Group params
     shapeType = SHAPE_TYPE_CIRCLE;
     circleRadius = new Range(5);
-    numParticles = new Range(1024);
+    numParticles = new Range(64);
 
     // Particle Params
-    startColor = new Range(new Color(1, 1, 1, 1));
-    endColor = new Range(new Color(1, 1, 0, 1));
-    startSpeed = new Range(400, 600);
+    startColor = new Range(new Color(1, 1, 0.4, 1));
+    endColor = new Range(new Color(1, 1, 0, 0));
+    startSpeed = new Range(80, 120);
     endSpeed = new Range(0.0);
     startSecs = new Range(0, 0.6);
     lifeSecs = new Range(0.1, 0.8);

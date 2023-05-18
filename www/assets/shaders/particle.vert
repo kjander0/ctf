@@ -30,7 +30,7 @@ void main() {
     vec2 accel = (endVel - startVel) / lifeSecs;
     vec2 displacement = startVel * time + 0.5 * (endVel - startVel) / lifeSecs * time * time;
 
-    float pointSize = 10.0 * step(0.0, time) * (1.0 - step(lifeSecs, time));
+    float pointSize = 5.0 * step(0.0, time) * (1.0 - step(lifeSecs, time));
     float particleNum = mod(float(gl_InstanceID), maxNumberParticles);
     pointSize *= 1.0 - step(aEmitterSize, particleNum); // TODO: don't show particles outside numParticles in emitter
     
