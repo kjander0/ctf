@@ -13,10 +13,15 @@ class Texture {
     width;
     height;
 
-    static fromSize(width, height, srgb=false) {
+    static fromSize(width, height, srgb=false, yFlip=false) {
         let tex = new Texture();
         tex.width = width;
         tex.height = height;
+        if (yFlip) {
+            const tmp = tex.t0;
+            tex.t0 = tex.t1;
+            tex.t1 = tmp;
+        }
         tex.glTexture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, tex.glTexture);
         let internalFormat = gl.RGBA;
@@ -31,10 +36,15 @@ class Texture {
         return tex;
     }
 
-    static fromImage(image, srgb=false) {
+    static fromImage(image, srgb=false, yFlip=true) {
         let tex = new Texture();
         tex.width = image.naturalWidth;
         tex.height = image.naturalHeight;
+        if (yFlip) {
+            const tmp = tex.t0;
+            tex.t0 = tex.t1;
+            tex.t1 = tmp;
+        }
         tex.glTexture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, tex.glTexture);
     
@@ -159,7 +169,8 @@ class TextureArray {
             subTex.width = newTexArray.width;
             subTex.height = newTexArray.height;
             subTex.s1 = (info.sourceSize.w-0.5) / newTexArray.width;
-            subTex.t1 = (info.sourceSize.h-0.5) / newTexArray.height;
+            subTex.t0 = (info.sourceSize.h-0.5) / newTexArray.height;
+            subTex.t1 = 0;
             newTexArray.texMap[name] = subTex;
             zOffset++;
         }

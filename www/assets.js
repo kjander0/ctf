@@ -66,7 +66,7 @@ async function loadAssets() {
     const flagImage = await requestImage("assets/flag.png");
     textures["flag"] = Texture.fromImage(flagImage, true);
     // ========== FONTS ==========
-    const arialFontTexture = Texture.fromImage(await requestImage("assets/arial.png"));
+    const arialFontTexture = Texture.fromImage(await requestImage("assets/arial.png"), false, false);
     const arialCSVText = await requestText("assets/arial.csv");
     arialFont = new Font(arialFontTexture, arialCSVText);
 }

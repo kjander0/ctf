@@ -12,7 +12,7 @@ import { Camera } from "./camera.js";
 import { gl } from "./gl.js";
 import * as assets from "../assets.js";
 import { checkError } from "./error.js";
-import { ParticleSystem, sparkEmitterParams } from "./particle.js";
+import { Emitter, ParticleSystem, sparkEmitterParams } from "./particle.js";
 
 const ATTRIB_LIGHT_POS_LOC = 8;
 
@@ -45,7 +45,7 @@ class Graphics {
     shapeShader;
     texShader;
 
-    testParticleSystem;
+    particleSystem;
 
     constructor (canvas) {
         this.canvas = canvas;
@@ -61,7 +61,7 @@ class Graphics {
         this.spriteShader = new Shader(assets.spriteVertSrc, assets.spriteFragSrc);
         this.gammaShader = new Shader(assets.texVertSrc, assets.gammaFragSrc);
 
-        this.testParticleSystem = new ParticleSystem();
+        this.particleSystem = new ParticleSystem();
 
         const resizeObserver = new ResizeObserver(() => {
             this._onresize();
@@ -124,8 +124,6 @@ class Graphics {
         this.camera.update(lerpPos.x, lerpPos.y, this.screenSize.x, this.screenSize.y);
 
         let shipRadius = conf.PLAYER_RADIUS / assets.shipPixelRatio;
-
-        this.testParticleSystem.addEmitter(lerpPos, sparkEmitterParams);
 
         let shipPositions = [lerpPos]
         for (let other of game.otherPlayers) {
@@ -232,32 +230,7 @@ class Graphics {
         this.renderer.setAndClearTarget(this.finalTex);
         this.renderer.render(this.uiCamera);
 
-        let screenModel = new Model(
-            gl,
-            screenMesh,
-            gl.TRIANGLES,
-            this.gammaShader,
-            [this.finalTex]
-        );
-
-        this.renderer.drawModel(screenModel);
-        this.renderer.setAndClearTarget(null);
-        this.renderer.render(this.uiCamera);
-        
-        if (game.doDebug) {
-            this.renderer.setColor(0, 1, 0);
-            this.renderer.drawCircleLine(game.player.acked.pos.x, game.player.acked.pos.y, conf.PLAYER_RADIUS);
-            this.renderer.setColor(0, 0, 1);
-            this.renderer.drawCircleLine(game.player.predicted.pos.x, game.player.predicted.pos.y, conf.PLAYER_RADIUS);
-
-            for (let other of game.otherPlayers) {
-                this.renderer.setColor(0, 1, 0);
-                this.renderer.drawCircleLine(other.acked.pos.x, other.acked.pos.y, conf.PLAYER_RADIUS);
-            }
-        }
-
         // ========== BEGIN DRAW LASERS ==========
-        this.renderer.setColor(1, 0, 0);
         for (let laser of game.laserList) {
             const drawStartDist = lerpFraction * laser.getSpeed();
             const drawEndDist = laser.getDrawLength() - (1-lerpFraction) * laser.getSpeed();
@@ -301,8 +274,8 @@ class Graphics {
                     default:
                         throw "unsupported laser type";
                 }
-                const startColor = new Color(1, 0, 0, 0);
-                const endColor = new Color(1, 0.2, 0.2, 1);
+                const startColor = new Color(0.8, 0, 0, 0);
+                const endColor = new Color(1, 0.1, 0.1, 1);
                 const segmentStartFraction = (segmentStartDist - drawStartDist) / (drawEndDist - drawStartDist);
                 const segmentEndFraction = (segmentEndDist - drawStartDist) / (drawEndDist - drawStartDist);
                 const segmentStartColor = startColor.lerp(endColor, segmentStartFraction);
@@ -325,9 +298,37 @@ class Graphics {
             }
             this.renderer.drawTexture(flagPos.x, flagPos.y, conf.TILE_SIZE, conf.TILE_SIZE, assets.getTexture("flag"));
         }
-        this.testParticleSystem.update(game.deltaMs);
-        const particleModel = this.testParticleSystem.model;
+
+        this.particleSystem.update(game.deltaMs);
+        const particleModel = this.particleSystem.model;
         this.renderer.drawModel(particleModel);
+
+        this.renderer.render(this.camera);
+
+        let screenModel = new Model(
+            gl,
+            screenMesh,
+            gl.TRIANGLES,
+            this.gammaShader,
+            [this.finalTex]
+        );
+
+        this.renderer.drawModel(screenModel);
+        this.renderer.setAndClearTarget(null);
+        this.renderer.render(this.uiCamera);
+        
+        if (game.doDebug) {
+            this.renderer.setColor(0, 1, 0);
+            this.renderer.drawCircleLine(game.player.acked.pos.x, game.player.acked.pos.y, conf.PLAYER_RADIUS);
+            this.renderer.setColor(0, 0, 1);
+            this.renderer.drawCircleLine(game.player.predicted.pos.x, game.player.predicted.pos.y, conf.PLAYER_RADIUS);
+
+            for (let other of game.otherPlayers) {
+                this.renderer.setColor(0, 1, 0);
+                this.renderer.drawCircleLine(other.acked.pos.x, other.acked.pos.y, conf.PLAYER_RADIUS);
+            }
+        }
+
 
         this.renderer.render(this.camera);
 

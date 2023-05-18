@@ -71,8 +71,8 @@ class Font {
                 const td = this.texture.t1 - this.texture.t0;
                 glyph.s0 = this.texture.s0 + col * this.cellWidth / this.texture.width * sd;
                 glyph.s1 = this.texture.s0 + (col+1) * this.cellWidth / this.texture.width * sd;
-                glyph.t0 = this.texture.t0 + row * this.cellHeight / this.texture.height * td;
-                glyph.t1 = this.texture.t0 + (row+1) * this.cellHeight / this.texture.height * td;
+                glyph.t1 = this.texture.t0 + row * this.cellHeight / this.texture.height * td;
+                glyph.t0 = this.texture.t0 + (row+1) * this.cellHeight / this.texture.height * td;
                 this.glyphs[charIndex] = glyph;
             }
         }

@@ -22,7 +22,6 @@ class Game {
     player = new player.Player();
     otherPlayers = [];
     laserList = [];
-    emitterList = [];
     flagList = [];
 
     constructor(graphics, input) {
@@ -70,13 +69,6 @@ class Game {
 
         if (this.input.wasActivated(Input.CMD_TOGGLE_RECORD)) {
             this.input.toggleRecord();
-        }
-
-        for (let i = this.emitterList.length-1; i >= 0; i--) { // loop backwards for removing elements
-            if (!this.emitterList[i].update()) {
-                this.emitterList.splice(i, 1);
-            }
-            
         }
 
         player.sampleInput(this);

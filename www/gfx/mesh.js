@@ -31,7 +31,6 @@ class Mesh {
     color;
     transform;
     data;
-    yFlip = true;
 
     // TODO: instead of taking attribBits, take list of VertAttrib objects
     constructor(attribBits) {
@@ -109,11 +108,6 @@ class Mesh {
     }
 
     addRect(x, y, width, height, s0=0, t0=0, s1=1, t1=1, p=0) {
-        if (this.yFlip) {
-            const tmp = t0;
-            t0 = t1;
-            t1 = tmp;
-        }
         this.add(x, y, s0, t0, p);
         this.add(x+width, y, s1, t0, p);
         this.add(x+width, y+height, s1, t1, p);
@@ -123,11 +117,6 @@ class Mesh {
     }
     
     addCircle(x, y, radius, s0=0, t0=0, s1=1, t1=1, p=0) {
-        if (this.yFlip) {
-            const tmp = t0;
-            t0 = t1;
-            t1 = tmp;
-        }
         const resolution = 36;
         const rads = 2 * Math.PI / resolution;
         const sDiff = s1 - s0;

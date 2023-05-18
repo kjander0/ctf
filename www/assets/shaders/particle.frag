@@ -3,8 +3,10 @@ precision mediump float;
 
 out vec4 fragColor;
 in vec4 vColor;
+in vec2 worldPos;
+in vec2 particlePos;
 
 void main() {
-    fragColor = vColor;
-    fragColor.a = 1.0f;
+    float atten = (10.0 - length(worldPos - particlePos))/10.0;
+    fragColor = atten * vColor;
 }

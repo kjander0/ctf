@@ -210,8 +210,7 @@ function _processUpdateMsg(game, decoder) {
     let numNewHits = decoder.readUint16();
     for (let i = 0; i < numNewHits; i++) {
         let hitPos = decoder.readVec();
-        const emitter = new particle.Emitter(hitPos, particle.sparkEmitterParams);
-        game.emitterList.push(emitter);
+        game.graphics.particleSystem.addEmitter(new particle.Emitter(hitPos, particle.sparkEmitterParams));
     }
     if (numNewHits > 0) {
         sound.playHit();

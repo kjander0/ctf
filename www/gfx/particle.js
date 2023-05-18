@@ -167,11 +167,12 @@ class ParticleSystem {
         gl.vertexAttribDivisor(EMITTER_TIME_LOC, MAX_EMITTER_PARTICLES);
     }
 
-    addEmitter(pos, params) {
-        let emitterIndex = -1;
+    addEmitter(emitter) {
+        const params = emitter.params;
+        let emitterIndex = 0;
         let numDefined = 0;
         for (let i = 0; i < this.emitterList.length; i++) {
-            numDefined = i;
+            numDefined = i+1;
             if (this.emitterList[i] === undefined || this.emitterList[i].finished()) {
                 emitterIndex = i;
                 if (this.emitterList[i] === undefined) {
@@ -179,10 +180,7 @@ class ParticleSystem {
                 }
             }
         }
-        console.log(emitterIndex);
-        const emitter = new Emitter(pos, params);
         this.emitterList[emitterIndex] = emitter;
-
         this.model.numInstances = numDefined * MAX_EMITTER_PARTICLES;
 
         // Particle instance data

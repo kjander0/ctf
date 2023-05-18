@@ -11,6 +11,8 @@ layout (location=10) in float aEmitterTime;
 layout (location=11) in float aEmitterSize;
 
 out vec4 vColor;
+out vec2 worldPos;
+out vec2 particlePos;
 uniform mat3 uCamMatrix;
 uniform mat4 uProjMatrix;
 uniform float maxNumberParticles;
@@ -28,11 +30,12 @@ void main() {
     vec2 accel = (endVel - startVel) / lifeSecs;
     vec2 displacement = startVel * time + 0.5 * (endVel - startVel) / lifeSecs * time * time;
 
-    float pointSize = 2.0 * step(0.0, time) * (1.0 - step(lifeSecs, time));
+    float pointSize = 10.0 * step(0.0, time) * (1.0 - step(lifeSecs, time));
     float particleNum = mod(float(gl_InstanceID), maxNumberParticles);
     pointSize *= 1.0 - step(aEmitterSize, particleNum); // TODO: don't show particles outside numParticles in emitter
-
-    vec2 worldPos = pointSize * aVertexPosition + aParticlePos + displacement;
+    
+    particlePos = aParticlePos + displacement;
+    worldPos = pointSize * aVertexPosition + particlePos;
     vec2 screenPos = (uCamMatrix * vec3(worldPos, 1)).xy;
     gl_Position = uProjMatrix * vec4(screenPos, 0, 1);
 }
