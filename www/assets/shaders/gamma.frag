@@ -8,6 +8,7 @@ out vec4 fragColor;
 
 void main() {
     fragColor = texture(uTex0, vTexCoord);
-    // gamma correction
-    fragColor.rgb = pow(fragColor.rgb, vec3(1.0/2.2));
+
+    // gamma correcting alpha also, assuming it was authored based on perceived brightness
+    fragColor = pow(fragColor, vec4(1.0/2.2));
 }

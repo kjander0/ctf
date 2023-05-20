@@ -48,6 +48,7 @@ import (
 // - king of the hill, or ctf goal
 
 // GAME IDEAS
+// - smoke screen
 // - swept raycast to calculate light volume so e.g. back side or occluded walls arn't lit up
 // - shift to temporarily boost, draining laser energy
 // - lock on homing missile
