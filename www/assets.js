@@ -25,6 +25,8 @@ let normalAtlas;
 
 let arialFont;
 
+let smokeTexture;
+
 const textures = {};
 
 const shipPixelRatio = 406/512;
@@ -69,6 +71,8 @@ async function loadAssets() {
     const arialFontTexture = Texture.fromImage(await requestImage("assets/arial.png"), false, false);
     const arialCSVText = await requestText("assets/arial.csv");
     arialFont = new Font(arialFontTexture, arialCSVText);
+
+    smokeTexture = Texture.fromImage(await requestImage("assets/smoke.png"), true);
 }
 
 async function loadAtlas(imgPath, infoPath, srgb) {
@@ -150,4 +154,6 @@ export {
     shipPixelRatio,
 
     arialFont,
+
+    smokeTexture,
 }

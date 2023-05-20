@@ -1,16 +1,15 @@
 #version 300 es
 precision mediump float;
 
-out vec4 fragColor;
+in vec2 vTexCoord;
 in vec4 vColor;
-in vec2 worldPos;
-in vec2 particlePos;
+
+out vec4 fragColor;
+
+uniform sampler2D uTex0;
+
 
 void main() {
-    PASS PARTICLE START/END SIZE AS ATTRIBUTE
-
-    DO BETTER ALPHA BLENDING OF PARTICLES (STOP THE DARK OUTLINES)
-    float atten = (5.0 - length(worldPos - particlePos))/5.0;
-    fragColor = vColor;
-    fragColor.a *= atten;
+    fragColor = texture(uTex0, vTexCoord);
+    fragColor.a *= vColor.a;
 }

@@ -30,9 +30,11 @@ const PARTICLE_VEL_LOC = 6;
 const PARTICLE_START_COLOR_LOC = 7;
 const PARTICLE_END_COLOR_LOC = 8;
 const PARTICLE_TIME_LOC = 9;
+const PARTICLE_SCALE_ROT_LOC = 10;
+const PARTICLE_TEXTURE_LOC = 11;
 
-const EMITTER_TIME_LOC = 10;
-const EMITTER_SIZE_LOC = 11;
+const EMITTER_TIME_LOC = 12;
+const EMITTER_SIZE_LOC = 13;
 
 // GPU particles with particle state stored in textures
 class ParticleSystem {
@@ -59,7 +61,7 @@ class ParticleSystem {
             mesh,
             gl.TRIANGLES,
             assets.particleShader,
-            null,
+            [assets.smokeTexture],
             null,
             0,
         );
@@ -75,6 +77,8 @@ class ParticleSystem {
             new VertAttrib(PARTICLE_START_COLOR_LOC, 4, gl.FLOAT, 1), // start color
             new VertAttrib(PARTICLE_END_COLOR_LOC, 4, gl.FLOAT, 1), // end color
             new VertAttrib(PARTICLE_TIME_LOC, 2, gl.FLOAT, 1), // start and end time (secs)
+            new VertAttrib(PARTICLE_SCALE_ROT_LOC, 4, gl.FLOAT, 1),
+            new VertAttrib(PARTICLE_TEXTURE_LOC, 1, gl.FLOAT, 1),
         ];
 
         this.floatsPerParticle = 0;
@@ -215,6 +219,12 @@ class ParticleSystem {
 
             particleData[i * this.floatsPerParticle + 14] = params.startSecs.sample();
             particleData[i * this.floatsPerParticle + 15] = params.lifeSecs.sample();
+
+            particleData[i * this.floatsPerParticle + 16] = params.startScale.sample();
+            particleData[i * this.floatsPerParticle + 17] = params.endScale.sample();
+
+            particleData[i * this.floatsPerParticle + 18] = params.startRot.sample();
+            particleData[i * this.floatsPerParticle + 19] = params.endRot.sample();
         }
         const particleVboOffset = emitterIndex * MAX_EMITTER_PARTICLES * this.floatsPerParticle * sizeOf(gl.FLOAT);
         gl.bindBuffer(gl.ARRAY_BUFFER, this.particleVbo);
@@ -282,12 +292,16 @@ class EmitterParams {
     numParticles = new Range(64);
 
     // Particle Params
-    startColor = new Range(new Color(1, 1, 0.4, 1));
-    endColor = new Range(new Color(1, 1, 0, 0));
-    startSpeed = new Range(80, 120);
+    startColor = new Range(new Color(1, 1, 1, 0.5));
+    endColor = new Range(new Color(1, 1, 1, 0.0));
+    startSpeed = new Range(20, 50);
     endSpeed = new Range(0.0);
-    startSecs = new Range(0, 0.6);
-    lifeSecs = new Range(0.1, 0.8);
+    startSecs = new Range(0, 1);
+    lifeSecs = new Range(0.1, 4.8);
+    startScale = new Range(10.0);
+    endScale = new Range(40.0);
+    startRot = new Range(-3.0, 3.0);
+    endRot = new Range(-3.0, 3.0);
 }
 
 // TODO: pack all draw data together so it is drawn with one vbo/model

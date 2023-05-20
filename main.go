@@ -59,6 +59,7 @@ import (
 // - power crystal flag that hovers behind player
 
 // GRAPHICS IDEAS
+// - draw each laser segment as rotated rect, then fragment shader to draw based on distance to line for lighting and bloom (solid colour section)
 // - particles should be lights
 // - add bloom effect by drawing some storngly decaying amount of light colour (irresepective of normal)
 // - draw tiles from slight angle (e.g. if from slightly above, then draw top to bottom overlaping so lower tiles cover wall of higher tiles)

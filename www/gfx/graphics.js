@@ -302,7 +302,6 @@ class Graphics {
         this.particleSystem.update(game.deltaMs);
         const particleModel = this.particleSystem.model;
         this.renderer.drawModel(particleModel);
-
         this.renderer.render(this.camera);
 
         let screenModel = new Model(
