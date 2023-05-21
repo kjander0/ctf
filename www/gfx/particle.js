@@ -292,14 +292,14 @@ class EmitterParams {
     numParticles = new Range(32);
 
     // Particle Params
-    startColor = new Range(new Color(1, 1, 1, 0.9));
-    endColor = new Range(new Color(1, 1, 1, 0.0));
-    startSpeed = new Range(5, 25);
+    startColor = new Range(new Color(1, 1, 1, 1.0));
+    endColor = new Range(new Color(1, 1, 1, 1.0));
+    startSpeed = new Range(20, 50);
     endSpeed = new Range(0.0);
-    startSecs = new Range(0, 3);
-    lifeSecs = new Range(3, 3.5);
-    startScale = new Range(5.0);
-    endScale = new Range(30.0);
+    startSecs = new Range(0, 1);
+    lifeSecs = new Range(0.1, 4.8);
+    startScale = new Range(64.0);
+    endScale = new Range(64.0);
     startRot = new Range(-3.0, 3.0);
     endRot = new Range(-3.0, 3.0);
 }

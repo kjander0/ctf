@@ -72,7 +72,7 @@ async function loadAssets() {
     const arialCSVText = await requestText("assets/arial.csv");
     arialFont = new Font(arialFontTexture, arialCSVText);
 
-    smokeTexture = Texture.fromImage(await requestImage("assets/smoke.png"), true);
+    smokeTexture = Texture.fromImage(await requestImage("assets/spark.png"), true);
 }
 
 async function loadAtlas(imgPath, infoPath, srgb) {

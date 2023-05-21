@@ -20,6 +20,15 @@ const ATTRIB_LIGHT_POS_LOC = 8;
 
 // TODO
 // - pre-allocate STREAM vbo's for buffer streaming
+
+// LIGHTING/PARTICLE NOTES
+// - want to be able to remove emitters, but keep their remaining particles on screen
+// - particle bloom can come from textures (drawn with a blur around edges)
+// - add line lights for lasers
+// - lights for particles (that interact with normals)?
+//      - seperate shader for drawing point lights at each particle
+
+
 class Graphics {
     camera = new Camera();
     uiCamera = new Camera();
