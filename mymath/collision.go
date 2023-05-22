@@ -134,6 +134,13 @@ func LaserCircleIntersect(l Line, circle Circle) (bool, Vec) {
 	return true, l.Start.Add(v.Scale(t1))
 }
 
+type Tiling struct {
+	Left   bool
+	Right  bool
+	Top    bool
+	Bottom bool
+}
+
 func LaserRectIntersect(l Line, r Rect) (bool, Vec, Vec) {
 	// Avoid case of laser beggining slightly inside shape (e.g. after a bounce)
 	if r.ContainsPoint(l.Start) {
@@ -141,62 +148,85 @@ func LaserRectIntersect(l Line, r Rect) (bool, Vec, Vec) {
 	}
 
 	lineDir := l.End.Sub(l.Start)
-	var intersects bool
-	var intersection Vec
-	var normal Vec
+	var intersectsVertical bool
+	var intersectionVertical Vec
+	var normalVertical Vec
 	if lineDir.X > 0 {
-		intersects, intersection = l.Intersection(r.LeftLine())
-		normal = Vec{-1, 0}
-	} else {
-		intersects, intersection = l.Intersection(r.RightLine())
-		normal = Vec{1, 0}
+		intersectsVertical, intersectionVertical = l.Intersection(r.LeftLine())
+		normalVertical = Vec{-1, 0}
+	} else if lineDir.X < 0 {
+		intersectsVertical, intersectionVertical = l.Intersection(r.RightLine())
+		normalVertical = Vec{1, 0}
 	}
 
-	if !intersects {
-		if lineDir.Y > 0 {
-			intersects, intersection = l.Intersection(r.BottomLine())
-			normal = Vec{0, -1}
-		} else {
-			intersects, intersection = l.Intersection(r.TopLine())
-			normal = Vec{0, 1}
+	var intersectsHorizontal bool
+	var intersectionHorizontal Vec
+	var normalHorizontal Vec
+	if lineDir.Y > 0 {
+		intersectsHorizontal, intersectionHorizontal = l.Intersection(r.BottomLine())
+		normalHorizontal = Vec{0, -1}
+	} else if lineDir.Y < 0 {
+		intersectsHorizontal, intersectionHorizontal = l.Intersection(r.TopLine())
+		normalHorizontal = Vec{0, 1}
+	}
+
+	if intersectsVertical && intersectsHorizontal {
+		distVertical := intersectionVertical.DistanceTo(l.Start)
+		distHorizontal := intersectionHorizontal.DistanceTo(l.Start)
+		if distVertical < distHorizontal {
+			return true, intersectionVertical, normalVertical
 		}
+		return true, intersectionHorizontal, normalHorizontal
 	}
-
-	if intersects {
-		return true, intersection, normal
+	if intersectsVertical {
+		return true, intersectionVertical, normalVertical
 	}
-	return false, intersection, normal
+	if intersectsHorizontal {
+		return true, intersectionHorizontal, normalHorizontal
+	}
+	return false, intersectionVertical, normalVertical
 }
 
 func LaserTriangleIntersect(line Line, t0 Vec, t1 Vec, t2 Vec) (bool, Vec, Vec) {
+	closestDist := -1.0
+	var closestIntersect Vec
+	var closestNormal Vec
+
+	dist, intersect, normal := laserTriangleSideIntersect(line, t0, t1)
+	if dist >= 0 && (closestDist < 0 || dist < closestDist) {
+		closestDist = dist
+		closestIntersect = intersect
+		closestNormal = normal
+	}
+
+	dist, intersect, normal = laserTriangleSideIntersect(line, t1, t2)
+	if dist >= 0 && (closestDist < 0 || dist < closestDist) {
+		closestDist = dist
+		closestIntersect = intersect
+		closestNormal = normal
+	}
+
+	dist, intersect, normal = laserTriangleSideIntersect(line, t2, t0)
+	if dist >= 0 && (closestDist < 0 || dist < closestDist) {
+		closestDist = dist
+		closestIntersect = intersect
+		closestNormal = normal
+	}
+
+	return closestDist >= 0, closestIntersect, closestNormal
+}
+
+func laserTriangleSideIntersect(line Line, t0 Vec, t1 Vec) (float64, Vec, Vec) {
 	normal := clockWiseNormal(t1.Sub(t0))
-	if line.Start.Sub(t0).Dot(normal) > 0 {
+	if line.Start.Sub(t0).Dot(normal) > 0 { // Avoid case of laser beggining slightly inside shape (e.g. after a bounce)
 		side := Line{t0, t1}
 		intersected, intersect := line.Intersection(side)
 		if intersected {
-			return intersected, intersect, normal
+			dist := intersect.DistanceTo(line.Start)
+			return dist, intersect, normal
 		}
 	}
-
-	normal = clockWiseNormal(t2.Sub(t1))
-	if line.Start.Sub(t1).Dot(normal) > 0 {
-		side := Line{t1, t2}
-		intersected, intersect := line.Intersection(side)
-		if intersected {
-			return intersected, intersect, normal
-		}
-	}
-
-	normal = clockWiseNormal(t0.Sub(t2))
-	if line.Start.Sub(t2).Dot(normal) > 0 {
-		side := Line{t2, t0}
-		intersected, intersect := line.Intersection(side)
-		if intersected {
-			return intersected, intersect, normal
-		}
-	}
-
-	return false, Vec{}, Vec{}
+	return -1.0, normal, normal
 }
 
 func clockWiseNormal(dir Vec) Vec {

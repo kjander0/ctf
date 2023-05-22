@@ -16,8 +16,6 @@ import { Emitter, ParticleSystem, sparkEmitterParams } from "./particle.js";
 
 const ATTRIB_LIGHT_POS_LOC = 8;
 
-// tree of containers
-
 // TODO
 // - pre-allocate STREAM vbo's for buffer streaming
 

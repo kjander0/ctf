@@ -41,6 +41,7 @@ import (
 // - use integer textures for particles to improve performance and break dependency on RGBA float texture extension
 // - verify client/server lasers at same position for each tick
 //  	- test edge cases like shooting into edges between two tiles
+// - print bullet location relative to player on client and server to test they are in sync
 
 // MVP FEATURES
 // - choose name (appears below player)

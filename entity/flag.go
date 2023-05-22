@@ -87,7 +87,6 @@ func UpdateFlags(world *World) {
 	}
 
 	numFlags := len(world.FlagList)
-	logger.Debug(numFlags, numGreen, numRed)
 	if numGreen == numFlags {
 		world.WinningTeam = TeamGreen
 	} else if numRed == numFlags {

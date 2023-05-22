@@ -9,6 +9,23 @@ const SHAPE_TYPE_CIRCLE = 0;
 const SHAPE_TYPE_CONE = 1;
 
 // TODO: GPU PARTICLES
+
+// Types of particles I want to support
+// - sparks from getting hit
+// - sparks trailing off laser bullets
+// - smoke coming off damaged player
+// - explosions from grenades/deaths (parts of players flying off)
+
+// - USE uber particle shader with defines for each particle type
+    // - can have loads more parameters/animation curves
+    // - reuse functions for common things, probs not gonna be that many different particle types anyway!
+    // - entropy texture
+
+// - I want to be able to remove emitters, but keep their remaining particles on screen
+//      -use a incrementing number to stage new particles, and just stop incrementing it
+// - I want more complex easing curves
+// - I want emitters to follow player/bullets (use transform feedback/texture for positions)
+
 // - each particle has a bunch of state, all of it dynamic
 //      - attributes in vbo
 //      - quad positions (get explanded in shader)
@@ -223,8 +240,15 @@ class ParticleSystem {
             particleData[i * this.floatsPerParticle + 16] = params.startScale.sample();
             particleData[i * this.floatsPerParticle + 17] = params.endScale.sample();
 
-            particleData[i * this.floatsPerParticle + 18] = params.startRot.sample();
-            particleData[i * this.floatsPerParticle + 19] = params.endRot.sample();
+            let startRot = params.startRot.sample();
+            let endRot = params.endRot.sample();
+
+            if (params.lockOrientationToVel) {
+                startRot = angleRads;
+                endRot = angleRads;
+            }
+            particleData[i * this.floatsPerParticle + 18] = startRot;
+            particleData[i * this.floatsPerParticle + 19] = endRot;
         }
         const particleVboOffset = emitterIndex * MAX_EMITTER_PARTICLES * this.floatsPerParticle * sizeOf(gl.FLOAT);
         gl.bindBuffer(gl.ARRAY_BUFFER, this.particleVbo);
@@ -289,7 +313,8 @@ class EmitterParams {
     // Group params
     shapeType = SHAPE_TYPE_CIRCLE;
     circleRadius = new Range(5);
-    numParticles = new Range(32);
+    numParticles = new Range(128);
+    lockOrientationToVel = false;
 
     // Particle Params
     startColor = new Range(new Color(1, 1, 1, 1.0));
@@ -297,8 +322,8 @@ class EmitterParams {
     startSpeed = new Range(150, 200);
     endSpeed = new Range(0.0);
     startSecs = new Range(0);
-    lifeSecs = new Range(0.2, 0.3);
-    startScale = new Range(12.0);
+    lifeSecs = new Range(0.1, 0.15);
+    startScale = new Range(6.0);
     endScale = new Range(2.0);
     startRot = new Range(-3.0, 3.0);
     endRot = new Range(-3.0, 3.0);
@@ -332,6 +357,7 @@ class Emitter {
 }
 
 const sparkEmitterParams = new EmitterParams();
+sparkEmitterParams.lockOrientationToVel = true;
 
 
 export {ParticleSystem, Emitter, EmitterParams, sparkEmitterParams};

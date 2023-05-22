@@ -12,6 +12,7 @@ let LASER_TIME_TICKS;
 let LASER_ENERGY_COST;
 let BOUNCY_ENERGY_COST;
 let BOUNCY_SPEED;
+let MAX_BOUNCES;
 
 async function retrieveConf()
 {
@@ -29,6 +30,7 @@ async function retrieveConf()
     LASER_ENERGY_COST = config.LaserEnergyCost;
     BOUNCY_ENERGY_COST = config.BouncyEnergyCost;
     BOUNCY_SPEED = config.BouncySpeed;
+    MAX_BOUNCES = config.MaxBounces;
 }
 
 export {
@@ -45,4 +47,5 @@ export {
     LASER_ENERGY_COST,
     BOUNCY_ENERGY_COST,
     BOUNCY_SPEED,
+    MAX_BOUNCES,
 };

@@ -144,62 +144,85 @@ function laserRectIntersect(line, rect) {
 	}
 
 	const lineDir = line.end.sub(line.start);
-	let intersection;
-	let normal;
+	let intersectionVertical;
+	let normalVertical;
 	if (lineDir.x > 0) {
-		intersection = line.intersection(rect.leftLine());
-		normal = new Vec(-1, 0);
-	} else {
-		intersection = line.intersection(rect.rightLine());
-		normal = new Vec(1, 0);
+		intersectionVertical = line.intersection(rect.leftLine());
+		normalVertical = new Vec(-1, 0);
+	} else if (lineDir.x < 0) {
+		intersectionVertical = line.intersection(rect.rightLine());
+		normalVertical = new Vec(1, 0);
 	}
 
-	if (!intersection) {
-		if (lineDir.y > 0) {
-			intersection = line.intersection(rect.bottomLine());
-			normal = new Vec(0, -1);
+	let intersectionHorizontal;
+	let normalHorizontal;
+	if (lineDir.y > 0) {
+		intersectionHorizontal = line.intersection(rect.bottomLine());
+		normalHorizontal = new Vec(0, -1);
+	} else if (lineDir.y < 0) {
+		intersectionHorizontal = line.intersection(rect.topLine());
+		normalHorizontal = new Vec(0, 1);
+	}
+
+	if (intersectionVertical && intersectionHorizontal) {
+		let distVertical = intersectionVertical.distanceTo(line.start);
+		let distHorizontal = intersectionHorizontal.distanceTo(line.start);
+		if (distVertical < distHorizontal) {
+			return [intersectionVertical, normalVertical];
 		} else {
-			intersection = line.intersection(rect.topLine());
-			normal = new Vec(0, 1);
+			return [intersectionHorizontal, normalHorizontal];
 		}
 	}
-
-	if (intersection) {
-		return [intersection, normal];
+	if (intersectionVertical) {
+		return [intersectionVertical, normalVertical];
+	}
+	if (intersectionHorizontal) {
+		return [intersectionHorizontal, normalHorizontal];
 	}
 	return [null, null];
 }
 
 // Return intersection closest to start of line.
 function laserTriangleIntersect(line, t0, t1, t2) {
-	let normal = _clockWiseNormal(t1.sub(t0));
-	if (line.start.sub(t0).dot(normal) > 0) {
+	let closestDist = -1.0;
+	let closestIntersect = null;
+	let closestNormal = null;
+
+	let [dist, intersect, normal] = _laserTriangleSideIntersect(line, t0, t1)
+	if (dist >= 0 && (closestDist < 0 || dist < closestDist)) {
+		closestDist = dist
+		closestIntersect = intersect
+		closestNormal = normal
+	}
+
+	[dist, intersect, normal] = _laserTriangleSideIntersect(line, t1, t2)
+	if (dist >= 0 && (closestDist < 0 || dist < closestDist)) {
+		closestDist = dist
+		closestIntersect = intersect
+		closestNormal = normal
+	}
+
+	[dist, intersect, normal] = _laserTriangleSideIntersect(line, t2, t0)
+	if (dist >= 0 && (closestDist < 0 || dist < closestDist)) {
+		closestDist = dist
+		closestIntersect = intersect
+		closestNormal = normal
+	}
+	return [closestIntersect, closestNormal];
+}
+
+function _laserTriangleSideIntersect(line, t0, t1) {
+	const normal = _clockWiseNormal(t1.sub(t0));
+	if (line.start.sub(t0).dot(normal) > 0) { // Avoid case of laser beggining slightly inside shape (e.g. after a bounce)
 		const side = new Line(t0, t1);
 		const intersect = line.intersection(side);
 		if (intersect !== null) {
-			return [intersect, normal];
+			let dist = intersect.distanceTo(line.start)
+			return [dist, intersect, normal];
 		}
 	}
 
-    normal = _clockWiseNormal(t2.sub(t1));
-	if (line.start.sub(t1).dot(normal) > 0) {
-		const side = new Line(t1, t2);
-		const intersect = line.intersection(side);
-		if (intersect !== null) {
-			return [intersect, normal];
-		}
-	}
-
-    normal = _clockWiseNormal(t0.sub(t2));
-	if (line.start.sub(t2).dot(normal) > 0) {
-		const side = new Line(t2, t0);
-		const intersect = line.intersection(side);
-		if (intersect !== null) {
-			return [intersect, normal];
-		}
-	}
-
-	return [null, null];
+	return [-1.0, null, null];
 }
 
 function _clockWiseNormal(dir) {

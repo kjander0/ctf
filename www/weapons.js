@@ -129,6 +129,7 @@ function _reduceLaserDrawLength(laser) {
 // Returns true if laser has hit a wall and should be destroyed
 function processCollisions(game, laser) {
     // Keep resolving collisions until laser has stopped bouncing
+    let bounceCount = 0;
     while (true) {
         let [hitDist, hitPos, normal] = checkWallHit(game, laser.line);
         let [hitPlayerDist, hitPlayerPos, hitPlayer] = checkPlayerHit(game, laser);
@@ -150,6 +151,12 @@ function processCollisions(game, laser) {
         }
 
         bounce(laser, hitPos, normal);
+
+        bounceCount++;
+        if (bounceCount > conf.MAX_BOUNCES) {
+            console.log("Reached bounce count limit: ", conf.MAX_BOUNCES);
+            return true; // // laser is stuck, remove laser
+        }
     }
 }
 
@@ -163,17 +170,23 @@ function checkWallHit(game, line) {
 	for (let tile of tileSample) {
 		tileRect.pos.set(tile.pos);
         let hit, normal;
-        if (tile.type === TileType.WALL) {
-            [hit, normal] = collision.laserRectIntersect(line, tileRect);
-            if (hit === null) {
+        switch (tile.type) {
+            case TileType.WALL:
+                [hit, normal] = collision.laserRectIntersect(line, tileRect);
+                if (hit === null) {
+                    continue;
+                }
+                break;
+            case TileType.WALL_TRIANGLE:
+            case TileType.WALL_TRIANGLE_CORNER:
+                tile.setTrianglePoints(t0, t1, t2);
+                [hit, normal] = collision.laserTriangleIntersect(line, t0, t1, t2);
+                if (hit === null) {
+                    continue;
+                }
+                break
+            default:
                 continue;
-            }
-        } else if (tile.type === TileType.WALL_TRIANGLE || tile.type === TileType.WALL_TRIANGLE_CORNER) {
-            tile.setTrianglePoints(t0, t1, t2);
-            [hit, normal] = collision.laserTriangleIntersect(line, t0, t1, t2);
-            if (hit === null) {
-                continue;
-            }
         }
 
 		let dist = line.start.distanceTo(hit);
@@ -240,6 +253,7 @@ function bounce(laser, hitPos, normal) {
 	laser.line.end = hitPos.add(laser.dir.scale(newLen));
     laser.drawPoints[laser.drawPoints.length-1].set(hitPos);
     laser.drawPoints.push(new Vec(laser.line.end));
+    //console.log("bounce: ", laser.line.start, laser.line.end)
 }
 
 export {Laser, update};

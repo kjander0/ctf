@@ -89,10 +89,13 @@ func processCollisions(world *World, laserIndex int) bool {
 		if world.LaserList[laserIndex].Type != ProjTypeBouncy {
 			return true
 		}
-
 		bounce(&world.LaserList[laserIndex], hitPos, normal)
-		logger.Debug("bounce: ", bounceCount)
-		bounceCount += 1
+
+		bounceCount++
+		if bounceCount > conf.Shared.MaxBounces {
+			logger.Errorf("Reached bounce count limit: %d", conf.Shared.MaxBounces)
+			return true // laser is stuck, remove laser
+		}
 	}
 }
 
@@ -109,17 +112,22 @@ func checkWallHit(world *World, line mymath.Line) (float64, mymath.Vec, mymath.V
 		var intersected bool
 		var hit, normal mymath.Vec
 
-		if tile.Type == TileTypeWall {
+		switch tile.Type {
+		case TileTypeWall:
 			intersected, hit, normal = mymath.LaserRectIntersect(line, tileRect)
 			if !intersected {
 				continue
 			}
-		} else if tile.Type == TileTypeWallTriangle || tile.Type == TileTypeWallTriangleCorner {
+		case TileTypeWallTriangle:
+			fallthrough
+		case TileTypeWallTriangleCorner:
 			t0, t1, t2 := tile.CalcTrianglePoints()
 			intersected, hit, normal = mymath.LaserTriangleIntersect(line, t0, t1, t2)
 			if !intersected {
 				continue
 			}
+		default:
+			continue
 		}
 
 		dist := line.Start.DistanceTo(hit)
@@ -157,9 +165,9 @@ func checkPlayerHit(world *World, laser *Laser, hitDist float64) (*Player, mymat
 
 func bounce(laser *Laser, hitPos mymath.Vec, normal mymath.Vec) {
 	incident := laser.Line.End.Sub(laser.Line.Start)
-	len := incident.Length()
-	newLen := len - hitPos.Sub(laser.Line.Start).Length()
 	laser.Dir = incident.Reflect(normal).Normalize()
 	laser.Line.Start = hitPos
+	newLen := laser.Line.End.Sub(hitPos).Length()
 	laser.Line.End = hitPos.Add(laser.Dir.Scale(newLen))
+	//logger.Debug("bounce: ", laser.Line.Start, laser.Line.End)
 }

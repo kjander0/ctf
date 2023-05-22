@@ -21,6 +21,7 @@ type SharedParams struct {
 	LaserEnergyCost  int
 	BouncyEnergyCost int
 	BouncySpeed      float64
+	MaxBounces       int
 }
 
 var Shared = SharedParams{
@@ -35,8 +36,9 @@ var Shared = SharedParams{
 	LaserSpeed:       10,
 	LaserTimeTicks:   60,
 	LaserEnergyCost:  18,
-	BouncyEnergyCost: 90,
+	BouncyEnergyCost: 1,
 	BouncySpeed:      15,
+	MaxBounces:       5,
 }
 
 func WriteSharedParams(filePath string) {
