@@ -193,16 +193,17 @@ class ParticleSystem {
         let numDefined = 0;
         for (let i = 0; i < this.emitterList.length; i++) {
             numDefined = i+1;
-            if (this.emitterList[i] === undefined || this.emitterList[i].finished()) {
+            if (this.emitterList[i] === undefined) {
                 emitterIndex = i;
-                if (this.emitterList[i] === undefined) {
-                    break; // end loop at last defined so we know how many to draw
-                }
+                break; // end loop at last defined so we know how many to draw
+            }
+
+            if (this.emitterList[i].finished()) {
+                emitterIndex = i;
             }
         }
         this.emitterList[emitterIndex] = emitter;
         this.model.numInstances = numDefined * MAX_EMITTER_PARTICLES;
-
 
 
         const emitterVboOffset = emitterIndex * this.floatsPerEmitter * sizeOf(gl.FLOAT);
@@ -215,78 +216,9 @@ class ParticleSystem {
         // Initialize new particles
         const numNew = 1;
 
-        for (let emitter of this.emitterList) {
-            if (emitter === undefined || emitter.finished()) {
-                continue;
-            }
-
-            const params = emitter.params;
-            
-            const particleData = new Float32Array(emitter.numParticles * this.floatsPerParticle);
-            for (let i = 0; i < emitter.numParticles; i++) {
-                const angleRads = Math.random() * 2 * Math.PI;
-                const startSpeed = params.startSpeed.sample();
-                const endSpeed = params.endSpeed.sample();
-                const startVel = Vec.fromAngleRads(angleRads).scale(startSpeed);
-                const endVel = Vec.fromAngleRads(angleRads).scale(endSpeed);
-
-                const startColor = params.startColor.sample();
-                const endColor = params.endColor.sample();
-
-                particleData[i * this.floatsPerParticle]     = emitter.pos.x;
-                particleData[i * this.floatsPerParticle + 1] = emitter.pos.y;
-
-                particleData[i * this.floatsPerParticle + 2] = startVel.x;
-                particleData[i * this.floatsPerParticle + 3] = startVel.y;
-                particleData[i * this.floatsPerParticle + 4] = endVel.x;
-                particleData[i * this.floatsPerParticle + 5] = endVel.y;
-
-                particleData[i * this.floatsPerParticle + 6] = startColor.r;
-                particleData[i * this.floatsPerParticle + 7] = startColor.g;
-                particleData[i * this.floatsPerParticle + 8] = startColor.b;
-                particleData[i * this.floatsPerParticle + 9] = startColor.a;
-
-                particleData[i * this.floatsPerParticle + 10] = endColor.r;
-                particleData[i * this.floatsPerParticle + 11] = endColor.g;
-                particleData[i * this.floatsPerParticle + 12] = endColor.b;
-                particleData[i * this.floatsPerParticle + 13] = endColor.a;
-
-                particleData[i * this.floatsPerParticle + 14] = params.startSecs.sample();
-                particleData[i * this.floatsPerParticle + 15] = params.lifeSecs.sample();
-
-                particleData[i * this.floatsPerParticle + 16] = params.startScale.sample();
-                particleData[i * this.floatsPerParticle + 17] = params.endScale.sample();
-
-                let startRot = params.startRot.sample();
-                let endRot = params.endRot.sample();
-
-                if (params.lockOrientationToVel) {
-                    startRot = angleRads;
-                    endRot = angleRads;
-                }
-                particleData[i * this.floatsPerParticle + 18] = startRot;
-                particleData[i * this.floatsPerParticle + 19] = endRot;
-            }
-            const particleVboOffset = emitterIndex * MAX_EMITTER_PARTICLES * this.floatsPerParticle * sizeOf(gl.FLOAT);
-            gl.bindBuffer(gl.ARRAY_BUFFER, this.particleVbo);
-            gl.bufferSubData(gl.ARRAY_BUFFER, particleVboOffset, particleData);
-
+        for (let emitterIndex = 0; emitterIndex < this.emitterList.length; emitterIndex++) {
+            this._emitParticles(emitterIndex);
         }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         let lastDefined = this.emitterList.length-1;
         for (; lastDefined >= 0; lastDefined--) {
@@ -304,6 +236,70 @@ class ParticleSystem {
         }
         gl.bindBuffer(gl.ARRAY_BUFFER, this.emitterTimeVbo);
         gl.bufferData(gl.ARRAY_BUFFER, timeData, gl.STATIC_DRAW);
+    }
+
+    _emitParticles(emitterIndex) {
+        const emitter = this.emitterList[emitterIndex];
+
+        if (emitter === undefined || emitter.finished() || emitter.numEmitted >= emitter.numParticles) {
+            return;
+        }
+
+        let numNew = Math.min(particlesRemaining, Math.max(1, deltaTime * particlesPerSecond));
+
+
+        emitter.numEmitted = emitter.numParticles;
+
+        const params = emitter.params;
+        
+        const particleData = new Float32Array(emitter.numParticles * this.floatsPerParticle);
+        for (let i = 0; i < emitter.numParticles; i++) {
+            const angleRads = Math.random() * 2 * Math.PI;
+            const startSpeed = params.startSpeed.sample();
+            const endSpeed = params.endSpeed.sample();
+            const startVel = Vec.fromAngleRads(angleRads).scale(startSpeed);
+            const endVel = Vec.fromAngleRads(angleRads).scale(endSpeed);
+
+            const startColor = params.startColor.sample();
+            const endColor = params.endColor.sample();
+
+            particleData[i * this.floatsPerParticle]     = emitter.pos.x;
+            particleData[i * this.floatsPerParticle + 1] = emitter.pos.y;
+
+            particleData[i * this.floatsPerParticle + 2] = startVel.x;
+            particleData[i * this.floatsPerParticle + 3] = startVel.y;
+            particleData[i * this.floatsPerParticle + 4] = endVel.x;
+            particleData[i * this.floatsPerParticle + 5] = endVel.y;
+
+            particleData[i * this.floatsPerParticle + 6] = startColor.r;
+            particleData[i * this.floatsPerParticle + 7] = startColor.g;
+            particleData[i * this.floatsPerParticle + 8] = startColor.b;
+            particleData[i * this.floatsPerParticle + 9] = startColor.a;
+
+            particleData[i * this.floatsPerParticle + 10] = endColor.r;
+            particleData[i * this.floatsPerParticle + 11] = endColor.g;
+            particleData[i * this.floatsPerParticle + 12] = endColor.b;
+            particleData[i * this.floatsPerParticle + 13] = endColor.a;
+
+            particleData[i * this.floatsPerParticle + 14] = emitter.timeSecs;
+            particleData[i * this.floatsPerParticle + 15] = params.lifeSecs.sample();
+
+            particleData[i * this.floatsPerParticle + 16] = params.startScale.sample();
+            particleData[i * this.floatsPerParticle + 17] = params.endScale.sample();
+
+            let startRot = params.startRot.sample();
+            let endRot = params.endRot.sample();
+
+            if (params.lockOrientationToVel) {
+                startRot = angleRads;
+                endRot = angleRads;
+            }
+            particleData[i * this.floatsPerParticle + 18] = startRot;
+            particleData[i * this.floatsPerParticle + 19] = endRot;
+        }
+        const particleVboOffset = emitterIndex * MAX_EMITTER_PARTICLES * this.floatsPerParticle * sizeOf(gl.FLOAT);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.particleVbo);
+        gl.bufferSubData(gl.ARRAY_BUFFER, particleVboOffset, particleData);
     }
 
     dispose() {
@@ -362,6 +358,7 @@ class Emitter {
     params;
     timeSecs = 0;
 
+    numEmitted = 0;
     numParticles;
     circleRadius;
 
