@@ -12,7 +12,7 @@ const SHAPE_TYPE_CONE = 1;
 
 // Types of particles I want to support
 // - sparks from getting hit
-// - sparks trailing off laser bullets
+// - sparks/plasma trailing off laser bullets
 // - smoke coming off damaged player
 // - explosions from grenades/deaths (parts of players flying off)
 
@@ -189,7 +189,6 @@ class ParticleSystem {
     }
 
     addEmitter(emitter) {
-        const params = emitter.params;
         let emitterIndex = 0;
         let numDefined = 0;
         for (let i = 0; i < this.emitterList.length; i++) {
@@ -204,55 +203,7 @@ class ParticleSystem {
         this.emitterList[emitterIndex] = emitter;
         this.model.numInstances = numDefined * MAX_EMITTER_PARTICLES;
 
-        // Particle instance data
-        const particleData = new Float32Array(emitter.numParticles * this.floatsPerParticle);
-        for (let i = 0; i < emitter.numParticles; i++) {
-            const angleRads = Math.random() * 2 * Math.PI;
-            const startSpeed = params.startSpeed.sample();
-            const endSpeed = params.endSpeed.sample();
-            const startVel = Vec.fromAngleRads(angleRads).scale(startSpeed);
-            const endVel = Vec.fromAngleRads(angleRads).scale(endSpeed);
 
-            const startColor = params.startColor.sample();
-            const endColor = params.endColor.sample();
-
-            particleData[i * this.floatsPerParticle]     = emitter.pos.x;
-            particleData[i * this.floatsPerParticle + 1] = emitter.pos.y;
-
-            particleData[i * this.floatsPerParticle + 2] = startVel.x;
-            particleData[i * this.floatsPerParticle + 3] = startVel.y;
-            particleData[i * this.floatsPerParticle + 4] = endVel.x;
-            particleData[i * this.floatsPerParticle + 5] = endVel.y;
-
-            particleData[i * this.floatsPerParticle + 6] = startColor.r;
-            particleData[i * this.floatsPerParticle + 7] = startColor.g;
-            particleData[i * this.floatsPerParticle + 8] = startColor.b;
-            particleData[i * this.floatsPerParticle + 9] = startColor.a;
-
-            particleData[i * this.floatsPerParticle + 10] = endColor.r;
-            particleData[i * this.floatsPerParticle + 11] = endColor.g;
-            particleData[i * this.floatsPerParticle + 12] = endColor.b;
-            particleData[i * this.floatsPerParticle + 13] = endColor.a;
-
-            particleData[i * this.floatsPerParticle + 14] = params.startSecs.sample();
-            particleData[i * this.floatsPerParticle + 15] = params.lifeSecs.sample();
-
-            particleData[i * this.floatsPerParticle + 16] = params.startScale.sample();
-            particleData[i * this.floatsPerParticle + 17] = params.endScale.sample();
-
-            let startRot = params.startRot.sample();
-            let endRot = params.endRot.sample();
-
-            if (params.lockOrientationToVel) {
-                startRot = angleRads;
-                endRot = angleRads;
-            }
-            particleData[i * this.floatsPerParticle + 18] = startRot;
-            particleData[i * this.floatsPerParticle + 19] = endRot;
-        }
-        const particleVboOffset = emitterIndex * MAX_EMITTER_PARTICLES * this.floatsPerParticle * sizeOf(gl.FLOAT);
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.particleVbo);
-        gl.bufferSubData(gl.ARRAY_BUFFER, particleVboOffset, particleData);
 
         const emitterVboOffset = emitterIndex * this.floatsPerEmitter * sizeOf(gl.FLOAT);
         const emitterData = new Float32Array([emitter.numParticles]);
@@ -261,6 +212,82 @@ class ParticleSystem {
     }
 
     update(deltaMs) {
+        // Initialize new particles
+        const numNew = 1;
+
+        for (let emitter of this.emitterList) {
+            if (emitter === undefined || emitter.finished()) {
+                continue;
+            }
+
+            const params = emitter.params;
+            
+            const particleData = new Float32Array(emitter.numParticles * this.floatsPerParticle);
+            for (let i = 0; i < emitter.numParticles; i++) {
+                const angleRads = Math.random() * 2 * Math.PI;
+                const startSpeed = params.startSpeed.sample();
+                const endSpeed = params.endSpeed.sample();
+                const startVel = Vec.fromAngleRads(angleRads).scale(startSpeed);
+                const endVel = Vec.fromAngleRads(angleRads).scale(endSpeed);
+
+                const startColor = params.startColor.sample();
+                const endColor = params.endColor.sample();
+
+                particleData[i * this.floatsPerParticle]     = emitter.pos.x;
+                particleData[i * this.floatsPerParticle + 1] = emitter.pos.y;
+
+                particleData[i * this.floatsPerParticle + 2] = startVel.x;
+                particleData[i * this.floatsPerParticle + 3] = startVel.y;
+                particleData[i * this.floatsPerParticle + 4] = endVel.x;
+                particleData[i * this.floatsPerParticle + 5] = endVel.y;
+
+                particleData[i * this.floatsPerParticle + 6] = startColor.r;
+                particleData[i * this.floatsPerParticle + 7] = startColor.g;
+                particleData[i * this.floatsPerParticle + 8] = startColor.b;
+                particleData[i * this.floatsPerParticle + 9] = startColor.a;
+
+                particleData[i * this.floatsPerParticle + 10] = endColor.r;
+                particleData[i * this.floatsPerParticle + 11] = endColor.g;
+                particleData[i * this.floatsPerParticle + 12] = endColor.b;
+                particleData[i * this.floatsPerParticle + 13] = endColor.a;
+
+                particleData[i * this.floatsPerParticle + 14] = params.startSecs.sample();
+                particleData[i * this.floatsPerParticle + 15] = params.lifeSecs.sample();
+
+                particleData[i * this.floatsPerParticle + 16] = params.startScale.sample();
+                particleData[i * this.floatsPerParticle + 17] = params.endScale.sample();
+
+                let startRot = params.startRot.sample();
+                let endRot = params.endRot.sample();
+
+                if (params.lockOrientationToVel) {
+                    startRot = angleRads;
+                    endRot = angleRads;
+                }
+                particleData[i * this.floatsPerParticle + 18] = startRot;
+                particleData[i * this.floatsPerParticle + 19] = endRot;
+            }
+            const particleVboOffset = emitterIndex * MAX_EMITTER_PARTICLES * this.floatsPerParticle * sizeOf(gl.FLOAT);
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.particleVbo);
+            gl.bufferSubData(gl.ARRAY_BUFFER, particleVboOffset, particleData);
+
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         let lastDefined = this.emitterList.length-1;
         for (; lastDefined >= 0; lastDefined--) {
             if (this.emitterList[lastDefined] !== undefined && !this.emitterList[lastDefined].finished()) {
@@ -319,12 +346,12 @@ class EmitterParams {
     // Particle Params
     startColor = new Range(new Color(1, 1, 1, 1.0));
     endColor = new Range(new Color(1, 1, 1, 0));
-    startSpeed = new Range(150, 200);
-    endSpeed = new Range(0.0);
+    startSpeed = new Range(60, 190);
+    endSpeed = new Range(10.0);
     startSecs = new Range(0);
-    lifeSecs = new Range(0.1, 0.15);
-    startScale = new Range(6.0);
-    endScale = new Range(2.0);
+    lifeSecs = new Range(0.3, 0.45);
+    startScale = new Range(7.0);
+    endScale = new Range(0.1);
     startRot = new Range(-3.0, 3.0);
     endRot = new Range(-3.0, 3.0);
 }
@@ -356,6 +383,7 @@ class Emitter {
     }
 }
 
+// TODO: Sparks should be additive so they get brighter! (like fire)
 const sparkEmitterParams = new EmitterParams();
 sparkEmitterParams.lockOrientationToVel = true;
 
