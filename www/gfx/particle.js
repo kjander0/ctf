@@ -43,29 +43,36 @@ const MAX_EMITTERS = 256;
 const MAX_EMITTER_PARTICLES = 1024;
 
 const PARTICLE_POS_LOC = 5;
-const PARTICLE_VEL_LOC = 6;
-const PARTICLE_START_COLOR_LOC = 7;
-const PARTICLE_END_COLOR_LOC = 8;
-const PARTICLE_TIME_LOC = 9;
-const PARTICLE_SCALE_ROT_LOC = 10;
-const PARTICLE_TEXTURE_LOC = 11;
 
-const EMITTER_TIME_LOC = 12;
-const EMITTER_SIZE_LOC = 13;
+const EMITTER_TIME_LOC = 10;
+const EMITTER_SIZE_LOC = 11;
+
+const PARTICLE_TYPE_SPARKS = 0;
+
+class EmitterParams {
+    numParticles = 100;
+    particlesPerSec = 50;
+}
+
+const paramsMap = new Map();
+{
+    const params = new EmitterParams();
+    paramsMap.set(PARTICLE_TYPE_SPARKS, params);
+}
 
 // GPU particles with particle state stored in textures
 class ParticleSystem {
     model;
 
     particleVbo;
-    emitterList = new Array(MAX_EMITTERS);
-
     floatsPerParticle;
     floatsPerEmitter;
 
     emitterVbo;
     emitterTimeVbo;
     emitterAttribs;
+
+    emitterMap = new Map(); // lists of emitters for each type
 
     timeSecs = 0;
 
@@ -90,12 +97,6 @@ class ParticleSystem {
         // =========== Particle Data ==========
         const particleAttribs = [
             new VertAttrib(PARTICLE_POS_LOC, 2, gl.FLOAT, 1),   // position
-            new VertAttrib(PARTICLE_VEL_LOC, 4, gl.FLOAT, 1),   // start and end velocity
-            new VertAttrib(PARTICLE_START_COLOR_LOC, 4, gl.FLOAT, 1), // start color
-            new VertAttrib(PARTICLE_END_COLOR_LOC, 4, gl.FLOAT, 1), // end color
-            new VertAttrib(PARTICLE_TIME_LOC, 2, gl.FLOAT, 1), // start and end time (secs)
-            new VertAttrib(PARTICLE_SCALE_ROT_LOC, 4, gl.FLOAT, 1),
-            new VertAttrib(PARTICLE_TEXTURE_LOC, 1, gl.FLOAT, 1),
         ];
 
         this.floatsPerParticle = 0;
@@ -155,30 +156,6 @@ class ParticleSystem {
             offset += attrib.size * floatBytes;
         }
 
-        
-        // =========== Emitter Data ==========
-        this.emitterAttribs = [
-            new VertAttrib(EMITTER_SIZE_LOC, 1, gl.FLOAT, MAX_EMITTER_PARTICLES)
-        ];
-
-        this.floatsPerEmitter = 0;
-        for (let attrib of this.emitterAttribs) {
-            this.floatsPerEmitter += attrib.size;
-        }
-
-        this.emitterVbo = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.emitterVbo);
-        gl.bufferData(gl.ARRAY_BUFFER, MAX_EMITTERS * this.floatsPerEmitter * sizeOf(gl.FLOAT), gl.STATIC_DRAW);
-
-        offset = 0;
-        stride = this.floatsPerEmitter * floatBytes;
-        for (let attrib of this.emitterAttribs) {
-            gl.vertexAttribPointer(attrib.loc, attrib.size, attrib.type, false, stride, offset);
-            gl.enableVertexAttribArray(attrib.loc);
-            gl.vertexAttribDivisor(attrib.loc, attrib.divisor);
-            offset += attrib.size * sizeOf(gl.FLOAT);
-        }
-
         // Seperate vbo holding time for each active emitter
         this.emitterTimeVbo = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.emitterTimeVbo);
@@ -188,7 +165,17 @@ class ParticleSystem {
         gl.vertexAttribDivisor(EMITTER_TIME_LOC, MAX_EMITTER_PARTICLES);
     }
 
-    addEmitter(emitter) {
+    addEmitter(type) {
+        const emitter = new Emitter(type, paramsMap.get(type));
+
+        let emitterList = this.emitterMap.get(type);
+        if (emitterList === undefined) {
+            emitterList = [];
+            this.emitterMap.push(emitterList);
+        } 
+
+
+
         let emitterIndex = 0;
         let numDefined = 0;
         for (let i = 0; i < this.emitterList.length; i++) {
@@ -332,42 +319,19 @@ class Range {
     }
 }
 
-class EmitterParams {
-    // Group params
-    shapeType = SHAPE_TYPE_CIRCLE;
-    circleRadius = new Range(5);
-    numParticles = new Range(128);
-    lockOrientationToVel = false;
-
-    // Particle Params
-    startColor = new Range(new Color(1, 1, 1, 1.0));
-    endColor = new Range(new Color(1, 1, 1, 0));
-    startSpeed = new Range(60, 190);
-    endSpeed = new Range(10.0);
-    startSecs = new Range(0);
-    lifeSecs = new Range(0.3, 0.45);
-    startScale = new Range(7.0);
-    endScale = new Range(0.1);
-    startRot = new Range(-3.0, 3.0);
-    endRot = new Range(-3.0, 3.0);
-}
-
 // TODO: pack all draw data together so it is drawn with one vbo/model
 class Emitter {
+    type;
     pos = new Vec();
-    params;
     timeSecs = 0;
 
     numEmitted = 0;
     numParticles;
     circleRadius;
 
-    constructor(pos, params) {
+    constructor(type) {
+        this.type = type;
         this.pos.set(pos);
-        this.params = params;
-        console.assert(params.numParticles.end <= MAX_EMITTER_PARTICLES);
-        this.numParticles = params.numParticles.sample();
-        this.circleRadius = params.circleRadius.sample();
     }
 
     moveTo() {
@@ -376,13 +340,7 @@ class Emitter {
     }
 
     finished() {
-        return this.timeSecs > this.params.startSecs.end + this.params.lifeSecs.end;
     }
 }
 
-// TODO: Sparks should be additive so they get brighter! (like fire)
-const sparkEmitterParams = new EmitterParams();
-sparkEmitterParams.lockOrientationToVel = true;
-
-
-export {ParticleSystem, Emitter, EmitterParams, sparkEmitterParams};
+export {ParticleSystem, Emitter};
