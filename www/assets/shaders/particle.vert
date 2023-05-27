@@ -4,17 +4,11 @@
 layout (location=0) in vec2 aVertexPosition;
 
 // Per Particle attribs
-layout (location=5) in vec2 aParticlePos;
-layout (location=6) in vec4 aParticleVel;
-layout (location=7) in vec4 aParticleStartColor;
-layout (location=8) in vec4 aParticleEndColor;
-layout (location=9) in vec2 aParticleTime;
-layout (location=10) in vec4 aParticleScaleRot;
-layout (location=11) in float aParticleTexture;
+layout (location=5) in vec2 aParticleStartPos;
+layout (location=6) in vec2 aParticleStartTime;
 
 // Per emitter attribs
-layout (location=12) in float aEmitterTime;
-layout (location=13) in float aEmitterSize;
+layout (location=10) in float aEmitterTime;
 
 out vec2 vTexCoord;
 out vec4 vColor;
@@ -26,9 +20,8 @@ uniform float maxNumberParticles;
 void main() {
     vTexCoord = (aVertexPosition + 1.0) / 2.0;
 
-    float startSecs = aParticleTime.x;
-    float lifeSecs = aParticleTime.y;
-    float time = aEmitterTime - startSecs;
+    float lifeSecs = 2.0;
+    float time = aEmitterTime - aParticleStartTime;
     float lerp = time / lifeSecs; // TODO: handle overflow of time
 
     vColor = mix(aParticleStartColor, aParticleEndColor, lerp);
