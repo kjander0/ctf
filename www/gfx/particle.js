@@ -53,8 +53,6 @@ const allParticleTypes = [
     PARTICLE_TYPE_SPARKS,
 ];
 
-
-
 class EmitterParams {
     numParticles = 100;
     particlesPerSec = 50;
@@ -69,8 +67,9 @@ const paramsMap = new Map();
 // Describes batch of emitters of same type
 class EmitterBatch {
     type;
-    emitterList;
-    vboStartOffset;
+    list = new Array(MAX_EMITTERS_PER_TYPE);
+    particleByteOffset;
+    emitterByteOffset;
 }
 
 // GPU particles with particle state stored in textures
@@ -79,9 +78,9 @@ class ParticleSystem {
 
     particleVbo;
     floatsPerParticle;
-    floatsPerEmitter;
 
     emitterVbo;
+    floatsPerEmitter;
 
     emitterBatches = new Map(); // emitter batch for each type
 
@@ -107,7 +106,7 @@ class ParticleSystem {
         // Specify particle VBO and attribs
         const particleAttribs = [
             new VertAttrib(PARTICLE_START_POS_LOC, 2, gl.FLOAT, 1),
-            new VertAttrib(PARTICLE_START_TIME_LOC, 2, gl.FLOAT, 1),
+            new VertAttrib(PARTICLE_START_TIME_LOC, 1, gl.FLOAT, 1),
         ];
 
         this.floatsPerParticle = 0;
@@ -134,11 +133,11 @@ class ParticleSystem {
             new VertAttrib(EMITTER_TIME_LOC, 1, gl.FLOAT, 1),
         ];
 
-        let floatsPerEmitter = 0;
+        this.floatsPerEmitter = 0;
         for (let attrib of emitterAttribs) {
-            floatsPerEmitter += attrib.size;
+            this.floatsPerEmitter += attrib.size;
         }
-        stride = floatsPerEmitter * floatBytes;
+        stride = this.floatsPerEmitter * floatBytes;
 
         this.emitterVbo = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.emitterVbo);
@@ -154,12 +153,15 @@ class ParticleSystem {
         
         // Create emitter batches
         { 
-            let offset = 0;
+            let particleOffset = 0;
+            let emitterOffset = 0;
             for (let particleType of allParticleTypes) {
                 const batch = new EmitterBatch();
                 batch.type = particleType;
-                batch.vboStartOffset = offset;
-                offset += MAX_EMITTERS_PER_TYPE * MAX_EMITTER_PARTICLES;
+                batch.particleByteOffset = particleOffset;
+                batch.emitterByteOffset = emitterOffset;
+                particleOffset += MAX_EMITTERS_PER_TYPE * MAX_EMITTER_PARTICLES * this.floatsPerParticle * floatBytes;
+                emitterOffset += MAX_EMITTERS_PER_TYPE * floatsPerEmitter * floatBytes;
                 this.emitterBatches.set(particleType, batch);
             }
         }
@@ -168,25 +170,30 @@ class ParticleSystem {
     addEmitter(type) {
         const emitter = new Emitter(type, paramsMap.get(type));
 
-        let emitterList = this.emitterMap.get(type);
-        if (emitterList === undefined) {
-            emitterList = [];
-            this.emitterMap.set(type, emitterList);
+        const emitterBatch = this.emitterBatches.get(type);
+
+        let emitterList = emitterBatch.list;
+
+        // Find next free emittter, else override the first
+        let emitterIndex = 0;
+        for (; emitterIndex < emitterList.length; emitterIndex++) {
+            if (emitterList[emitterIndex] === undefined) {
+                break;
+            }
         }
-        
 
-        this.model.numInstances = numDefined * MAX_EMITTER_PARTICLES;
+        emitterList[emitterIndex] = emitter;
 
-        const emitterVboOffset = emitterIndex * this.floatsPerEmitter * sizeOf(gl.FLOAT);
-        const emitterData = new Float32Array([emitter.numParticles]);
+        const emitterVboOffset = emitterBatch.emitterByteOffset + emitterIndex * this.floatsPerEmitter * sizeOf(gl.FLOAT);
+        const emitterData = new Float32Array([0]);
         gl.bindBuffer(gl.ARRAY_BUFFER, this.emitterVbo);
         gl.bufferSubData(gl.ARRAY_BUFFER, emitterVboOffset, emitterData);
     }
 
     update(deltaMs) {
-        // Initialize new particles
-        const numNew = 1;
-
+        for (let type of allParticleTypes) {
+            const emitterBatch = this.emitterBatches.get(type);
+        }
         for (let emitterIndex = 0; emitterIndex < this.emitterList.length; emitterIndex++) {
             this._emitParticles(emitterIndex);
         }
@@ -308,6 +315,8 @@ class Emitter {
     type;
     pos = new Vec();
     timeSecs = 0;
+    emitAccumSecs = 0;
+    
 
     numEmitted = 0;
 
