@@ -308,7 +308,10 @@ class Graphics {
 
         this.particleSystem.update(game.deltaMs);
         const particleModel = this.particleSystem.model;
-        for each batch compute number of instances and draw
+        for (const [particleType, particleBatch] of this.particleSystem.emitterBatches) {
+            SET NUM INSTANCES
+        }
+
         this.renderer.drawModel(particleModel);
         this.renderer.render(this.camera);
 

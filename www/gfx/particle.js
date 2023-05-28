@@ -42,6 +42,8 @@ const SHAPE_TYPE_CONE = 1;
 const MAX_EMITTERS_PER_TYPE = 64;
 const MAX_EMITTER_PARTICLES = 1024;
 
+const MAX_PARTICLE_LIFE_SECS = 10;
+
 const PARTICLE_START_POS_LOC = 5;
 const PARTICLE_START_TIME_LOC = 6;
 
@@ -66,7 +68,7 @@ const paramsMap = new Map();
 
 // Describes batch of emitters of same type
 class EmitterBatch {
-    type;
+    params;
     list = new Array(MAX_EMITTERS_PER_TYPE);
     particleByteOffset;
     emitterByteOffset;
@@ -87,7 +89,6 @@ class ParticleSystem {
     timeSecs = 0;
 
     constructor() {
-
         const mesh = new Mesh(VertAttrib.POS_BIT);
         mesh.addRect(-1, -1, 2, 2);
 
@@ -157,7 +158,7 @@ class ParticleSystem {
             let emitterOffset = 0;
             for (let particleType of allParticleTypes) {
                 const batch = new EmitterBatch();
-                batch.type = particleType;
+                batch.params = paramsMap[particleType];
                 batch.particleByteOffset = particleOffset;
                 batch.emitterByteOffset = emitterOffset;
                 particleOffset += MAX_EMITTERS_PER_TYPE * MAX_EMITTER_PARTICLES * this.floatsPerParticle * floatBytes;
@@ -192,92 +193,61 @@ class ParticleSystem {
 
     update(deltaMs) {
         for (let type of allParticleTypes) {
-            const emitterBatch = this.emitterBatches.get(type);
-        }
-        for (let emitterIndex = 0; emitterIndex < this.emitterList.length; emitterIndex++) {
-            this._emitParticles(emitterIndex);
-        }
-
-        let lastDefined = this.emitterList.length-1;
-        for (; lastDefined >= 0; lastDefined--) {
-            if (this.emitterList[lastDefined] !== undefined && !this.emitterList[lastDefined].finished()) {
-                break;
-            }
-            this.emitterList[lastDefined] = undefined;
+            _updateBatch(this.emitterBatches.get(type));
         }
 
         const timeData = new Float32Array(lastDefined+1);
         for (let i = 0; i < timeData.length; i++) {
             const emitter = this.emitterList[i];
-            emitter.timeSecs += deltaMs / 1000;
             timeData[i] = emitter.timeSecs;
         }
         gl.bindBuffer(gl.ARRAY_BUFFER, this.emitterTimeVbo);
         gl.bufferData(gl.ARRAY_BUFFER, timeData, gl.STATIC_DRAW);
     }
 
-    _emitParticles(emitterIndex) {
-        const emitter = this.emitterList[emitterIndex];
+    _updateBatch(emitterBatch, deltaMs) {
+        const emitterList = emitterBatch.list;
 
-        if (emitter === undefined || emitter.finished() || emitter.numEmitted >= emitter.numParticles) {
+        // emit new particles
+        for (let i = 0; i < emitterList.length; i++) {
+            emitterList[i].timeSecs += deltaMs / 1000;
+            emitterList[i].particleAccum += deltaMs / 1000 * emitterBatch.params.particlesPerSec;
+
+            this._emitParticles(emitterBatch, i);
+        }
+
+        // free up finished emitters
+        for (let i = emitterList.length -1; i >= 0; i--) {
+            if (emitterList[i] !== undefined && !emitterList[i].finished()) {
+                break;
+            }
+            this.emitterList[i] = undefined;
+        }
+    }
+
+    _emitParticles(emitterBatch, emitterIndex) {
+        const emitter = emitterBatch.list[emitterIndex];
+        if (emitter === undefined || emitter.finished()) {
             return;
         }
 
-        let numNew = Math.min(particlesRemaining, Math.max(1, deltaTime * particlesPerSecond));
-
-
-        emitter.numEmitted = emitter.numParticles;
-
-        const params = emitter.params;
+        let numNew = Math.floor(emitter.particleAccum);
+        if (numNew === 0) {
+            return;
+        }
+        emitter.particleAccum -= numNew; 
+        emitter.numEmitted += numNew;
         
-        const particleData = new Float32Array(emitter.numParticles * this.floatsPerParticle);
-        for (let i = 0; i < emitter.numParticles; i++) {
-            const angleRads = Math.random() * 2 * Math.PI;
-            const startSpeed = params.startSpeed.sample();
-            const endSpeed = params.endSpeed.sample();
-            const startVel = Vec.fromAngleRads(angleRads).scale(startSpeed);
-            const endVel = Vec.fromAngleRads(angleRads).scale(endSpeed);
-
-            const startColor = params.startColor.sample();
-            const endColor = params.endColor.sample();
-
+        const particleData = new Float32Array(numNew * this.floatsPerParticle);
+        for (let i = 0; i < numNew; i++) {
             particleData[i * this.floatsPerParticle]     = emitter.pos.x;
             particleData[i * this.floatsPerParticle + 1] = emitter.pos.y;
-
-            particleData[i * this.floatsPerParticle + 2] = startVel.x;
-            particleData[i * this.floatsPerParticle + 3] = startVel.y;
-            particleData[i * this.floatsPerParticle + 4] = endVel.x;
-            particleData[i * this.floatsPerParticle + 5] = endVel.y;
-
-            particleData[i * this.floatsPerParticle + 6] = startColor.r;
-            particleData[i * this.floatsPerParticle + 7] = startColor.g;
-            particleData[i * this.floatsPerParticle + 8] = startColor.b;
-            particleData[i * this.floatsPerParticle + 9] = startColor.a;
-
-            particleData[i * this.floatsPerParticle + 10] = endColor.r;
-            particleData[i * this.floatsPerParticle + 11] = endColor.g;
-            particleData[i * this.floatsPerParticle + 12] = endColor.b;
-            particleData[i * this.floatsPerParticle + 13] = endColor.a;
-
-            particleData[i * this.floatsPerParticle + 14] = emitter.timeSecs;
-            particleData[i * this.floatsPerParticle + 15] = params.lifeSecs.sample();
-
-            particleData[i * this.floatsPerParticle + 16] = params.startScale.sample();
-            particleData[i * this.floatsPerParticle + 17] = params.endScale.sample();
-
-            let startRot = params.startRot.sample();
-            let endRot = params.endRot.sample();
-
-            if (params.lockOrientationToVel) {
-                startRot = angleRads;
-                endRot = angleRads;
-            }
-            particleData[i * this.floatsPerParticle + 18] = startRot;
-            particleData[i * this.floatsPerParticle + 19] = endRot;
+            particleData[i * this.floatsPerParticle + 2] = emitter.timeSecs;
         }
-        const particleVboOffset = emitterIndex * MAX_EMITTER_PARTICLES * this.floatsPerParticle * sizeOf(gl.FLOAT);
+
+        const byteOffset = emitterBatch.particleByteOffset + emitterIndex * MAX_EMITTER_PARTICLES * this.floatsPerParticle * sizeOf(gl.FLOAT);
         gl.bindBuffer(gl.ARRAY_BUFFER, this.particleVbo);
-        gl.bufferSubData(gl.ARRAY_BUFFER, particleVboOffset, particleData);
+        gl.bufferSubData(gl.ARRAY_BUFFER, byteOffset, particleData);
     }
 
     dispose() {
@@ -315,13 +285,16 @@ class Emitter {
     type;
     pos = new Vec();
     timeSecs = 0;
-    emitAccumSecs = 0;
+    endSecs;
+    particleAccum = 0;
     
 
     numEmitted = 0;
 
     constructor(type) {
         this.type = type;
+        const params = paramsMap.get(type);
+        this.endSecs = params.numParticles / params.particlesPerSec + MAX_PARTICLE_LIFE_SECS;
     }
 
     moveTo() {
