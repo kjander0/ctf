@@ -309,7 +309,9 @@ class Graphics {
         this.particleSystem.update(game.deltaMs);
         const particleModel = this.particleSystem.model;
         for (const [particleType, particleBatch] of this.particleSystem.emitterBatches) {
-            SET NUM INSTANCES
+            // TODO set emitter type uniform
+            // - set num instances
+            particleModel.numInstances = particleBatch.
         }
 
         this.renderer.drawModel(particleModel);
